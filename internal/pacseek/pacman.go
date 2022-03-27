@@ -1,0 +1,123 @@
+package pacseek
+
+import (
+	"errors"
+	"strings"
+
+	"github.com/Jguer/go-alpm/v2"
+	pconf "github.com/Morganamilo/go-pacmanconf"
+)
+
+// creates the alpm handler used to search packages
+func initPacmanDbs(dbPath, confPath string) (*alpm.Handle, error) {
+	h, err := alpm.Initialize("/", dbPath)
+	if err != nil {
+		return nil, err
+	}
+
+	conf, _, err := pconf.ParseFile(confPath)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, repo := range conf.Repos {
+		_, err := h.RegisterSyncDB(repo.Name, 0)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return h, nil
+}
+
+// searches the pacman databases and returns packages that could be found (starting with "term")
+func searchRepos(h *alpm.Handle, term string, maxResults int) ([]Package, error) {
+	packages := []Package{}
+	if h == nil {
+		return packages, errors.New("handle is nil")
+	}
+	dbs, err := h.SyncDBs()
+	if err != nil {
+		return packages, err
+	}
+	local, err := h.LocalDB()
+	if err != nil {
+		return packages, err
+	}
+
+	counter := 0
+	for _, db := range dbs.Slice() {
+		for _, pkg := range db.PkgCache().Slice() {
+			if counter >= maxResults {
+				break
+			}
+			if strings.HasPrefix(pkg.Name(), term) {
+				installed := false
+				if local.Pkg(pkg.Name()) != nil {
+					installed = true
+				}
+				packages = append(packages, Package{
+					Name:        pkg.Name(),
+					Source:      db.Name(),
+					IsInstalled: installed,
+				})
+				counter++
+			}
+		}
+	}
+	return packages, nil
+}
+
+// checks the local db if a package is installed
+func isInstalled(h *alpm.Handle, pkg string) bool {
+	local, err := h.LocalDB()
+	if err != nil {
+		return false
+	}
+	local.SetUsage(alpm.UsageSearch)
+
+	p := local.Pkg(pkg)
+	if p != nil {
+		return true
+	}
+	return false
+}
+
+// retrieves package information from the pacman DB's and returns it in the same format as the AUR call
+func infoPacman(h *alpm.Handle, pkg string) RpcResult {
+	r := RpcResult{
+		Results: []InfoRecord{},
+	}
+
+	dbs, err := h.SyncDBs()
+	if err != nil {
+		r.Error = err.Error()
+		return r
+	}
+
+	for _, db := range dbs.Slice() {
+		p := db.Pkg(pkg)
+		if p == nil {
+			continue
+		}
+
+		deps := []string{}
+		for _, d := range p.Depends().Slice() {
+			deps = append(deps, d.Name)
+		}
+
+		i := InfoRecord{
+			Name:         p.Name(),
+			Description:  p.Description(),
+			Version:      p.Version(),
+			License:      p.Licenses().Slice(),
+			Maintainer:   p.Packager(),
+			Depends:      deps,
+			URL:          p.URL(),
+			LastModified: int(p.BuildDate().UTC().Unix()),
+		}
+
+		r.Results = append(r.Results, i)
+		return r
+	}
+	return r
+}
