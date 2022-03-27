@@ -17,6 +17,7 @@ type Settings struct {
 	PacmanConfigPath string
 	InstallCommand   string
 	UninstallCommand string
+	SearchMode       string
 }
 
 // Defaults returns the default settings
@@ -30,6 +31,7 @@ func Defaults() *Settings {
 		PacmanConfigPath: "/etc/pacman.conf",
 		InstallCommand:   "yay -Syu",
 		UninstallCommand: "yay -Rs",
+		SearchMode:       "StartsWith",
 	}
 
 	return &s

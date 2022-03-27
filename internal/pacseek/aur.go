@@ -8,13 +8,17 @@ import (
 )
 
 // calls the AUR rpc API (suggest type) and returns found packages (beginning with "term")
-func searchAur(url, term string, timeout int) ([]Package, error) {
+func searchAur(url, term string, timeout int, mode string, maxResults int) ([]Package, error) {
 	packages := []Package{}
 	client := http.Client{
 		Timeout: time.Millisecond * time.Duration(timeout),
 	}
+	t := "suggest"
+	if mode != "StartsWith" {
+		t = "search&by=name"
+	}
 
-	r, err := client.Get(url + "?v=5&type=suggest&arg=" + term)
+	r, err := client.Get(url + "?v=5&type=" + t + "&arg=" + term)
 	if err != nil {
 		return packages, err
 	}
@@ -24,17 +28,37 @@ func searchAur(url, term string, timeout int) ([]Package, error) {
 	if err != nil {
 		return packages, err
 	}
-	var s []string
-	err = json.Unmarshal(b, &s)
-	if err != nil {
-		return packages, err
+	if mode == "StartsWith" {
+		var s []string
+		err = json.Unmarshal(b, &s)
+		if err != nil {
+			return packages, err
+		}
+		for _, pkg := range s {
+			packages = append(packages, Package{
+				Name:   pkg,
+				Source: "AUR",
+			})
+		}
+	} else {
+		var s RpcResult
+		err = json.Unmarshal(b, &s)
+		if err != nil {
+			return packages, err
+		}
+		i := 0
+		for _, pkg := range s.Results {
+			if i >= maxResults {
+				break
+			}
+			packages = append(packages, Package{
+				Name:   pkg.Name,
+				Source: "AUR",
+			})
+			i++
+		}
 	}
-	for _, pkg := range s {
-		packages = append(packages, Package{
-			Name:   pkg,
-			Source: "AUR",
-		})
-	}
+
 	return packages, nil
 }
 

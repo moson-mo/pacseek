@@ -48,16 +48,16 @@ func (suite *pacseekTestSuite) TestSearchPacmanDbs() {
 	suite.Nil(err, err)
 
 	// ok
-	p, err := searchRepos(h, "glibc", 1)
+	p, err := searchRepos(h, "glibc", "StartsWith", 1)
 	suite.Nil(err, err)
 	suite.Equal(suite.ExpectedPackages, p, "Package not found")
 
 	// nok
-	p, err = searchRepos(h, "nonsense_nonsense", 1)
+	p, err = searchRepos(h, "nonsense_nonsense", "StartsWith", 1)
 	suite.Nil(err, err)
 	suite.Equal([]Package{}, p, "[]Packages not empty")
 
-	p, err = searchRepos(nil, "nonsense_nonsense", 1)
+	p, err = searchRepos(nil, "nonsense_nonsense", "StartsWith", 1)
 	suite.NotNil(err, err)
 	suite.Equal([]Package{}, p, "[]Packages not empty")
 }
@@ -95,16 +95,19 @@ func (suite *pacseekTestSuite) TestIsInstalled() {
 
 func (suite *pacseekTestSuite) TestSearchAur() {
 	// ok
-	p, err := searchAur("http://server.moson.rocks:10666/rpc", "yay", 5000)
+	p, err := searchAur("http://server.moson.rocks:10666/rpc", "yay", 5000, "StartsWith", 20)
+	suite.Nil(err, err)
+	suite.Greater(len(p), 0, "no results for yay")
+	p, err = searchAur("http://server.moson.rocks:10666/rpc", "yay", 5000, "Contains", 20)
 	suite.Nil(err, err)
 	suite.Greater(len(p), 0, "no results for yay")
 
 	// nok
-	p, err = searchAur("http://server.moson.rocks:10666/rpcbla", "yay", 5000)
+	p, err = searchAur("http://server.moson.rocks:10666/rpcbla", "yay", 5000, "StartsWith", 20)
 	suite.NotNil(err, err)
 	suite.Equal([]Package{}, p, "[]Packages not empty")
 
-	p, err = searchAur("nonsense", "yay", 5000)
+	p, err = searchAur("nonsense", "yay", 5000, "StartsWith", 20)
 	suite.NotNil(err, err)
 	suite.Equal([]Package{}, p, "[]Packages not empty")
 }

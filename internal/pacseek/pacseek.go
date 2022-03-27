@@ -88,7 +88,7 @@ func (ps *UI) setupComponents() {
 
 	// component config
 	ps.root.SetBorder(true).
-		SetTitle(" [#00dfff]pacseek - v0.1.1 ").
+		SetTitle(" [#00dfff]pacseek - v0.1.2 ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Attributes(tcell.AttrBold)).
 		SetFieldBackgroundColor(tcell.ColorDarkBlue).
@@ -186,15 +186,21 @@ func (ps *UI) setupComponents() {
 // sets up settings form
 func (ps *UI) setupSettingsForm() {
 	addFields := func() {
+		mode := 1
+		if ps.conf.SearchMode != "Contains" {
+			mode = 0
+		}
+
 		// input fields
 		ps.settings.AddInputField("AUR RPC URL: ", ps.conf.AurRpcUrl, 40, nil, nil)
 		ps.settings.AddInputField("AUR timeout (ms): ", strconv.Itoa(ps.conf.AurTimeout), 6, nil, nil)
 		ps.settings.AddInputField("AUR search delay (ms): ", strconv.Itoa(ps.conf.AurSearchDelay), 6, nil, nil)
-		ps.settings.AddInputField("Max search results (repo): ", strconv.Itoa(ps.conf.MaxResults), 6, nil, nil)
+		ps.settings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, nil)
 		ps.settings.AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, nil)
 		ps.settings.AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, nil)
 		ps.settings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, nil)
 		ps.settings.AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, nil)
+		ps.settings.AddDropDown("Search mode: ", []string{"StartsWith", "Contains"}, mode, nil)
 
 		// key bindings
 		for i := 0; i < ps.settings.GetFormItemCount(); i++ {
@@ -209,10 +215,26 @@ func (ps *UI) setupSettingsForm() {
 						}
 						return event
 					})
+				} else if dd, ok := item.(*tview.DropDown); ok {
+					dd.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+						if event.Key() == tcell.KeyTAB {
+							ps.app.SetFocus(next)
+							return nil
+						}
+						return event
+					})
 				}
 			} else {
 				if input, ok := item.(*tview.InputField); ok {
 					input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+						if event.Key() == tcell.KeyTAB {
+							ps.app.SetFocus(ps.settings.GetButton(0))
+							return nil
+						}
+						return event
+					})
+				} else if dd, ok := item.(*tview.DropDown); ok {
+					dd.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 						if event.Key() == tcell.KeyTAB {
 							ps.app.SetFocus(ps.settings.GetButton(0))
 							return nil
@@ -268,14 +290,20 @@ func (ps *UI) setupSettingsForm() {
 					ps.conf.InstallCommand = input.GetText()
 				case "Uninstall command: ":
 					ps.conf.UninstallCommand = input.GetText()
-				case "Max search results (repo): ":
+				case "Max search results: ":
 					ps.conf.MaxResults, err = strconv.Atoi(input.GetText())
 					if err != nil {
 						ps.status.SetText("Can't convert max results value to int")
 						return
 					}
 				}
+			} else if dd, ok := item.(*tview.DropDown); ok {
+				switch dd.GetLabel() {
+				case "Search mode: ":
+					_, ps.conf.SearchMode = dd.GetCurrentOption()
+				}
 			}
+
 		}
 		ps.settings.GetButton(0).SetLabel("Saved")
 		err = ps.conf.Save()
@@ -376,13 +404,13 @@ func (ps *UI) showPackages(text string) {
 		ps.locker.Lock()
 		defer ps.locker.Unlock()
 		defer ps.showPackageInfo(1, 0)
-		packages, err := searchRepos(ps.alpmHandle, text, ps.conf.MaxResults)
+		packages, err := searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.MaxResults)
 		if err != nil {
 			ps.app.QueueUpdateDraw(func() {
 				ps.status.SetText(err.Error())
 			})
 		}
-		aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout)
+		aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchMode, ps.conf.MaxResults)
 		if err != nil {
 			ps.app.QueueUpdateDraw(func() {
 				ps.status.SetText(err.Error())
@@ -398,6 +426,10 @@ func (ps *UI) showPackages(text string) {
 		sort.Slice(packages, func(i, j int) bool {
 			return packages[i].Name < packages[j].Name
 		})
+
+		if len(packages) > ps.conf.MaxResults {
+			packages = packages[:ps.conf.MaxResults]
+		}
 
 		// draw packages
 		ps.app.QueueUpdateDraw(func() {
