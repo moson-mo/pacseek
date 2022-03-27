@@ -1,6 +1,6 @@
 [![pacseek](https://img.shields.io/aur/version/pacseek?color=1793d1&label=pacseek&logo=arch-linux&style=for-the-badge)](https://aur.archlinux.org/packages/pacseek/)
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/moson-mo/pacseek/Go)](https://github.com/moson-mo/pacseek/actions) 
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/moson-mo/pacseek/Build)](https://github.com/moson-mo/pacseek/actions) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/moson-mo/pacseek)](https://goreportcard.com/report/github.com/moson-mo/pacseek)
 
 # pacseek
