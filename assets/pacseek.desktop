@@ -1,0 +1,13 @@
+[Desktop Entry]
+
+Name=pacseek
+Comment=A terminal user interface for searching and installing Arch Linux packages
+
+Icon=terminal
+Type=Application
+Categories=Utility;
+Keywords=terminal;package;
+
+Exec=pacseek
+StartupNotify=false
+Terminal=true
