@@ -88,7 +88,7 @@ func (ps *UI) setupComponents() {
 
 	// component config
 	ps.root.SetBorder(true).
-		SetTitle(" [red]pacseek - v0.1.0 ").
+		SetTitle(" [#00dfff]pacseek - v0.1.1 ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Attributes(tcell.AttrBold)).
 		SetFieldBackgroundColor(tcell.ColorDarkBlue).
@@ -97,6 +97,7 @@ func (ps *UI) setupComponents() {
 		SetTitleAlign(tview.AlignLeft).
 		SetBorderPadding(1, 1, 1, 1)
 	ps.packages.SetSelectable(true, false).
+		SetFixed(1, 1).
 		SetBorder(true).
 		SetTitleAlign(tview.AlignLeft)
 	ps.spinner.SetText("|").
@@ -104,13 +105,12 @@ func (ps *UI) setupComponents() {
 	ps.bottom.AddItem(
 		tview.NewTextView().
 			SetText("CTRL+Q = Quit; "+
-				"ENTER = Search; "+
+				"ENTER = Search/Install/Uninstall "+
 				"TAB = Change focus; "+
-				"CTRL+Space = Install/Remove package; "+
 				"CTRL-S = Settings"), 0, 1, false).
 		SetBorder(true)
 	ps.settings.SetBorder(true).
-		SetTitle(" [red]Settings ").
+		SetTitle(" [#00dfff]Settings ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.status.SetBorder(true)
 
@@ -174,7 +174,7 @@ func (ps *UI) setupComponents() {
 			}
 			return nil
 		}
-		if event.Key() == tcell.KeyCtrlSpace {
+		if event.Key() == tcell.KeyEnter {
 			ps.installPackage()
 			return nil
 		}
@@ -314,7 +314,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 			return
 		}
 		ps.app.QueueUpdateDraw(func() {
-			ps.details.SetTitle(" [red]" + pkg + " - Retrieving data... ")
+			ps.details.SetTitle(" [#1793d1]" + pkg + " - Retrieving data... ")
 		})
 
 		ps.locker.Lock()
@@ -345,26 +345,26 @@ func (ps *UI) showPackageInfo(row, column int) {
 			}
 			r := info.Results[0]
 
-			ps.details.SetTitle(" [red]"+r.Name+" ").SetBorderPadding(1, 1, 1, 1)
-			ps.details.SetCell(0, 0, tview.NewTableCell("[green]Description").SetAttributes(tcell.AttrBold))
+			ps.details.SetTitle(" [#00dfff]"+r.Name+" ").SetBorderPadding(1, 1, 1, 1)
+			ps.details.SetCell(0, 0, tview.NewTableCell("[#1793d1]Description").SetAttributes(tcell.AttrBold))
 			ps.details.SetCellSimple(0, 1, r.Description)
-			ps.details.SetCell(1, 0, tview.NewTableCell("[green]Version").SetAttributes(tcell.AttrBold))
+			ps.details.SetCell(1, 0, tview.NewTableCell("[#1793d1]Version").SetAttributes(tcell.AttrBold))
 			ps.details.SetCellSimple(1, 1, r.Version)
-			ps.details.SetCell(2, 0, tview.NewTableCell("[green]Licenses").SetAttributes(tcell.AttrBold))
+			ps.details.SetCell(2, 0, tview.NewTableCell("[#1793d1]Licenses").SetAttributes(tcell.AttrBold))
 			ps.details.SetCellSimple(2, 1, strings.Join(r.License, ", "))
-			ps.details.SetCell(3, 0, tview.NewTableCell("[green]Maintainer").SetAttributes(tcell.AttrBold))
+			ps.details.SetCell(3, 0, tview.NewTableCell("[#1793d1]Maintainer").SetAttributes(tcell.AttrBold))
 			ps.details.SetCellSimple(3, 1, r.Maintainer)
 			if source == "AUR" {
-				ps.details.SetCell(4, 0, tview.NewTableCell("[green]Votes").SetAttributes(tcell.AttrBold))
+				ps.details.SetCell(4, 0, tview.NewTableCell("[#1793d1]Votes").SetAttributes(tcell.AttrBold))
 				ps.details.SetCellSimple(4, 1, fmt.Sprintf("%d", r.NumVotes))
-				ps.details.SetCell(5, 0, tview.NewTableCell("[green]Popularity").SetAttributes(tcell.AttrBold))
+				ps.details.SetCell(5, 0, tview.NewTableCell("[#1793d1]Popularity").SetAttributes(tcell.AttrBold))
 				ps.details.SetCellSimple(5, 1, fmt.Sprintf("%f", r.Popularity))
 			}
-			ps.details.SetCell(6, 0, tview.NewTableCell("[green]Dependencies").SetAttributes(tcell.AttrBold))
+			ps.details.SetCell(6, 0, tview.NewTableCell("[#1793d1]Dependencies").SetAttributes(tcell.AttrBold))
 			ps.details.SetCellSimple(6, 1, strings.Join(r.Depends, ", "))
-			ps.details.SetCell(7, 0, tview.NewTableCell("[green]URL").SetAttributes(tcell.AttrBold))
+			ps.details.SetCell(7, 0, tview.NewTableCell("[#1793d1]URL").SetAttributes(tcell.AttrBold))
 			ps.details.SetCellSimple(7, 1, r.URL)
-			ps.details.SetCell(8, 0, tview.NewTableCell("[green]Last modified").SetAttributes(tcell.AttrBold))
+			ps.details.SetCell(8, 0, tview.NewTableCell("[#1793d1]Last modified").SetAttributes(tcell.AttrBold))
 			ps.details.SetCellSimple(8, 1, time.Unix(int64(r.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)"))
 		})
 	}()
@@ -431,7 +431,7 @@ func (ps *UI) showPackages(text string) {
 					installed = "Y"
 				}
 				if pkg.Source == "AUR" {
-					color = tcell.ColorRed
+					color = tcell.NewRGBColor(23, 147, 209)
 				}
 
 				ps.packages.SetCellSimple(i+1, 0, pkg.Name)
