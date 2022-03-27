@@ -23,7 +23,7 @@ type Settings struct {
 // Defaults returns the default settings
 func Defaults() *Settings {
 	s := Settings{
-		AurRpcUrl:        "http://server.moson.rocks:10666/rpc",
+		AurRpcUrl:        "https://server.moson.rocks/rpc",
 		AurTimeout:       1000,
 		AurSearchDelay:   500,
 		MaxResults:       100,
