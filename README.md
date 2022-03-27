@@ -1,3 +1,8 @@
+[![pacseek](https://img.shields.io/aur/version/pacseek?color=1793d1&label=pacseek&logo=arch-linux&style=for-the-badge)](https://aur.archlinux.org/packages/pacseek/)
+
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/moson-mo/pacseek/Go)](https://github.com/moson-mo/pacseek/actions) 
+[![Go Report Card](https://goreportcard.com/badge/github.com/moson-mo/pacseek)](https://goreportcard.com/report/github.com/moson-mo/pacseek)
+
 # pacseek
 ## A terminal user interface for searching and installing Arch Linux packages
 
@@ -14,7 +19,7 @@ In the default configuration, [yay](https://github.com/Jguer/yay) is being used.
 * [go-alpm](https://github.com/Jguer/go-alpm) for searching the package DB's
 * [goaurrpc](https://github.com/moson-mo/goaurrpc) self-hosted backend for the AUR REST API calls (to not stress the official aur.archlinux.org/rpc endpoint)
 
-#### How to build / run
+#### How to build / run / install
 
 ```
 $ git clone https://github.com/moson-mo/pacseek.git
@@ -22,6 +27,9 @@ $ cd pacseek
 $ go build .
 $ ./pacseek
 ```
+
+Binaries are available on the [Releases](releases/) page.  
+Also an [AUR package](https://aur.archlinux.org/packages/pacseek/) is available.
 
 #### Navigation / Usage
 

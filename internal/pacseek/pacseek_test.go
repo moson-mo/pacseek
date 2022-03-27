@@ -15,7 +15,7 @@ type pacseekTestSuite struct {
 func (suite *pacseekTestSuite) SetupSuite() {
 	fmt.Println(">>> Setting up test suite")
 
-	suite.ExpectedPackages = []Package{Package{Name: "glibc", Source: "core", IsInstalled: true}}
+	suite.ExpectedPackages = []Package{{Name: "glibc", Source: "core", IsInstalled: true}}
 }
 
 func (suite *pacseekTestSuite) TearDownSuite() {
