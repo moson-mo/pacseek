@@ -1,0 +1,25 @@
+
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux/archlinux:latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Install go, gcc
+      shell: bash
+      run: |
+        pacman -Syu --noconfirm go gcc
+        
+    - name: Build
+      run: go build -v ./...
