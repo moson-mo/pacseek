@@ -52,7 +52,7 @@ func searchRepos(h *alpm.Handle, term string, mode string, maxResults int) ([]Pa
 			}
 
 			compFunc := strings.HasPrefix
-			if mode != "StartWith" {
+			if mode != "StartsWith" {
 				compFunc = strings.Contains
 			}
 
