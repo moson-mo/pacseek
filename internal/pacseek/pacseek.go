@@ -28,7 +28,6 @@ type UI struct {
 	left    *tview.Flex
 	topleft *tview.Flex
 	right   *tview.Flex
-	bottom  *tview.Flex
 
 	search   *tview.InputField
 	packages *tview.Table
@@ -76,7 +75,6 @@ func (ps *UI) setupComponents() {
 	ps.left = tview.NewFlex().SetDirection(tview.FlexRow)
 	ps.topleft = tview.NewFlex()
 	ps.right = tview.NewFlex().SetDirection(tview.FlexRow)
-	ps.bottom = tview.NewFlex()
 
 	// components
 	ps.search = tview.NewInputField()
@@ -94,20 +92,20 @@ func (ps *UI) setupComponents() {
 		SetFieldBackgroundColor(tcell.ColorDarkBlue).
 		SetBorder(true)
 	ps.details.SetBorder(true).
+		SetTitle(" [#00dfff]Instructions ").
 		SetTitleAlign(tview.AlignLeft).
 		SetBorderPadding(1, 1, 1, 1)
+	ps.details.SetCellSimple(0, 0, "Enter a search term and press ENTER to search").
+		SetCellSimple(1, 0, "Navigate to the results list with TAB or ArrowDown").
+		SetCellSimple(2, 0, "Use the up/down arrow keys to navigate within the list").
+		SetCellSimple(3, 0, "Packages can be un/-installed with the ENTER key").
+		SetCellSimple(5, 0, "CTRL+S opens the settings. Use TAB to navigate through the form").
+		SetCellSimple(7, 0, "Use CTRL+Q to exit")
 	ps.packages.SetSelectable(true, false).
 		SetFixed(1, 1).
 		SetBorder(true).
 		SetTitleAlign(tview.AlignLeft)
 	ps.spinner.SetText("|").
-		SetBorder(true)
-	ps.bottom.AddItem(
-		tview.NewTextView().
-			SetText("CTRL+Q = Quit; "+
-				"ENTER = Search/Install/Uninstall "+
-				"TAB = Change focus; "+
-				"CTRL-S = Settings"), 0, 1, false).
 		SetBorder(true)
 	ps.settings.SetBorder(true).
 		SetTitle(" [#00dfff]Settings ").
@@ -126,7 +124,6 @@ func (ps *UI) setupComponents() {
 	ps.left.AddItem(ps.packages, 0, 1, false)
 	ps.left.AddItem(ps.status, 3, 1, false)
 	ps.right.AddItem(ps.details, 0, 1, false)
-	ps.right.AddItem(ps.bottom, 3, 1, false)
 
 	// handlers / key bindings
 
@@ -138,15 +135,11 @@ func (ps *UI) setupComponents() {
 		}
 		if event.Key() == tcell.KeyCtrlS {
 			if ps.right.GetItem(0) != ps.settings {
-				ps.right.RemoveItem(ps.details)
-				ps.right.RemoveItem(ps.bottom)
+				ps.right.Clear()
 				ps.right.AddItem(ps.settings, 0, 1, false)
-				ps.right.AddItem(ps.bottom, 3, 1, false)
 			} else {
-				ps.right.RemoveItem(ps.settings)
-				ps.right.RemoveItem(ps.bottom)
+				ps.right.Clear()
 				ps.right.AddItem(ps.details, 0, 1, false)
-				ps.right.AddItem(ps.bottom, 3, 1, false)
 				ps.app.SetFocus(ps.search)
 			}
 		}
@@ -154,7 +147,7 @@ func (ps *UI) setupComponents() {
 	})
 	// search
 	ps.search.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyTAB {
+		if event.Key() == tcell.KeyTAB || event.Key() == tcell.KeyDown {
 			ps.app.SetFocus(ps.packages)
 			return nil
 		}
@@ -166,12 +159,18 @@ func (ps *UI) setupComponents() {
 
 	// packages
 	ps.packages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyTAB {
-			if ps.right.GetItem(0) == ps.settings {
+		row, _ := ps.packages.GetSelection()
+		if event.Key() == tcell.KeyTAB ||
+			(event.Key() == tcell.KeyUp && row <= 1) {
+			if ps.right.GetItem(0) == ps.settings && event.Key() == tcell.KeyTAB {
 				ps.app.SetFocus(ps.settings.GetFormItem(0))
 			} else {
 				ps.app.SetFocus(ps.search)
 			}
+			return nil
+		}
+		if event.Key() == tcell.KeyRight && ps.right.GetItem(0) == ps.settings {
+			ps.app.SetFocus(ps.settings.GetFormItem(0))
 			return nil
 		}
 		if event.Key() == tcell.KeyEnter {
@@ -207,55 +206,44 @@ func (ps *UI) setupSettingsForm() {
 			item := ps.settings.GetFormItem(i)
 			if i+1 < ps.settings.GetFormItemCount() {
 				next := ps.settings.GetFormItem(i + 1)
-				if input, ok := item.(*tview.InputField); ok {
-					input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-						if event.Key() == tcell.KeyTAB {
-							ps.app.SetFocus(next)
-							return nil
-						}
-						return event
-					})
-				} else if dd, ok := item.(*tview.DropDown); ok {
-					dd.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-						if event.Key() == tcell.KeyTAB {
-							ps.app.SetFocus(next)
-							return nil
-						}
-						return event
-					})
+				var prev tview.FormItem
+				if i > 0 {
+					prev = ps.settings.GetFormItem(i - 1)
 				}
+				item.SetFinishedFunc(func(key tcell.Key) {
+					if key == tcell.KeyUp {
+						if prev != nil {
+							ps.app.SetFocus(prev)
+							return
+						}
+						ps.app.SetFocus(ps.packages)
+					} else {
+						ps.app.SetFocus(next)
+					}
+				})
 			} else {
-				if input, ok := item.(*tview.InputField); ok {
-					input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-						if event.Key() == tcell.KeyTAB {
-							ps.app.SetFocus(ps.settings.GetButton(0))
-							return nil
-						}
-						return event
-					})
-				} else if dd, ok := item.(*tview.DropDown); ok {
-					dd.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-						if event.Key() == tcell.KeyTAB {
-							ps.app.SetFocus(ps.settings.GetButton(0))
-							return nil
-						}
-						return event
-					})
-				}
+				item.SetFinishedFunc(func(key tcell.Key) {
+					ps.app.SetFocus(ps.settings.GetButton(0))
+				})
 			}
 		}
-
 		ps.settings.GetButton(0).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			if event.Key() == tcell.KeyTAB {
+			if event.Key() == tcell.KeyTAB || event.Key() == tcell.KeyDown {
 				ps.app.SetFocus(ps.settings.GetButton(1))
 				return nil
+			}
+			if event.Key() == tcell.KeyUp {
+				ps.app.SetFocus(ps.settings.GetFormItem(ps.settings.GetFormItemCount() - 1))
 			}
 			return event
 		})
 		ps.settings.GetButton(1).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			if event.Key() == tcell.KeyTAB {
+			if event.Key() == tcell.KeyTAB || event.Key() == tcell.KeyDown {
 				ps.app.SetFocus(ps.search)
 				return nil
+			}
+			if event.Key() == tcell.KeyUp {
+				ps.app.SetFocus(ps.settings.GetButton(0))
 			}
 			return event
 		})
