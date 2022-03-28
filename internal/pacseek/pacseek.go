@@ -86,7 +86,7 @@ func (ps *UI) setupComponents() {
 
 	// component config
 	ps.root.SetBorder(true).
-		SetTitle(" [#00dfff]pacseek - v0.1.3 ").
+		SetTitle(" [#00dfff]pacseek - v0.1.4 ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Attributes(tcell.AttrBold)).
 		SetFieldBackgroundColor(tcell.ColorDarkBlue).
