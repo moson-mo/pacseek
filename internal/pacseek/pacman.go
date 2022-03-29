@@ -33,7 +33,7 @@ func initPacmanDbs(dbPath, confPath string) (*alpm.Handle, error) {
 func searchRepos(h *alpm.Handle, term string, mode string, maxResults int) ([]Package, error) {
 	packages := []Package{}
 	if h == nil {
-		return packages, errors.New("handle is nil")
+		return packages, errors.New("alpm handle is nil")
 	}
 	dbs, err := h.SyncDBs()
 	if err != nil {

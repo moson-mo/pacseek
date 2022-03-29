@@ -13,6 +13,10 @@ func main() {
 		fmt.Println("pacseek should not be run as root.")
 		os.Exit(1)
 	}
+	term := ""
+	if len(os.Args) > 1 {
+		term = os.Args[1]
+	}
 	conf, err := config.Load()
 	if err != nil {
 		if os.IsNotExist(err) && conf != nil {
@@ -31,7 +35,7 @@ func main() {
 		printError("Error during pacseek initialization", err)
 		os.Exit(1)
 	}
-	if err = ps.Start(); err != nil {
+	if err = ps.Start(term); err != nil {
 		printError("Error starting pacseek", err)
 		os.Exit(1)
 	}

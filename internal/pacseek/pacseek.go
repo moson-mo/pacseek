@@ -24,10 +24,11 @@ type UI struct {
 
 	alpmHandle *alpm.Handle
 
-	root    *tview.Flex
-	left    *tview.Flex
-	topleft *tview.Flex
-	right   *tview.Flex
+	root      *tview.Flex
+	left      *tview.Flex
+	topleft   *tview.Flex
+	right     *tview.Flex
+	container *tview.Flex
 
 	search   *tview.InputField
 	packages *tview.Table
@@ -36,8 +37,8 @@ type UI struct {
 	settings *tview.Form
 	status   *tview.TextView
 
-	locker     *sync.RWMutex
-	spinLocker *sync.RWMutex
+	locker        *sync.RWMutex
+	messageLocker *sync.RWMutex
 
 	quitSpin       chan bool
 	requestRunning bool
@@ -47,10 +48,11 @@ type UI struct {
 // New creates a UI object and makes sure everything is initialized
 func New(config *config.Settings) (*UI, error) {
 	ui := UI{
-		conf:     config,
-		app:      tview.NewApplication(),
-		locker:   &sync.RWMutex{},
-		quitSpin: make(chan bool),
+		conf:          config,
+		app:           tview.NewApplication(),
+		locker:        &sync.RWMutex{},
+		messageLocker: &sync.RWMutex{},
+		quitSpin:      make(chan bool),
 	}
 	ui.setupComponents()
 
@@ -64,14 +66,19 @@ func New(config *config.Settings) (*UI, error) {
 }
 
 // Start runs application / event-loop
-func (ps *UI) Start() error {
+func (ps *UI) Start(term string) error {
+	if term != "" {
+		ps.search.SetText(term)
+		ps.showPackages(term)
+	}
 	return ps.app.SetRoot(ps.root, true).EnableMouse(true).Run()
 }
 
 // sets up all our ui components
 func (ps *UI) setupComponents() {
 	// flex grids
-	ps.root = tview.NewFlex()
+	ps.root = tview.NewFlex().SetDirection(tview.FlexRow)
+	ps.container = tview.NewFlex()
 	ps.left = tview.NewFlex().SetDirection(tview.FlexRow)
 	ps.topleft = tview.NewFlex()
 	ps.right = tview.NewFlex().SetDirection(tview.FlexRow)
@@ -86,43 +93,49 @@ func (ps *UI) setupComponents() {
 
 	// component config
 	ps.root.SetBorder(true).
-		SetTitle(" [#00dfff]pacseek - v0.1.4 ").
+		SetTitle(" [#00dfff]pacseek - v0.2.0 ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Attributes(tcell.AttrBold)).
 		SetFieldBackgroundColor(tcell.ColorDarkBlue).
 		SetBorder(true)
 	ps.details.SetBorder(true).
-		SetTitle(" [#00dfff]Instructions ").
+		SetTitle(" [#00dfff]Usage ").
 		SetTitleAlign(tview.AlignLeft).
 		SetBorderPadding(1, 1, 1, 1)
-	ps.details.SetCellSimple(0, 0, "Enter a search term and press ENTER to search").
-		SetCellSimple(1, 0, "Navigate to the results list with TAB or ArrowDown").
-		SetCellSimple(2, 0, "Use the up/down arrow keys to navigate within the list").
-		SetCellSimple(3, 0, "Packages can be un/-installed with the ENTER key").
-		SetCellSimple(5, 0, "CTRL+S opens the settings. Use TAB to navigate through the form").
-		SetCellSimple(7, 0, "Use CTRL+Q to exit")
+	ps.details.SetCellSimple(0, 0, "ENTER: Search; Install or remove a selected package").
+		SetCellSimple(1, 0, "TAB / CTRL+Up/Down/Right/Left: Navigate between boxes").
+		SetCellSimple(2, 0, "Up/Down: Navigate within package list").
+		SetCellSimple(3, 0, "CTRL+S: Open/Close settings").
+		SetCellSimple(4, 0, "CTRL+Q: Quit")
 	ps.packages.SetSelectable(true, false).
 		SetFixed(1, 1).
 		SetBorder(true).
 		SetTitleAlign(tview.AlignLeft)
+	ps.packages.SetCell(0, 0, &tview.TableCell{
+		Text:          "Package - Source - Installed",
+		NotSelectable: true,
+		Color:         tcell.ColorYellow,
+	})
 	ps.spinner.SetText("|").
 		SetBorder(true)
 	ps.settings.SetBorder(true).
 		SetTitle(" [#00dfff]Settings ").
 		SetTitleAlign(tview.AlignLeft)
-	ps.status.SetBorder(true)
+	ps.status.SetDynamicColors(true).
+		SetBorder(true)
 
 	// settings component
 	ps.setupSettingsForm()
 
 	// layouting
-	ps.root.AddItem(ps.left, 0, 40, true)
-	ps.root.AddItem(ps.right, 0, 100, false)
+	ps.root.AddItem(ps.container, 0, 1, true)
+	ps.root.AddItem(ps.status, 0, 0, false)
+	ps.container.AddItem(ps.left, 0, 40, true)
+	ps.container.AddItem(ps.right, 0, 100, false)
 	ps.left.AddItem(ps.topleft, 3, 1, true)
 	ps.topleft.AddItem(ps.search, 0, 1, true)
 	ps.topleft.AddItem(ps.spinner, 3, 1, false)
 	ps.left.AddItem(ps.packages, 0, 1, false)
-	ps.left.AddItem(ps.status, 3, 1, false)
 	ps.right.AddItem(ps.details, 0, 1, false)
 
 	// handlers / key bindings
@@ -145,6 +158,7 @@ func (ps *UI) setupComponents() {
 		}
 		return event
 	})
+
 	// search
 	ps.search.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTAB || event.Key() == tcell.KeyDown {
@@ -153,7 +167,13 @@ func (ps *UI) setupComponents() {
 		}
 		if event.Key() == tcell.KeyEnter {
 			ps.showPackages(ps.search.GetText())
+			return nil
 		}
+		if event.Key() == tcell.KeyRight && event.Modifiers() == tcell.ModCtrl && ps.right.GetItem(0) == ps.settings {
+			ps.app.SetFocus(ps.settings)
+			return nil
+		}
+
 		return event
 	})
 
@@ -161,7 +181,8 @@ func (ps *UI) setupComponents() {
 	ps.packages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		row, _ := ps.packages.GetSelection()
 		if event.Key() == tcell.KeyTAB ||
-			(event.Key() == tcell.KeyUp && row <= 1) {
+			(event.Key() == tcell.KeyUp && row <= 1) ||
+			(event.Key() == tcell.KeyUp && event.Modifiers() == tcell.ModCtrl) {
 			if ps.right.GetItem(0) == ps.settings && event.Key() == tcell.KeyTAB {
 				ps.app.SetFocus(ps.settings.GetFormItem(0))
 			} else {
@@ -202,6 +223,14 @@ func (ps *UI) setupSettingsForm() {
 		ps.settings.AddDropDown("Search mode: ", []string{"StartsWith", "Contains"}, mode, nil)
 
 		// key bindings
+		ps.settings.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModCtrl {
+				ps.app.SetFocus(ps.packages)
+				return nil
+			}
+			return event
+		})
+
 		for i := 0; i < ps.settings.GetFormItemCount(); i++ {
 			item := ps.settings.GetFormItem(i)
 			if i+1 < ps.settings.GetFormItemCount() {
@@ -261,13 +290,13 @@ func (ps *UI) setupSettingsForm() {
 				case "AUR timeout (ms): ":
 					ps.conf.AurTimeout, err = strconv.Atoi(input.GetText())
 					if err != nil {
-						ps.status.SetText("Can't convert timeout value to int")
+						ps.showMessage("Can't convert timeout value to int", true)
 						return
 					}
 				case "AUR search delay (ms): ":
 					ps.conf.AurSearchDelay, err = strconv.Atoi(input.GetText())
 					if err != nil {
-						ps.status.SetText("Can't convert delay value to int")
+						ps.showMessage("Can't convert delay value to int", true)
 						return
 					}
 				case "Pacman DB path: ":
@@ -281,7 +310,7 @@ func (ps *UI) setupSettingsForm() {
 				case "Max search results: ":
 					ps.conf.MaxResults, err = strconv.Atoi(input.GetText())
 					if err != nil {
-						ps.status.SetText("Can't convert max results value to int")
+						ps.showMessage("Can't convert max results value to int", true)
 						return
 					}
 				}
@@ -296,10 +325,10 @@ func (ps *UI) setupSettingsForm() {
 		ps.settings.GetButton(0).SetLabel("Saved")
 		err = ps.conf.Save()
 		if err != nil {
-			ps.status.SetText(err.Error())
+			ps.showMessage(err.Error(), true)
 			return
 		}
-		ps.status.SetText("Settings have been saved")
+		ps.showMessage("Settings have been saved", false)
 	})
 
 	ps.settings.AddButton("Defaults", func() {
@@ -395,13 +424,13 @@ func (ps *UI) showPackages(text string) {
 		packages, err := searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.MaxResults)
 		if err != nil {
 			ps.app.QueueUpdateDraw(func() {
-				ps.status.SetText(err.Error())
+				ps.showMessage(err.Error(), true)
 			})
 		}
 		aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchMode, ps.conf.MaxResults)
 		if err != nil {
 			ps.app.QueueUpdateDraw(func() {
-				ps.status.SetText(err.Error())
+				ps.showMessage(err.Error(), true)
 			})
 		}
 
@@ -427,21 +456,7 @@ func (ps *UI) showPackages(text string) {
 			ps.packages.Clear()
 
 			// header
-			ps.packages.SetCell(0, 0, &tview.TableCell{
-				Text:          "Package",
-				NotSelectable: true,
-				Color:         tcell.ColorYellow,
-			})
-			ps.packages.SetCell(0, 1, &tview.TableCell{
-				Text:          "Source",
-				NotSelectable: true,
-				Color:         tcell.ColorYellow,
-			})
-			ps.packages.SetCell(0, 2, &tview.TableCell{
-				Text:          "Installed",
-				NotSelectable: true,
-				Color:         tcell.ColorYellow,
-			})
+			ps.addPackagesHeader()
 
 			// rows
 			for i, pkg := range packages {
@@ -463,6 +478,45 @@ func (ps *UI) showPackages(text string) {
 				ps.packages.SetCellSimple(i+1, 2, installed)
 			}
 			ps.packages.ScrollToBeginning()
+		})
+	}()
+}
+
+// adds header row to package table
+func (ps *UI) addPackagesHeader() {
+	ps.packages.SetCell(0, 0, &tview.TableCell{
+		Text:          "Package",
+		NotSelectable: true,
+		Color:         tcell.ColorYellow,
+	})
+	ps.packages.SetCell(0, 1, &tview.TableCell{
+		Text:          "Source",
+		NotSelectable: true,
+		Color:         tcell.ColorYellow,
+	})
+	ps.packages.SetCell(0, 2, &tview.TableCell{
+		Text:          "Installed",
+		NotSelectable: true,
+		Color:         tcell.ColorYellow,
+	})
+}
+
+// shows status bar with error message
+func (ps *UI) showMessage(message string, isError bool) {
+	txt := message
+	if isError {
+		txt = "[red]Error: " + message
+	}
+
+	ps.status.SetText(txt)
+	ps.root.ResizeItem(ps.status, 3, 1)
+
+	go func() {
+		ps.messageLocker.Lock()
+		defer ps.messageLocker.Unlock()
+		time.Sleep(10 * time.Second)
+		ps.app.QueueUpdateDraw(func() {
+			ps.root.ResizeItem(ps.status, 0, 0)
 		})
 	}()
 }
@@ -533,7 +587,7 @@ func (ps *UI) installPackage() {
 		// we need to reinitialize the alpm handler to get the proper install state
 		err := ps.reinitPacmanDbs()
 		if err != nil {
-			ps.status.SetText(err.Error())
+			ps.showMessage(err.Error(), true)
 			return
 		}
 

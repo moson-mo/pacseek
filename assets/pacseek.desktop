@@ -3,7 +3,7 @@
 Name=pacseek
 Comment=A terminal user interface for searching and installing Arch Linux packages
 
-Icon=terminal
+Icon=pacseek
 Type=Application
 Categories=Utility;
 Keywords=terminal;package;
