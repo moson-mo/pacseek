@@ -43,3 +43,9 @@ With TAB you can navigate to the package list. Use the cursor keys to navigate w
 To install/remove a package, press ENTER.  
 
 The settings form can be opened with CTRL+S.  
+
+
+#### ToDo's
+
+* Improve test code
+* Implement caching for package data to have less lookups (AUR)
