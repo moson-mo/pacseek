@@ -4,6 +4,8 @@
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/moson-mo/pacseek/Build)](https://github.com/moson-mo/pacseek/actions) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/moson-mo/pacseek)](https://goreportcard.com/report/github.com/moson-mo/pacseek)
 
+<img src="/assets/pacseek.png" align="left" width="64"/>
+
 # pacseek
 ## A terminal user interface for searching and installing Arch Linux packages
 
