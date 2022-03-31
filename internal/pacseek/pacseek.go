@@ -40,12 +40,8 @@ type UI struct {
 	locker        *sync.RWMutex
 	messageLocker *sync.RWMutex
 
-	quitSpin       chan bool
-	requestRunning bool
-	requestNumber  int
-
-	width int
-
+	quitSpin        chan bool
+	width           int
 	selectedPackage *InfoRecord
 }
 
@@ -97,7 +93,7 @@ func (ps *UI) setupComponents() {
 
 	// component config
 	ps.root.SetBorder(true).
-		SetTitle(" [#00dfff][::b]pacseek - v0.2.2 ").
+		SetTitle(" [#00dfff][::b]pacseek - v0.2.3 ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Attributes(tcell.AttrBold)).
 		SetFieldBackgroundColor(tcell.NewRGBColor(5, 100, 160)).
@@ -141,10 +137,12 @@ func (ps *UI) setupComponents() {
 
 	// app / global
 	ps.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// CTRL+Q
 		if event.Key() == tcell.KeyCtrlQ {
 			ps.alpmHandle.Release()
 			ps.app.Stop()
 		}
+		// CTRL+S
 		if event.Key() == tcell.KeyCtrlS {
 			if ps.right.GetItem(0) != ps.settings {
 				ps.right.Clear()
@@ -156,12 +154,18 @@ func (ps *UI) setupComponents() {
 			}
 			return nil
 		}
+		// CTRL+H
 		if event.Key() == tcell.KeyCtrlH {
 			ps.showHelp()
 			if ps.right.GetItem(0) == ps.settings {
 				ps.right.Clear()
 				ps.right.AddItem(ps.details, 0, 1, false)
 			}
+			return nil
+		}
+		// CTRL+U
+		if event.Key() == tcell.KeyCtrlU {
+			ps.performSyncSysUpgrade()
 			return nil
 		}
 		return event
@@ -179,15 +183,20 @@ func (ps *UI) setupComponents() {
 
 	// search
 	ps.search.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// TAB / Down
 		if event.Key() == tcell.KeyTAB || event.Key() == tcell.KeyDown {
 			ps.app.SetFocus(ps.packages)
 			return nil
 		}
+		// ENTER
 		if event.Key() == tcell.KeyEnter {
 			ps.showPackages(ps.search.GetText())
 			return nil
 		}
-		if event.Key() == tcell.KeyRight && event.Modifiers() == tcell.ModCtrl && ps.right.GetItem(0) == ps.settings {
+		// CTRL+Right
+		if event.Key() == tcell.KeyRight &&
+			event.Modifiers() == tcell.ModCtrl &&
+			ps.right.GetItem(0) == ps.settings {
 			ps.app.SetFocus(ps.settings)
 			return nil
 		}
@@ -197,6 +206,7 @@ func (ps *UI) setupComponents() {
 
 	// packages
 	ps.packages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// TAB / Up
 		row, _ := ps.packages.GetSelection()
 		if event.Key() == tcell.KeyTAB ||
 			(event.Key() == tcell.KeyUp && row <= 1) ||
@@ -208,10 +218,12 @@ func (ps *UI) setupComponents() {
 			}
 			return nil
 		}
+		// Right
 		if event.Key() == tcell.KeyRight && ps.right.GetItem(0) == ps.settings {
 			ps.app.SetFocus(ps.settings.GetFormItem(0))
 			return nil
 		}
+		// ENTER
 		if event.Key() == tcell.KeyEnter {
 			ps.installPackage()
 			return nil
@@ -249,6 +261,7 @@ func (ps *UI) setupSettingsForm() {
 			return event
 		})
 
+		// form input items
 		for i := 0; i < ps.settings.GetFormItemCount(); i++ {
 			item := ps.settings.GetFormItem(i)
 			if i+1 < ps.settings.GetFormItemCount() {
@@ -274,6 +287,8 @@ func (ps *UI) setupSettingsForm() {
 				})
 			}
 		}
+
+		// Save button
 		ps.settings.GetButton(0).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 			if event.Key() == tcell.KeyTAB || event.Key() == tcell.KeyDown {
 				ps.app.SetFocus(ps.settings.GetButton(1))
@@ -284,6 +299,8 @@ func (ps *UI) setupSettingsForm() {
 			}
 			return event
 		})
+
+		// Defaults button
 		ps.settings.GetButton(1).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 			if event.Key() == tcell.KeyTAB || event.Key() == tcell.KeyDown {
 				ps.app.SetFocus(ps.search)
@@ -296,7 +313,7 @@ func (ps *UI) setupSettingsForm() {
 		})
 	}
 
-	// buttons
+	// Save button clicked
 	ps.settings.AddButton("Save", func() {
 		var err error
 		for i := 0; i < ps.settings.GetFormItemCount(); i++ {
@@ -349,6 +366,7 @@ func (ps *UI) setupSettingsForm() {
 		ps.showMessage("Settings have been saved", false)
 	})
 
+	// Defaults button clicked
 	ps.settings.AddButton("Defaults", func() {
 		ps.conf = config.Defaults()
 		ps.settings.Clear(false)
@@ -562,7 +580,8 @@ func (ps *UI) showHelp() {
 		SetCellSimple(2, 0, "Up/Down: Navigate within package list").
 		SetCellSimple(3, 0, "CTRL+S: Open/Close settings").
 		SetCellSimple(4, 0, "CTRL+H: Show these instructions").
-		SetCellSimple(6, 0, "CTRL+Q: Quit")
+		SetCellSimple(5, 0, "CTRL+U: Perform sysupgrade (pacman -Syu)").
+		SetCellSimple(7, 0, "CTRL+Q: Quit")
 }
 
 // starts the spinner
@@ -606,44 +625,46 @@ func (ps *UI) installPackage() {
 		command = ps.conf.UninstallCommand
 	}
 
+	com := strings.Split(command, " ")[0]
+	args := strings.Split(command, " ")[1:]
+	args = append(args, pkg)
+
+	ps.runCommand(com, args)
+
+	// update package install status
+	if isInstalled(ps.alpmHandle, pkg) {
+		ps.packages.SetCellSimple(row, 2, "Y")
+	} else {
+		ps.packages.SetCellSimple(row, 2, "-")
+	}
+}
+
+// suspends UI and runs a command in the terminal
+func (ps *UI) runCommand(command string, args []string) {
 	// suspend gui and run command in terminal
 	ps.app.Suspend(func() {
-		com := strings.Split(command, " ")[0]
-		args := strings.Split(command, " ")[1:]
-		args = append(args, pkg)
 
-		cmd := exec.Command(com, args...)
+		cmd := exec.Command(command, args...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
 		// handle SIGINT and forward to the child process
-		go func() {
-			c := make(chan os.Signal, 1)
-			signal.Notify(c, os.Interrupt)
-			<-c
-			if cmd != nil {
-				cmd.Process.Signal(os.Interrupt)
-			}
-		}()
-
+		quit := handleSigint(cmd)
 		cmd.Run()
-
-		// we need to reinitialize the alpm handler to get the proper install state
-		err := ps.reinitPacmanDbs()
-		if err != nil {
-			ps.showMessage(err.Error(), true)
-			return
-		}
-
-		// update package install status
-		if isInstalled(ps.alpmHandle, pkg) {
-			ps.packages.SetCellSimple(row, 2, "Y")
-		} else {
-			ps.packages.SetCellSimple(row, 2, "-")
-		}
-
+		quit <- true
 	})
+	// we need to reinitialize the alpm handler to get the proper install state
+	err := ps.reinitPacmanDbs()
+	if err != nil {
+		ps.showMessage(err.Error(), true)
+		return
+	}
+}
+
+// issues "pacman -Syu"
+func (ps *UI) performSyncSysUpgrade() {
+	ps.runCommand("sudo", []string{"pacman", "-Syu"})
 }
 
 // checks if a given package is currently selected in the package list
@@ -714,4 +735,22 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	fields[order[8]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
 
 	return fields, order
+}
+
+// handles SIGINT call and passes it to a cmd process
+func handleSigint(cmd *exec.Cmd) chan bool {
+	quit := make(chan bool, 1)
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		select {
+		case <-c:
+			if cmd != nil {
+				cmd.Process.Signal(os.Interrupt)
+			}
+		case <-quit:
+			return
+		}
+	}()
+	return quit
 }

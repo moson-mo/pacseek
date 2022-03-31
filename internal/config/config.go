@@ -24,12 +24,12 @@ type Settings struct {
 func Defaults() *Settings {
 	s := Settings{
 		AurRpcUrl:        "https://server.moson.rocks/rpc",
-		AurTimeout:       1000,
+		AurTimeout:       5000,
 		AurSearchDelay:   500,
 		MaxResults:       100,
 		PacmanDbPath:     "/var/lib/pacman/",
 		PacmanConfigPath: "/etc/pacman.conf",
-		InstallCommand:   "yay -Syu",
+		InstallCommand:   "yay -S",
 		UninstallCommand: "yay -Rs",
 		SearchMode:       "StartsWith",
 	}
