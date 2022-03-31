@@ -43,6 +43,10 @@ type UI struct {
 	quitSpin       chan bool
 	requestRunning bool
 	requestNumber  int
+
+	width int
+
+	selectedPackage *InfoRecord
 }
 
 // New creates a UI object and makes sure everything is initialized
@@ -93,7 +97,7 @@ func (ps *UI) setupComponents() {
 
 	// component config
 	ps.root.SetBorder(true).
-		SetTitle(" [#00dfff][::b]pacseek - v0.2.1 ").
+		SetTitle(" [#00dfff][::b]pacseek - v0.2.2 ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Attributes(tcell.AttrBold)).
 		SetFieldBackgroundColor(tcell.NewRGBColor(5, 100, 160)).
@@ -125,8 +129,8 @@ func (ps *UI) setupComponents() {
 	// layouting
 	ps.root.AddItem(ps.container, 0, 1, true)
 	ps.root.AddItem(ps.status, 0, 0, false)
-	ps.container.AddItem(ps.left, 0, 50, true)
-	ps.container.AddItem(ps.right, 0, 100, false)
+	ps.container.AddItem(ps.left, 0, 4, true)
+	ps.container.AddItem(ps.right, 0, 6, false)
 	ps.left.AddItem(ps.topleft, 3, 1, true)
 	ps.topleft.AddItem(ps.search, 0, 1, true)
 	ps.topleft.AddItem(ps.spinner, 3, 1, false)
@@ -161,6 +165,16 @@ func (ps *UI) setupComponents() {
 			return nil
 		}
 		return event
+	})
+
+	// redraw package information when the screen is being resized
+	ps.app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
+		w, _ := screen.Size()
+		if ps.selectedPackage != nil && w != ps.width {
+			ps.drawPackageInfo(*ps.selectedPackage, w)
+		}
+		ps.width = w
+		return false
 	})
 
 	// search
@@ -350,6 +364,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 	if row == -1 || row+1 > ps.packages.GetRowCount() {
 		return
 	}
+	ps.details.SetTitle("")
 	ps.details.Clear()
 	pkg := ps.packages.GetCell(row, 0).Text
 	source := ps.packages.GetCell(row, 1).Text
@@ -392,31 +407,39 @@ func (ps *UI) showPackageInfo(row, column int) {
 				ps.details.SetCellSimple(0, 0, fmt.Sprintf("[red]%s", errorMsg))
 				return
 			}
-			i := info.Results[0]
-
-			ps.details.SetTitle(" [#00dfff][::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1)
-			r := 0
-			ln := 0
-
-			fields, order := getDetailFields(i, source)
-			for _, k := range order {
-				_, _, w, _ := ps.details.GetInnerRect()
-				if v, ok := fields[k]; ok {
-					if ln == 1 || ln == len(fields)-1 {
-						r++
-					}
-					// split lines if they do not fit on the screen
-					lines := tview.WordWrap(v, w-15) // we use 13 characters for column 0 (+ 2 chars for padding)
-					ps.details.SetCell(r, 0, tview.NewTableCell(k).SetAttributes(tcell.AttrBold))
-					for _, l := range lines {
-						ps.details.SetCellSimple(r, 1, l)
-						r++
-					}
-					ln++
-				}
-			}
+			ps.selectedPackage = &info.Results[0]
+			_, _, w, _ := ps.root.GetRect()
+			ps.drawPackageInfo(info.Results[0], w)
 		})
 	}()
+}
+
+// draw package information on screen
+func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
+	ps.details.Clear()
+	ps.details.SetTitle(" [#00dfff][::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1)
+	r := 0
+	ln := 0
+
+	fields, order := getDetailFields(i)
+	for _, k := range order {
+		//_, _, w, _ := ps.details.GetInnerRect()
+		if v, ok := fields[k]; ok {
+			if ln == 1 || ln == len(fields)-1 {
+				r++
+			}
+			// split lines if they do not fit on the screen
+			w := width - (int(float64(width)*0.4) + 21) // left box = 40% size, then we use 13 characters for column 0, 2 for padding and 6 for borders
+			lines := tview.WordWrap(v, w)
+			ps.details.SetCell(r, 0, tview.NewTableCell(k).SetAttributes(tcell.AttrBold))
+			for _, l := range lines {
+				ps.details.SetCellSimple(r, 1, l)
+				r++
+			}
+			ln++
+		}
+	}
+	ps.details.ScrollToBeginning()
 }
 
 // gets packages from repos/AUR and displays them
@@ -457,37 +480,42 @@ func (ps *UI) showPackages(text string) {
 			if text != ps.search.GetText() {
 				return
 			}
-			ps.packages.Clear()
-
-			// header
-			ps.addPackagesHeader()
-
-			// rows
-			for i, pkg := range packages {
-				color := tcell.ColorGreen
-				installed := "-"
-				if pkg.IsInstalled {
-					installed = "Y"
-				}
-				if pkg.Source == "AUR" {
-					color = tcell.NewRGBColor(23, 147, 209)
-				}
-
-				ps.packages.SetCellSimple(i+1, 0, pkg.Name)
-				ps.packages.SetCell(i+1, 1, &tview.TableCell{
-					Text:      pkg.Source,
-					Expansion: 1000,
-					Color:     color,
-				})
-				ps.packages.SetCellSimple(i+1, 2, installed)
-			}
-			ps.packages.ScrollToBeginning()
+			ps.drawPackages(packages)
 		})
 	}()
 }
 
+// draw packages on screen
+func (ps *UI) drawPackages(packages []Package) {
+	ps.packages.Clear()
+
+	// header
+	ps.drawPackagesHeader()
+
+	// rows
+	for i, pkg := range packages {
+		color := tcell.ColorGreen
+		installed := "-"
+		if pkg.IsInstalled {
+			installed = "Y"
+		}
+		if pkg.Source == "AUR" {
+			color = tcell.NewRGBColor(23, 147, 209)
+		}
+
+		ps.packages.SetCellSimple(i+1, 0, pkg.Name)
+		ps.packages.SetCell(i+1, 1, &tview.TableCell{
+			Text:      pkg.Source,
+			Expansion: 1000,
+			Color:     color,
+		})
+		ps.packages.SetCellSimple(i+1, 2, installed)
+	}
+	ps.packages.ScrollToBeginning()
+}
+
 // adds header row to package table
-func (ps *UI) addPackagesHeader() {
+func (ps *UI) drawPackagesHeader() {
 	ps.packages.SetCell(0, 0, &tview.TableCell{
 		Text:          "Package",
 		NotSelectable: true,
@@ -654,7 +682,7 @@ func (ps *UI) reinitPacmanDbs() error {
 }
 
 // composes a map with fields and values (package information) for our details box
-func getDetailFields(i InfoRecord, source string) (map[string]string, []string) {
+func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	order := []string{
 		"[#1793d1]Description",
 		"[#1793d1]Version",
@@ -679,7 +707,7 @@ func getDetailFields(i InfoRecord, source string) (map[string]string, []string) 
 	}
 	fields[order[4]] = strings.Join(i.Depends, ", ") + mdeps
 	fields[order[5]] = i.URL
-	if source == "AUR" {
+	if i.Source == "AUR" {
 		fields[order[6]] = fmt.Sprintf("%d", i.NumVotes)
 		fields[order[7]] = fmt.Sprintf("%f", i.Popularity)
 	}

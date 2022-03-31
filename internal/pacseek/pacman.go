@@ -125,6 +125,7 @@ func infoPacman(h *alpm.Handle, pkg string) RpcResult {
 			MakeDepends:  makedeps,
 			URL:          p.URL(),
 			LastModified: int(p.BuildDate().UTC().Unix()),
+			Source:       db.Name(),
 		}
 
 		r.Results = append(r.Results, i)

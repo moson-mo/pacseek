@@ -82,5 +82,8 @@ func infoAur(url, pkg string, timeout int) RpcResult {
 	if err != nil {
 		return RpcResult{Error: err.Error()}
 	}
+	for i := 0; i < len(p.Results); i++ {
+		p.Results[i].Source = "AUR"
+	}
 	return p
 }

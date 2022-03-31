@@ -35,6 +35,7 @@ type InfoRecord struct {
 	URL            string   `json:"URL"`
 	URLPath        string   `json:"URLPath"`
 	Version        string   `json:"Version"`
+	Source         string
 }
 
 // Package is a data structure for the package tview table
