@@ -107,8 +107,12 @@ func infoPacman(h *alpm.Handle, pkg string) RpcResult {
 		}
 
 		deps := []string{}
+		makedeps := []string{}
 		for _, d := range p.Depends().Slice() {
 			deps = append(deps, d.Name)
+		}
+		for _, d := range p.MakeDepends().Slice() {
+			makedeps = append(makedeps, d.Name)
 		}
 
 		i := InfoRecord{
@@ -118,6 +122,7 @@ func infoPacman(h *alpm.Handle, pkg string) RpcResult {
 			License:      p.Licenses().Slice(),
 			Maintainer:   p.Packager(),
 			Depends:      deps,
+			MakeDepends:  makedeps,
 			URL:          p.URL(),
 			LastModified: int(p.BuildDate().UTC().Unix()),
 		}

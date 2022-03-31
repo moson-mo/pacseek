@@ -93,20 +93,15 @@ func (ps *UI) setupComponents() {
 
 	// component config
 	ps.root.SetBorder(true).
-		SetTitle(" [#00dfff]pacseek - v0.2.0 ").
+		SetTitle(" [#00dfff][::b]pacseek - v0.2.1 ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Attributes(tcell.AttrBold)).
-		SetFieldBackgroundColor(tcell.ColorDarkBlue).
+		SetFieldBackgroundColor(tcell.NewRGBColor(5, 100, 160)).
 		SetBorder(true)
 	ps.details.SetBorder(true).
-		SetTitle(" [#00dfff]Usage ").
 		SetTitleAlign(tview.AlignLeft).
 		SetBorderPadding(1, 1, 1, 1)
-	ps.details.SetCellSimple(0, 0, "ENTER: Search; Install or remove a selected package").
-		SetCellSimple(1, 0, "TAB / CTRL+Up/Down/Right/Left: Navigate between boxes").
-		SetCellSimple(2, 0, "Up/Down: Navigate within package list").
-		SetCellSimple(3, 0, "CTRL+S: Open/Close settings").
-		SetCellSimple(4, 0, "CTRL+Q: Quit")
+	ps.showHelp()
 	ps.packages.SetSelectable(true, false).
 		SetFixed(1, 1).
 		SetBorder(true).
@@ -119,7 +114,7 @@ func (ps *UI) setupComponents() {
 	ps.spinner.SetText("|").
 		SetBorder(true)
 	ps.settings.SetBorder(true).
-		SetTitle(" [#00dfff]Settings ").
+		SetTitle(" [#00dfff][::b]Settings ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.status.SetDynamicColors(true).
 		SetBorder(true)
@@ -130,7 +125,7 @@ func (ps *UI) setupComponents() {
 	// layouting
 	ps.root.AddItem(ps.container, 0, 1, true)
 	ps.root.AddItem(ps.status, 0, 0, false)
-	ps.container.AddItem(ps.left, 0, 40, true)
+	ps.container.AddItem(ps.left, 0, 50, true)
 	ps.container.AddItem(ps.right, 0, 100, false)
 	ps.left.AddItem(ps.topleft, 3, 1, true)
 	ps.topleft.AddItem(ps.search, 0, 1, true)
@@ -155,6 +150,15 @@ func (ps *UI) setupComponents() {
 				ps.right.AddItem(ps.details, 0, 1, false)
 				ps.app.SetFocus(ps.search)
 			}
+			return nil
+		}
+		if event.Key() == tcell.KeyCtrlH {
+			ps.showHelp()
+			if ps.right.GetItem(0) == ps.settings {
+				ps.right.Clear()
+				ps.right.AddItem(ps.details, 0, 1, false)
+			}
+			return nil
 		}
 		return event
 	})
@@ -359,7 +363,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 			return
 		}
 		ps.app.QueueUpdateDraw(func() {
-			ps.details.SetTitle(" [#1793d1]" + pkg + " - Retrieving data... ")
+			ps.details.SetTitle(" [#00dfff][::b]" + pkg + " - Retrieving data... ")
 		})
 
 		ps.locker.Lock()
@@ -388,29 +392,29 @@ func (ps *UI) showPackageInfo(row, column int) {
 				ps.details.SetCellSimple(0, 0, fmt.Sprintf("[red]%s", errorMsg))
 				return
 			}
-			r := info.Results[0]
+			i := info.Results[0]
 
-			ps.details.SetTitle(" [#00dfff]"+r.Name+" ").SetBorderPadding(1, 1, 1, 1)
-			ps.details.SetCell(0, 0, tview.NewTableCell("[#1793d1]Description").SetAttributes(tcell.AttrBold))
-			ps.details.SetCellSimple(0, 1, r.Description)
-			ps.details.SetCell(1, 0, tview.NewTableCell("[#1793d1]Version").SetAttributes(tcell.AttrBold))
-			ps.details.SetCellSimple(1, 1, r.Version)
-			ps.details.SetCell(2, 0, tview.NewTableCell("[#1793d1]Licenses").SetAttributes(tcell.AttrBold))
-			ps.details.SetCellSimple(2, 1, strings.Join(r.License, ", "))
-			ps.details.SetCell(3, 0, tview.NewTableCell("[#1793d1]Maintainer").SetAttributes(tcell.AttrBold))
-			ps.details.SetCellSimple(3, 1, r.Maintainer)
-			if source == "AUR" {
-				ps.details.SetCell(4, 0, tview.NewTableCell("[#1793d1]Votes").SetAttributes(tcell.AttrBold))
-				ps.details.SetCellSimple(4, 1, fmt.Sprintf("%d", r.NumVotes))
-				ps.details.SetCell(5, 0, tview.NewTableCell("[#1793d1]Popularity").SetAttributes(tcell.AttrBold))
-				ps.details.SetCellSimple(5, 1, fmt.Sprintf("%f", r.Popularity))
+			ps.details.SetTitle(" [#00dfff][::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1)
+			r := 0
+			ln := 0
+
+			fields, order := getDetailFields(i, source)
+			for _, k := range order {
+				_, _, w, _ := ps.details.GetInnerRect()
+				if v, ok := fields[k]; ok {
+					if ln == 1 || ln == len(fields)-1 {
+						r++
+					}
+					// split lines if they do not fit on the screen
+					lines := tview.WordWrap(v, w-15) // we use 13 characters for column 0 (+ 2 chars for padding)
+					ps.details.SetCell(r, 0, tview.NewTableCell(k).SetAttributes(tcell.AttrBold))
+					for _, l := range lines {
+						ps.details.SetCellSimple(r, 1, l)
+						r++
+					}
+					ln++
+				}
 			}
-			ps.details.SetCell(6, 0, tview.NewTableCell("[#1793d1]Dependencies").SetAttributes(tcell.AttrBold))
-			ps.details.SetCellSimple(6, 1, strings.Join(r.Depends, ", "))
-			ps.details.SetCell(7, 0, tview.NewTableCell("[#1793d1]URL").SetAttributes(tcell.AttrBold))
-			ps.details.SetCellSimple(7, 1, r.URL)
-			ps.details.SetCell(8, 0, tview.NewTableCell("[#1793d1]Last modified").SetAttributes(tcell.AttrBold))
-			ps.details.SetCellSimple(8, 1, time.Unix(int64(r.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)"))
 		})
 	}()
 }
@@ -521,6 +525,18 @@ func (ps *UI) showMessage(message string, isError bool) {
 	}()
 }
 
+// show help text
+func (ps *UI) showHelp() {
+	ps.details.SetTitle(" [#00dfff][::b]Usage ")
+	ps.details.Clear().
+		SetCellSimple(0, 0, "ENTER: Search; Install or remove a selected package").
+		SetCellSimple(1, 0, "TAB / CTRL+Up/Down/Right/Left: Navigate between boxes").
+		SetCellSimple(2, 0, "Up/Down: Navigate within package list").
+		SetCellSimple(3, 0, "CTRL+S: Open/Close settings").
+		SetCellSimple(4, 0, "CTRL+H: Show these instructions").
+		SetCellSimple(6, 0, "CTRL+Q: Quit")
+}
+
 // starts the spinner
 func (ps *UI) startSpin() {
 	go func() {
@@ -529,21 +545,22 @@ func (ps *UI) startSpin() {
 			case <-ps.quitSpin:
 				return
 			default:
+				ms := time.Duration(60)
 				ps.app.QueueUpdateDraw(func() {
-					txt := ps.spinner.GetText(true)
-					if txt == "|" {
-						ps.spinner.SetText("/")
-					} else if txt == "/" {
-						ps.spinner.SetText("-")
-					} else if txt == "-" {
-						ps.spinner.SetText("\\")
-					} else if txt == "\\" {
-						ps.spinner.SetText("|")
-					} else {
-						ps.spinner.SetText("|")
-					}
+					ps.spinner.SetText("/")
 				})
-				time.Sleep(200 * time.Millisecond)
+				time.Sleep(ms * time.Millisecond)
+				ps.app.QueueUpdateDraw(func() {
+					ps.spinner.SetText("-")
+				})
+				time.Sleep(ms * time.Millisecond)
+				ps.app.QueueUpdateDraw(func() {
+					ps.spinner.SetText("\\")
+				})
+				time.Sleep(ms * time.Millisecond)
+				ps.app.QueueUpdateDraw(func() {
+					ps.spinner.SetText("|")
+				})
 			}
 		}
 	}()
@@ -634,4 +651,39 @@ func (ps *UI) reinitPacmanDbs() error {
 		return err
 	}
 	return nil
+}
+
+// composes a map with fields and values (package information) for our details box
+func getDetailFields(i InfoRecord, source string) (map[string]string, []string) {
+	order := []string{
+		"[#1793d1]Description",
+		"[#1793d1]Version",
+		"[#1793d1]Licenses",
+		"[#1793d1]Maintainer",
+		"[#1793d1]Dependencies",
+		"[#1793d1]URL",
+		"[#1793d1]Votes",
+		"[#1793d1]Popularity",
+		"[#1793d1]Last modified",
+	}
+
+	fields := map[string]string{}
+	fields[order[0]] = i.Description
+	fields[order[1]] = i.Version
+	fields[order[2]] = strings.Join(i.License, ", ")
+	fields[order[3]] = i.Maintainer
+
+	mdeps := strings.Join(i.MakeDepends, " (make), ")
+	if mdeps != "" {
+		mdeps += " (make)"
+	}
+	fields[order[4]] = strings.Join(i.Depends, ", ") + mdeps
+	fields[order[5]] = i.URL
+	if source == "AUR" {
+		fields[order[6]] = fmt.Sprintf("%d", i.NumVotes)
+		fields[order[7]] = fmt.Sprintf("%f", i.Popularity)
+	}
+	fields[order[8]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
+
+	return fields, order
 }
