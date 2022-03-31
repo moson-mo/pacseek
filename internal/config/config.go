@@ -9,29 +9,31 @@ import (
 
 // Settings is a structure containing our configuration data
 type Settings struct {
-	AurRpcUrl        string
-	AurTimeout       int
-	AurSearchDelay   int
-	MaxResults       int
-	PacmanDbPath     string
-	PacmanConfigPath string
-	InstallCommand   string
-	UninstallCommand string
-	SearchMode       string
+	AurRpcUrl         string
+	AurTimeout        int
+	AurSearchDelay    int
+	MaxResults        int
+	PacmanDbPath      string
+	PacmanConfigPath  string
+	InstallCommand    string
+	UninstallCommand  string
+	SysUpgradeCommand string
+	SearchMode        string
 }
 
 // Defaults returns the default settings
 func Defaults() *Settings {
 	s := Settings{
-		AurRpcUrl:        "https://server.moson.rocks/rpc",
-		AurTimeout:       5000,
-		AurSearchDelay:   500,
-		MaxResults:       100,
-		PacmanDbPath:     "/var/lib/pacman/",
-		PacmanConfigPath: "/etc/pacman.conf",
-		InstallCommand:   "yay -S",
-		UninstallCommand: "yay -Rs",
-		SearchMode:       "StartsWith",
+		AurRpcUrl:         "https://server.moson.rocks/rpc",
+		AurTimeout:        5000,
+		AurSearchDelay:    500,
+		MaxResults:        100,
+		PacmanDbPath:      "/var/lib/pacman/",
+		PacmanConfigPath:  "/etc/pacman.conf",
+		InstallCommand:    "yay -S",
+		UninstallCommand:  "yay -Rs",
+		SearchMode:        "StartsWith",
+		SysUpgradeCommand: "yay -Syu",
 	}
 
 	return &s
@@ -77,5 +79,28 @@ func Load() (*Settings, error) {
 	if err = json.Unmarshal(b, &ret); err != nil {
 		return Defaults(), err
 	}
+	ret.applyUpgradeFixes()
 	return &ret, nil
+}
+
+// fix settings in case of version upgrades (e.g. new config options that have to be set)
+func (s *Settings) applyUpgradeFixes() {
+	fixApplied := false
+
+	// search mode: introducted in 0.1.2
+	if s.SearchMode == "" {
+		s.SearchMode = Defaults().SearchMode
+		fixApplied = true
+	}
+
+	// sysupgrade command introduced in 0.2.4
+	if s.SysUpgradeCommand == "" {
+		s.SysUpgradeCommand = Defaults().SysUpgradeCommand
+		fixApplied = true
+	}
+
+	// save config file when we applied changes
+	if fixApplied {
+		s.Save()
+	}
 }

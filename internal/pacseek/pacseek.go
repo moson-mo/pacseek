@@ -93,7 +93,7 @@ func (ps *UI) setupComponents() {
 
 	// component config
 	ps.root.SetBorder(true).
-		SetTitle(" [#00dfff][::b]pacseek - v0.2.3 ").
+		SetTitle(" [#00dfff][::b]pacseek - v0.2.4 ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Attributes(tcell.AttrBold)).
 		SetFieldBackgroundColor(tcell.NewRGBColor(5, 100, 160)).
@@ -250,6 +250,7 @@ func (ps *UI) setupSettingsForm() {
 		ps.settings.AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, nil)
 		ps.settings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, nil)
 		ps.settings.AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, nil)
+		ps.settings.AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, nil)
 		ps.settings.AddDropDown("Search mode: ", []string{"StartsWith", "Contains"}, mode, nil)
 
 		// key bindings
@@ -342,6 +343,8 @@ func (ps *UI) setupSettingsForm() {
 					ps.conf.InstallCommand = input.GetText()
 				case "Uninstall command: ":
 					ps.conf.UninstallCommand = input.GetText()
+				case "Upgrade command: ":
+					ps.conf.SysUpgradeCommand = input.GetText()
 				case "Max search results: ":
 					ps.conf.MaxResults, err = strconv.Atoi(input.GetText())
 					if err != nil {
@@ -523,11 +526,15 @@ func (ps *UI) drawPackages(packages []Package) {
 
 		ps.packages.SetCellSimple(i+1, 0, pkg.Name)
 		ps.packages.SetCell(i+1, 1, &tview.TableCell{
-			Text:      pkg.Source,
-			Expansion: 1000,
-			Color:     color,
+			Text:  pkg.Source,
+			Color: color,
 		})
-		ps.packages.SetCellSimple(i+1, 2, installed)
+		ps.packages.SetCell(i+1, 2, &tview.TableCell{
+			Text:            installed,
+			Expansion:       1000,
+			Color:           tcell.ColorWhite,
+			BackgroundColor: tcell.ColorBlack,
+		})
 	}
 	ps.packages.ScrollToBeginning()
 }
@@ -664,7 +671,10 @@ func (ps *UI) runCommand(command string, args []string) {
 
 // issues "pacman -Syu"
 func (ps *UI) performSyncSysUpgrade() {
-	ps.runCommand("sudo", []string{"pacman", "-Syu"})
+	com := strings.Split(ps.conf.SysUpgradeCommand, " ")[0]
+	args := strings.Split(ps.conf.SysUpgradeCommand, " ")[1:]
+
+	ps.runCommand(com, args)
 }
 
 // checks if a given package is currently selected in the package list
@@ -724,9 +734,15 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 
 	mdeps := strings.Join(i.MakeDepends, " (make), ")
 	if mdeps != "" {
+		mdeps = "\n" + mdeps
 		mdeps += " (make)"
 	}
-	fields[order[4]] = strings.Join(i.Depends, ", ") + mdeps
+	odeps := strings.Join(i.OptDepends, " (opt), ")
+	if odeps != "" {
+		odeps = "\n" + odeps
+		odeps += " (opt)"
+	}
+	fields[order[4]] = strings.Join(i.Depends, ", ") + mdeps + odeps
 	fields[order[5]] = i.URL
 	if i.Source == "AUR" {
 		fields[order[6]] = fmt.Sprintf("%d", i.NumVotes)

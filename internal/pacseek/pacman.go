@@ -108,11 +108,15 @@ func infoPacman(h *alpm.Handle, pkg string) RpcResult {
 
 		deps := []string{}
 		makedeps := []string{}
+		odeps := []string{}
 		for _, d := range p.Depends().Slice() {
 			deps = append(deps, d.Name)
 		}
 		for _, d := range p.MakeDepends().Slice() {
 			makedeps = append(makedeps, d.Name)
+		}
+		for _, d := range p.OptionalDepends().Slice() {
+			odeps = append(odeps, d.Name)
 		}
 
 		i := InfoRecord{
@@ -123,6 +127,7 @@ func infoPacman(h *alpm.Handle, pkg string) RpcResult {
 			Maintainer:   p.Packager(),
 			Depends:      deps,
 			MakeDepends:  makedeps,
+			OptDepends:   odeps,
 			URL:          p.URL(),
 			LastModified: int(p.BuildDate().UTC().Unix()),
 			Source:       db.Name(),

@@ -11,7 +11,6 @@ import (
 func main() {
 	if os.Getuid() == 0 {
 		fmt.Println("pacseek should not be run as root.")
-		os.Exit(1)
 	}
 	term := ""
 	if len(os.Args) > 1 {
@@ -22,25 +21,22 @@ func main() {
 		if os.IsNotExist(err) && conf != nil {
 			err = conf.Save()
 			if err != nil {
-				printError("Error saving configuration file", err)
-				os.Exit(1)
+				printErrorExit("Error saving configuration file", err)
 			}
 		} else {
-			printError("Error loading configuration file", err)
-			os.Exit(1)
+			printErrorExit("Error loading configuration file", err)
 		}
 	}
 	ps, err := pacseek.New(conf)
 	if err != nil {
-		printError("Error during pacseek initialization", err)
-		os.Exit(1)
+		printErrorExit("Error during pacseek initialization", err)
 	}
 	if err = ps.Start(term); err != nil {
-		printError("Error starting pacseek", err)
-		os.Exit(1)
+		printErrorExit("Error starting pacseek", err)
 	}
 }
 
-func printError(message string, err error) {
+func printErrorExit(message string, err error) {
 	fmt.Printf("%s:\n\n%s\n", message, err.Error())
+	os.Exit(1)
 }
