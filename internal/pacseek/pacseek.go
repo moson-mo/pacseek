@@ -17,6 +17,13 @@ import (
 	"github.com/rivo/tview"
 )
 
+const (
+	colorHighlight = "[#1793d1]"
+	colorTitle     = "[#00dfff]"
+
+	version = "0.2.6"
+)
+
 // UI is holding our application information and all tview components
 type UI struct {
 	conf *config.Settings
@@ -100,7 +107,7 @@ func (ps *UI) setupComponents() {
 
 	// component config
 	ps.root.SetBorder(true).
-		SetTitle(" [#00dfff][::b]pacseek - v0.2.5 ").
+		SetTitle(" " + colorTitle + "[::b]pacseek - v" + version + " ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Attributes(tcell.AttrBold)).
 		SetFieldBackgroundColor(tcell.NewRGBColor(5, 100, 160)).
@@ -120,8 +127,9 @@ func (ps *UI) setupComponents() {
 	})
 	ps.spinner.SetText("|").
 		SetBorder(true)
-	ps.settings.SetBorder(true).
-		SetTitle(" [#00dfff][::b]Settings ").
+	ps.settings.SetItemPadding(0).
+		SetBorder(true).
+		SetTitle(" " + colorTitle + "[::b]Settings ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.status.SetDynamicColors(true).
 		SetBorder(true)
@@ -185,6 +193,10 @@ func (ps *UI) setupKeyBindings() {
 		// CTRL+U
 		if event.Key() == tcell.KeyCtrlU {
 			ps.performSyncSysUpgrade()
+			return nil
+		}
+		if event.Key() == tcell.KeyCtrlA {
+			ps.showAbout()
 			return nil
 		}
 		return event
@@ -386,7 +398,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 			return
 		}
 		ps.app.QueueUpdateDraw(func() {
-			ps.details.SetTitle(" [#00dfff][::b]" + pkg + " - Retrieving data... ")
+			ps.details.SetTitle(" " + colorTitle + "[::b]" + pkg + " - Retrieving data... ")
 		})
 
 		ps.locker.Lock()
@@ -425,7 +437,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 // draw package information on screen
 func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 	ps.details.Clear()
-	ps.details.SetTitle(" [#00dfff][::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1)
+	ps.details.SetTitle(" "+colorTitle+"[::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1)
 	r := 0
 	ln := 0
 
@@ -439,8 +451,12 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 			// split lines if they do not fit on the screen
 			w := width - (int(float64(width)*0.4) + 21) // left box = 40% size, then we use 13 characters for column 0, 2 for padding and 6 for borders
 			lines := tview.WordWrap(v, w)
-			ps.details.SetCell(r, 0, tview.NewTableCell(k).SetAttributes(tcell.AttrBold))
+			mr := r
+			ps.details.SetCellSimple(r, 0, colorHighlight+"[::b]"+k)
 			for _, l := range lines {
+				if mr != r {
+					ps.details.SetCellSimple(r, 0, "") // we need to add some blank content otherwise it looks weird with some terminal configs
+				}
 				ps.details.SetCellSimple(r, 1, l)
 				r++
 			}
@@ -567,7 +583,7 @@ func (ps *UI) showMessage(message string, isError bool) {
 
 // show help text
 func (ps *UI) showHelp() {
-	ps.details.SetTitle(" [#00dfff][::b]Usage ")
+	ps.details.SetTitle(" " + colorTitle + "[::b]Usage ")
 	ps.details.Clear().
 		SetCellSimple(0, 0, "ENTER: Search; Install or remove a selected package").
 		SetCellSimple(1, 0, "TAB / CTRL+Up/Down/Right/Left: Navigate between boxes").
@@ -578,39 +594,63 @@ func (ps *UI) showHelp() {
 		SetCellSimple(7, 0, "CTRL+Q: Quit")
 }
 
+// show about text
+func (ps *UI) showAbout() {
+	ps.details.SetTitle(" " + colorTitle + "[::b]About ")
+	ps.details.Clear().
+		SetCellSimple(0, 0, colorHighlight+"[::b]Version").
+		SetCellSimple(0, 1, version).
+		SetCellSimple(1, 0, colorHighlight+"[::b]Author").
+		SetCellSimple(1, 1, "Mario Oenning").
+		SetCellSimple(2, 0, colorHighlight+"[::b]URL").
+		SetCellSimple(2, 1, "https://github.com/moson-mo/pacseek")
+
+	pic := `
+ .--. 
+/ _.-'
+\  '-.  ...
+ '--' 
+`
+	s := 3
+	for i, l := range tview.WordWrap(pic, 100) {
+		ps.details.SetCellSimple(s+i, 0, l)
+	}
+}
+
 // read settings from from and saves to config file
 func (ps *UI) saveSettings(defaults bool) {
 	var err error
 	for i := 0; i < ps.settings.GetFormItemCount(); i++ {
 		item := ps.settings.GetFormItem(i)
 		if input, ok := item.(*tview.InputField); ok {
+			txt := input.GetText()
 			switch input.GetLabel() {
 			case "AUR RPC URL: ":
-				ps.conf.AurRpcUrl = input.GetText()
+				ps.conf.AurRpcUrl = txt
 			case "AUR timeout (ms): ":
-				ps.conf.AurTimeout, err = strconv.Atoi(input.GetText())
+				ps.conf.AurTimeout, err = strconv.Atoi(txt)
 				if err != nil {
 					ps.showMessage("Can't convert timeout value to int", true)
 					return
 				}
 			case "AUR search delay (ms): ":
-				ps.conf.AurSearchDelay, err = strconv.Atoi(input.GetText())
+				ps.conf.AurSearchDelay, err = strconv.Atoi(txt)
 				if err != nil {
 					ps.showMessage("Can't convert delay value to int", true)
 					return
 				}
 			case "Pacman DB path: ":
-				ps.conf.PacmanDbPath = input.GetText()
+				ps.conf.PacmanDbPath = txt
 			case "Pacman config path: ":
-				ps.conf.PacmanConfigPath = input.GetText()
+				ps.conf.PacmanConfigPath = txt
 			case "Install command: ":
-				ps.conf.InstallCommand = input.GetText()
+				ps.conf.InstallCommand = txt
 			case "Uninstall command: ":
-				ps.conf.UninstallCommand = input.GetText()
+				ps.conf.UninstallCommand = txt
 			case "Upgrade command: ":
-				ps.conf.SysUpgradeCommand = input.GetText()
+				ps.conf.SysUpgradeCommand = txt
 			case "Max search results: ":
-				ps.conf.MaxResults, err = strconv.Atoi(input.GetText())
+				ps.conf.MaxResults, err = strconv.Atoi(txt)
 				if err != nil {
 					ps.showMessage("Can't convert max results value to int", true)
 					return
@@ -760,15 +800,15 @@ func (ps *UI) reinitPacmanDbs() error {
 // composes a map with fields and values (package information) for our details box
 func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	order := []string{
-		"[#1793d1]Description",
-		"[#1793d1]Version",
-		"[#1793d1]Licenses",
-		"[#1793d1]Maintainer",
-		"[#1793d1]Dependencies",
-		"[#1793d1]URL",
-		"[#1793d1]Votes",
-		"[#1793d1]Popularity",
-		"[#1793d1]Last modified",
+		"Description",
+		"Version",
+		"Licenses",
+		"Maintainer",
+		"Dependencies",
+		"URL",
+		"Votes",
+		"Popularity",
+		"Last modified",
 	}
 
 	fields := map[string]string{}
