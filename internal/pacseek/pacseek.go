@@ -30,12 +30,13 @@ type UI struct {
 	right     *tview.Flex
 	container *tview.Flex
 
-	search   *tview.InputField
-	packages *tview.Table
-	details  *tview.Table
-	spinner  *tview.TextView
-	settings *tview.Form
-	status   *tview.TextView
+	search      *tview.InputField
+	packages    *tview.Table
+	details     *tview.Table
+	spinner     *tview.TextView
+	settings    *tview.Form
+	status      *tview.TextView
+	prevControl tview.Primitive
 
 	locker        *sync.RWMutex
 	messageLocker *sync.RWMutex
@@ -43,24 +44,30 @@ type UI struct {
 	quitSpin        chan bool
 	width           int
 	selectedPackage *InfoRecord
+	settingsChanged bool
 }
 
 // New creates a UI object and makes sure everything is initialized
 func New(config *config.Settings) (*UI, error) {
 	ui := UI{
-		conf:          config,
-		app:           tview.NewApplication(),
-		locker:        &sync.RWMutex{},
-		messageLocker: &sync.RWMutex{},
-		quitSpin:      make(chan bool),
+		conf:            config,
+		app:             tview.NewApplication(),
+		locker:          &sync.RWMutex{},
+		messageLocker:   &sync.RWMutex{},
+		quitSpin:        make(chan bool),
+		settingsChanged: false,
 	}
-	ui.setupComponents()
 
 	var err error
 	ui.alpmHandle, err = initPacmanDbs(config.PacmanDbPath, config.PacmanConfigPath)
 	if err != nil {
 		return nil, err
 	}
+
+	// setup UI
+	ui.setupComponents()
+	ui.setupKeyBindings()
+	ui.setupSettingsForm()
 
 	return &ui, nil
 }
@@ -93,7 +100,7 @@ func (ps *UI) setupComponents() {
 
 	// component config
 	ps.root.SetBorder(true).
-		SetTitle(" [#00dfff][::b]pacseek - v0.2.4 ").
+		SetTitle(" [#00dfff][::b]pacseek - v0.2.5 ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Attributes(tcell.AttrBold)).
 		SetFieldBackgroundColor(tcell.NewRGBColor(5, 100, 160)).
@@ -119,9 +126,6 @@ func (ps *UI) setupComponents() {
 	ps.status.SetDynamicColors(true).
 		SetBorder(true)
 
-	// settings component
-	ps.setupSettingsForm()
-
 	// layouting
 	ps.root.AddItem(ps.container, 0, 1, true)
 	ps.root.AddItem(ps.status, 0, 0, false)
@@ -132,15 +136,30 @@ func (ps *UI) setupComponents() {
 	ps.topleft.AddItem(ps.spinner, 3, 1, false)
 	ps.left.AddItem(ps.packages, 0, 1, false)
 	ps.right.AddItem(ps.details, 0, 1, false)
+}
 
-	// handlers / key bindings
-
+// set up handlers for keyboard bindings
+func (ps *UI) setupKeyBindings() {
 	// app / global
 	ps.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// CTRL+Q
 		if event.Key() == tcell.KeyCtrlQ {
 			ps.alpmHandle.Release()
-			ps.app.Stop()
+			if ps.settingsChanged {
+				ask := tview.NewModal().
+					AddButtons([]string{"Yes", "No"}).
+					SetText("It seems you've made changes to the settings.\nDo you want to save them?").
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						if buttonIndex == 0 {
+							ps.saveSettings(false)
+						}
+						ps.app.Stop()
+					})
+
+				ps.app.SetRoot(ask, true)
+			} else {
+				ps.app.Stop()
+			}
 		}
 		// CTRL+S
 		if event.Key() == tcell.KeyCtrlS {
@@ -197,7 +216,8 @@ func (ps *UI) setupComponents() {
 		if event.Key() == tcell.KeyRight &&
 			event.Modifiers() == tcell.ModCtrl &&
 			ps.right.GetItem(0) == ps.settings {
-			ps.app.SetFocus(ps.settings)
+			ps.app.SetFocus(ps.settings.GetFormItem(0))
+			ps.prevControl = ps.search
 			return nil
 		}
 
@@ -221,6 +241,7 @@ func (ps *UI) setupComponents() {
 		// Right
 		if event.Key() == tcell.KeyRight && ps.right.GetItem(0) == ps.settings {
 			ps.app.SetFocus(ps.settings.GetFormItem(0))
+			ps.prevControl = ps.packages
 			return nil
 		}
 		// ENTER
@@ -241,22 +262,37 @@ func (ps *UI) setupSettingsForm() {
 			mode = 0
 		}
 
+		sc := func(txt string) {
+			ps.settingsChanged = true
+		}
+
 		// input fields
-		ps.settings.AddInputField("AUR RPC URL: ", ps.conf.AurRpcUrl, 40, nil, nil)
-		ps.settings.AddInputField("AUR timeout (ms): ", strconv.Itoa(ps.conf.AurTimeout), 6, nil, nil)
-		ps.settings.AddInputField("AUR search delay (ms): ", strconv.Itoa(ps.conf.AurSearchDelay), 6, nil, nil)
-		ps.settings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, nil)
-		ps.settings.AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, nil)
-		ps.settings.AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, nil)
-		ps.settings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, nil)
-		ps.settings.AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, nil)
-		ps.settings.AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, nil)
+		ps.settings.AddInputField("AUR RPC URL: ", ps.conf.AurRpcUrl, 40, nil, sc)
+		ps.settings.AddInputField("AUR timeout (ms): ", strconv.Itoa(ps.conf.AurTimeout), 6, nil, sc)
+		ps.settings.AddInputField("AUR search delay (ms): ", strconv.Itoa(ps.conf.AurSearchDelay), 6, nil, sc)
+		ps.settings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, sc)
+		ps.settings.AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, sc)
+		ps.settings.AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, sc)
+		ps.settings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, sc)
+		ps.settings.AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc)
+		ps.settings.AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, sc)
 		ps.settings.AddDropDown("Search mode: ", []string{"StartsWith", "Contains"}, mode, nil)
+		if dd, ok := ps.settings.GetFormItemByLabel("Search mode: ").(*tview.DropDown); ok {
+			dd.SetSelectedFunc(func(text string, index int) {
+				if text != ps.conf.SearchMode {
+					ps.settingsChanged = true
+				}
+			})
+		}
 
 		// key bindings
 		ps.settings.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 			if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModCtrl {
-				ps.app.SetFocus(ps.packages)
+				if ps.prevControl != nil {
+					ps.app.SetFocus(ps.prevControl)
+				} else {
+					ps.app.SetFocus(ps.packages)
+				}
 				return nil
 			}
 			return event
@@ -315,58 +351,8 @@ func (ps *UI) setupSettingsForm() {
 	}
 
 	// Save button clicked
-	ps.settings.AddButton("Save", func() {
-		var err error
-		for i := 0; i < ps.settings.GetFormItemCount(); i++ {
-			item := ps.settings.GetFormItem(i)
-			if input, ok := item.(*tview.InputField); ok {
-				switch input.GetLabel() {
-				case "AUR RPC URL: ":
-					ps.conf.AurRpcUrl = input.GetText()
-				case "AUR timeout (ms): ":
-					ps.conf.AurTimeout, err = strconv.Atoi(input.GetText())
-					if err != nil {
-						ps.showMessage("Can't convert timeout value to int", true)
-						return
-					}
-				case "AUR search delay (ms): ":
-					ps.conf.AurSearchDelay, err = strconv.Atoi(input.GetText())
-					if err != nil {
-						ps.showMessage("Can't convert delay value to int", true)
-						return
-					}
-				case "Pacman DB path: ":
-					ps.conf.PacmanDbPath = input.GetText()
-				case "Pacman config path: ":
-					ps.conf.PacmanConfigPath = input.GetText()
-				case "Install command: ":
-					ps.conf.InstallCommand = input.GetText()
-				case "Uninstall command: ":
-					ps.conf.UninstallCommand = input.GetText()
-				case "Upgrade command: ":
-					ps.conf.SysUpgradeCommand = input.GetText()
-				case "Max search results: ":
-					ps.conf.MaxResults, err = strconv.Atoi(input.GetText())
-					if err != nil {
-						ps.showMessage("Can't convert max results value to int", true)
-						return
-					}
-				}
-			} else if dd, ok := item.(*tview.DropDown); ok {
-				switch dd.GetLabel() {
-				case "Search mode: ":
-					_, ps.conf.SearchMode = dd.GetCurrentOption()
-				}
-			}
-
-		}
-		ps.settings.GetButton(0).SetLabel("Saved")
-		err = ps.conf.Save()
-		if err != nil {
-			ps.showMessage(err.Error(), true)
-			return
-		}
-		ps.showMessage("Settings have been saved", false)
+	ps.settings.AddButton("Apply & Save", func() {
+		ps.saveSettings(false)
 	})
 
 	// Defaults button clicked
@@ -374,6 +360,7 @@ func (ps *UI) setupSettingsForm() {
 		ps.conf = config.Defaults()
 		ps.settings.Clear(false)
 		addFields()
+		ps.saveSettings(true)
 	})
 
 	// add our input fields
@@ -587,8 +574,66 @@ func (ps *UI) showHelp() {
 		SetCellSimple(2, 0, "Up/Down: Navigate within package list").
 		SetCellSimple(3, 0, "CTRL+S: Open/Close settings").
 		SetCellSimple(4, 0, "CTRL+H: Show these instructions").
-		SetCellSimple(5, 0, "CTRL+U: Perform sysupgrade (pacman -Syu)").
+		SetCellSimple(5, 0, "CTRL+U: Perform sysupgrade").
 		SetCellSimple(7, 0, "CTRL+Q: Quit")
+}
+
+// read settings from from and saves to config file
+func (ps *UI) saveSettings(defaults bool) {
+	var err error
+	for i := 0; i < ps.settings.GetFormItemCount(); i++ {
+		item := ps.settings.GetFormItem(i)
+		if input, ok := item.(*tview.InputField); ok {
+			switch input.GetLabel() {
+			case "AUR RPC URL: ":
+				ps.conf.AurRpcUrl = input.GetText()
+			case "AUR timeout (ms): ":
+				ps.conf.AurTimeout, err = strconv.Atoi(input.GetText())
+				if err != nil {
+					ps.showMessage("Can't convert timeout value to int", true)
+					return
+				}
+			case "AUR search delay (ms): ":
+				ps.conf.AurSearchDelay, err = strconv.Atoi(input.GetText())
+				if err != nil {
+					ps.showMessage("Can't convert delay value to int", true)
+					return
+				}
+			case "Pacman DB path: ":
+				ps.conf.PacmanDbPath = input.GetText()
+			case "Pacman config path: ":
+				ps.conf.PacmanConfigPath = input.GetText()
+			case "Install command: ":
+				ps.conf.InstallCommand = input.GetText()
+			case "Uninstall command: ":
+				ps.conf.UninstallCommand = input.GetText()
+			case "Upgrade command: ":
+				ps.conf.SysUpgradeCommand = input.GetText()
+			case "Max search results: ":
+				ps.conf.MaxResults, err = strconv.Atoi(input.GetText())
+				if err != nil {
+					ps.showMessage("Can't convert max results value to int", true)
+					return
+				}
+			}
+		} else if dd, ok := item.(*tview.DropDown); ok {
+			switch dd.GetLabel() {
+			case "Search mode: ":
+				_, ps.conf.SearchMode = dd.GetCurrentOption()
+			}
+		}
+	}
+	err = ps.conf.Save()
+	if err != nil {
+		ps.showMessage(err.Error(), true)
+		return
+	}
+	msg := "Settings have been applied / saved"
+	if defaults {
+		msg = "Default settings have been restored"
+	}
+	ps.showMessage(msg, false)
+	ps.settingsChanged = false
 }
 
 // starts the spinner

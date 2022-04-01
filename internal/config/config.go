@@ -30,7 +30,7 @@ func Defaults() *Settings {
 		MaxResults:        100,
 		PacmanDbPath:      "/var/lib/pacman/",
 		PacmanConfigPath:  "/etc/pacman.conf",
-		InstallCommand:    "yay -S",
+		InstallCommand:    "yay -Su",
 		UninstallCommand:  "yay -Rs",
 		SearchMode:        "StartsWith",
 		SysUpgradeCommand: "yay -Syu",
