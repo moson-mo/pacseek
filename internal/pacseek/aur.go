@@ -4,18 +4,22 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
 // calls the AUR rpc API (suggest type) and returns found packages (beginning with "term")
-func searchAur(url, term string, timeout int, mode string, maxResults int) ([]Package, error) {
+func searchAur(url, term string, timeout int, mode string, by string, maxResults int) ([]Package, error) {
 	packages := []Package{}
 	client := http.Client{
 		Timeout: time.Millisecond * time.Duration(timeout),
 	}
 	t := "suggest"
-	if mode != "StartsWith" {
+	if mode == "Contains" {
 		t = "search&by=name"
+	}
+	if by == "Name & Description" {
+		t = "search"
 	}
 
 	r, err := client.Get(url + "?v=5&type=" + t + "&arg=" + term)
@@ -28,7 +32,7 @@ func searchAur(url, term string, timeout int, mode string, maxResults int) ([]Pa
 	if err != nil {
 		return packages, err
 	}
-	if mode == "StartsWith" {
+	if t == "suggest" {
 		var s []string
 		err = json.Unmarshal(b, &s)
 		if err != nil {
@@ -48,13 +52,20 @@ func searchAur(url, term string, timeout int, mode string, maxResults int) ([]Pa
 		}
 		i := 0
 		for _, pkg := range s.Results {
-			if i >= maxResults {
+			if mode == "StartsWith" && (strings.HasPrefix(pkg.Name, term) || strings.HasPrefix(pkg.Description, term)) {
+				packages = append(packages, Package{
+					Name:   pkg.Name,
+					Source: "AUR",
+				})
+			} else if mode == "Contains" {
+				packages = append(packages, Package{
+					Name:   pkg.Name,
+					Source: "AUR",
+				})
+			}
+			if len(packages) >= maxResults {
 				break
 			}
-			packages = append(packages, Package{
-				Name:   pkg.Name,
-				Source: "AUR",
-			})
 			i++
 		}
 	}

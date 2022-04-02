@@ -30,7 +30,7 @@ func initPacmanDbs(dbPath, confPath string) (*alpm.Handle, error) {
 }
 
 // searches the pacman databases and returns packages that could be found (starting with "term")
-func searchRepos(h *alpm.Handle, term string, mode string, maxResults int) ([]Package, error) {
+func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults int) ([]Package, error) {
 	packages := []Package{}
 	if h == nil {
 		return packages, errors.New("alpm handle is nil")
@@ -52,11 +52,12 @@ func searchRepos(h *alpm.Handle, term string, mode string, maxResults int) ([]Pa
 			}
 
 			compFunc := strings.HasPrefix
-			if mode != "StartsWith" {
+			if mode == "Contains" {
 				compFunc = strings.Contains
 			}
 
-			if compFunc(pkg.Name(), term) {
+			if compFunc(pkg.Name(), term) ||
+				(by == "Name & Description" && compFunc(pkg.Description(), term)) {
 				installed := false
 				if local.Pkg(pkg.Name()) != nil {
 					installed = true

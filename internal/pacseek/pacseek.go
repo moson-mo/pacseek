@@ -21,7 +21,7 @@ const (
 	colorHighlight = "[#1793d1]"
 	colorTitle     = "[#00dfff]"
 
-	version = "0.2.6"
+	version = "0.2.7"
 )
 
 // UI is holding our application information and all tview components
@@ -269,9 +269,13 @@ func (ps *UI) setupKeyBindings() {
 // sets up settings form
 func (ps *UI) setupSettingsForm() {
 	addFields := func() {
-		mode := 1
-		if ps.conf.SearchMode != "Contains" {
-			mode = 0
+		mode := 0
+		if ps.conf.SearchMode != "StartsWith" {
+			mode = 1
+		}
+		by := 0
+		if ps.conf.SearchBy != "Name" {
+			by = 1
 		}
 
 		sc := func(txt string) {
@@ -279,9 +283,12 @@ func (ps *UI) setupSettingsForm() {
 		}
 
 		// input fields
-		ps.settings.AddInputField("AUR RPC URL: ", ps.conf.AurRpcUrl, 40, nil, sc)
-		ps.settings.AddInputField("AUR timeout (ms): ", strconv.Itoa(ps.conf.AurTimeout), 6, nil, sc)
-		ps.settings.AddInputField("AUR search delay (ms): ", strconv.Itoa(ps.conf.AurSearchDelay), 6, nil, sc)
+		if !ps.conf.DisableAur {
+			ps.settings.AddInputField("AUR RPC URL: ", ps.conf.AurRpcUrl, 40, nil, sc)
+			ps.settings.AddInputField("AUR timeout (ms): ", strconv.Itoa(ps.conf.AurTimeout), 6, nil, sc)
+			ps.settings.AddInputField("AUR search delay (ms): ", strconv.Itoa(ps.conf.AurSearchDelay), 6, nil, sc)
+		}
+		ps.settings.AddCheckbox("Disable AUR: ", ps.conf.DisableAur, func(checked bool) { ps.settingsChanged = true })
 		ps.settings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, sc)
 		ps.settings.AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, sc)
 		ps.settings.AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, sc)
@@ -292,6 +299,14 @@ func (ps *UI) setupSettingsForm() {
 		if dd, ok := ps.settings.GetFormItemByLabel("Search mode: ").(*tview.DropDown); ok {
 			dd.SetSelectedFunc(func(text string, index int) {
 				if text != ps.conf.SearchMode {
+					ps.settingsChanged = true
+				}
+			})
+		}
+		ps.settings.AddDropDown("Search by: ", []string{"Name", "Name & Description"}, by, nil)
+		if dd, ok := ps.settings.GetFormItemByLabel("Search by: ").(*tview.DropDown); ok {
+			dd.SetSelectedFunc(func(text string, index int) {
+				if text != ps.conf.SearchBy {
 					ps.settingsChanged = true
 				}
 			})
@@ -330,6 +345,23 @@ func (ps *UI) setupSettingsForm() {
 						ps.app.SetFocus(next)
 					}
 				})
+				if cb, ok := item.(*tview.Checkbox); ok {
+					cb.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+						if event.Key() == tcell.KeyUp {
+							if prev != nil {
+								ps.app.SetFocus(prev)
+							} else {
+								ps.app.SetFocus(ps.packages)
+							}
+							return nil
+						}
+						if event.Key() == tcell.KeyDown {
+							ps.app.SetFocus(next)
+							return nil
+						}
+						return event
+					})
+				}
 			} else {
 				item.SetFinishedFunc(func(key tcell.Key) {
 					ps.app.SetFocus(ps.settings.GetButton(0))
@@ -365,6 +397,8 @@ func (ps *UI) setupSettingsForm() {
 	// Save button clicked
 	ps.settings.AddButton("Apply & Save", func() {
 		ps.saveSettings(false)
+		ps.settings.Clear(false)
+		addFields()
 	})
 
 	// Defaults button clicked
@@ -472,29 +506,36 @@ func (ps *UI) showPackages(text string) {
 		ps.locker.Lock()
 		defer ps.locker.Unlock()
 		defer ps.showPackageInfo(1, 0)
-		packages, err := searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.MaxResults)
+		packages, err := searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
 		if err != nil {
 			ps.app.QueueUpdateDraw(func() {
 				ps.showMessage(err.Error(), true)
 			})
 		}
-		aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchMode, ps.conf.MaxResults)
-		if err != nil {
-			ps.app.QueueUpdateDraw(func() {
-				ps.showMessage(err.Error(), true)
-			})
-		}
+		if !ps.conf.DisableAur {
+			aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
+			if err != nil {
+				ps.app.QueueUpdateDraw(func() {
+					ps.showMessage(err.Error(), true)
+				})
+			}
 
-		for i := 0; i < len(aurPackages); i++ {
-			aurPackages[i].IsInstalled = isInstalled(ps.alpmHandle, aurPackages[i].Name)
-		}
+			for i := 0; i < len(aurPackages); i++ {
+				aurPackages[i].IsInstalled = isInstalled(ps.alpmHandle, aurPackages[i].Name)
+			}
 
-		packages = append(packages, aurPackages...)
+			packages = append(packages, aurPackages...)
+		}
 
 		sort.Slice(packages, func(i, j int) bool {
 			return packages[i].Name < packages[j].Name
 		})
 
+		if len(packages) == 0 {
+			ps.app.QueueUpdateDraw(func() {
+				ps.showMessage("No packages found for searh-term: "+text, false)
+			})
+		}
 		if len(packages) > ps.conf.MaxResults {
 			packages = packages[:ps.conf.MaxResults]
 		}
@@ -657,9 +698,17 @@ func (ps *UI) saveSettings(defaults bool) {
 				}
 			}
 		} else if dd, ok := item.(*tview.DropDown); ok {
+			_, opt := dd.GetCurrentOption()
 			switch dd.GetLabel() {
 			case "Search mode: ":
-				_, ps.conf.SearchMode = dd.GetCurrentOption()
+				ps.conf.SearchMode = opt
+			case "Search by: ":
+				ps.conf.SearchBy = opt
+			}
+		} else if cb, ok := item.(*tview.Checkbox); ok {
+			switch cb.GetLabel() {
+			case "Disable AUR: ":
+				ps.conf.DisableAur = cb.IsChecked()
 			}
 		}
 	}

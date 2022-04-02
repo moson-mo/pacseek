@@ -12,6 +12,7 @@ type Settings struct {
 	AurRpcUrl         string
 	AurTimeout        int
 	AurSearchDelay    int
+	DisableAur        bool
 	MaxResults        int
 	PacmanDbPath      string
 	PacmanConfigPath  string
@@ -19,6 +20,7 @@ type Settings struct {
 	UninstallCommand  string
 	SysUpgradeCommand string
 	SearchMode        string
+	SearchBy          string
 }
 
 // Defaults returns the default settings
@@ -27,6 +29,7 @@ func Defaults() *Settings {
 		AurRpcUrl:         "https://server.moson.rocks/rpc",
 		AurTimeout:        5000,
 		AurSearchDelay:    500,
+		DisableAur:        false,
 		MaxResults:        100,
 		PacmanDbPath:      "/var/lib/pacman/",
 		PacmanConfigPath:  "/etc/pacman.conf",
@@ -34,6 +37,7 @@ func Defaults() *Settings {
 		UninstallCommand:  "yay -Rs",
 		SearchMode:        "StartsWith",
 		SysUpgradeCommand: "yay -Syu",
+		SearchBy:          "Name",
 	}
 
 	return &s
@@ -87,15 +91,21 @@ func Load() (*Settings, error) {
 func (s *Settings) applyUpgradeFixes() {
 	fixApplied := false
 
-	// search mode: introducted in 0.1.2
+	// search mode: added with 0.1.2
 	if s.SearchMode == "" {
 		s.SearchMode = Defaults().SearchMode
 		fixApplied = true
 	}
 
-	// sysupgrade command introduced in 0.2.4
+	// sysupgrade command: added with 0.2.4
 	if s.SysUpgradeCommand == "" {
 		s.SysUpgradeCommand = Defaults().SysUpgradeCommand
+		fixApplied = true
+	}
+
+	// search by: added with 0.2.7
+	if s.SearchBy == "" {
+		s.SearchBy = Defaults().SearchBy
 		fixApplied = true
 	}
 
