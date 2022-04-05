@@ -14,6 +14,7 @@ import (
 	"github.com/Jguer/go-alpm/v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/moson-mo/pacseek/internal/config"
+	"github.com/patrickmn/go-cache"
 	"github.com/rivo/tview"
 )
 
@@ -21,7 +22,7 @@ const (
 	colorHighlight = "[#1793d1]"
 	colorTitle     = "[#00dfff]"
 
-	version = "0.2.7"
+	version = "1.0.0"
 )
 
 // UI is holding our application information and all tview components
@@ -52,6 +53,7 @@ type UI struct {
 	width           int
 	selectedPackage *InfoRecord
 	settingsChanged bool
+	cache           *cache.Cache
 }
 
 // New creates a UI object and makes sure everything is initialized
@@ -63,6 +65,7 @@ func New(config *config.Settings) (*UI, error) {
 		messageLocker:   &sync.RWMutex{},
 		quitSpin:        make(chan bool),
 		settingsChanged: false,
+		cache:           cache.New(5*time.Minute, 1*time.Minute),
 	}
 
 	var err error
@@ -424,7 +427,8 @@ func (ps *UI) showPackageInfo(row, column int) {
 	source := ps.packages.GetCell(row, 1).Text
 
 	go func() {
-		if source == "AUR" {
+		infoCached, foundCached := ps.cache.Get(pkg)
+		if source == "AUR" && !foundCached {
 			time.Sleep(time.Duration(ps.conf.AurSearchDelay) * time.Millisecond)
 		}
 
@@ -436,15 +440,22 @@ func (ps *UI) showPackageInfo(row, column int) {
 		})
 
 		ps.locker.Lock()
-		ps.startSpin()
-		defer ps.stopSpin()
+		if !foundCached {
+			ps.startSpin()
+			defer ps.stopSpin()
+		}
 		defer ps.locker.Unlock()
 
 		var info RpcResult
-		if source == "AUR" {
-			info = infoAur(ps.conf.AurRpcUrl, pkg, ps.conf.AurTimeout)
+		if !foundCached {
+			if source == "AUR" {
+				info = infoAur(ps.conf.AurRpcUrl, pkg, ps.conf.AurTimeout)
+			} else {
+				info = infoPacman(ps.alpmHandle, pkg)
+			}
+			ps.cache.Set(pkg, info, cache.DefaultExpiration)
 		} else {
-			info = infoPacman(ps.alpmHandle, pkg)
+			info = infoCached.(RpcResult)
 		}
 
 		// draw results
@@ -458,7 +469,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 					errorMsg = info.Error
 				}
 				ps.details.SetTitle(" [red]Error ")
-				ps.details.SetCellSimple(0, 0, fmt.Sprintf("[red]%s", errorMsg))
+				ps.details.SetCellSimple(0, 0, "[red]s"+errorMsg)
 				return
 			}
 			ps.selectedPackage = &info.Results[0]
@@ -505,39 +516,51 @@ func (ps *UI) showPackages(text string) {
 	go func() {
 		ps.locker.Lock()
 		defer ps.locker.Unlock()
-		defer ps.showPackageInfo(1, 0)
-		packages, err := searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
-		if err != nil {
-			ps.app.QueueUpdateDraw(func() {
-				ps.showMessage(err.Error(), true)
-			})
-		}
-		if !ps.conf.DisableAur {
-			aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
+		defer ps.app.QueueUpdate(func() { ps.showPackageInfo(1, 0) })
+
+		var packages []Package
+		packagesCache, foundCache := ps.cache.Get("[search]" + text)
+
+		if !foundCache {
+			var err error
+			packages, err = searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
 			if err != nil {
 				ps.app.QueueUpdateDraw(func() {
 					ps.showMessage(err.Error(), true)
 				})
 			}
+			if !ps.conf.DisableAur {
+				aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
+				if err != nil {
+					ps.app.QueueUpdateDraw(func() {
+						ps.showMessage(err.Error(), true)
+					})
+				}
 
-			for i := 0; i < len(aurPackages); i++ {
-				aurPackages[i].IsInstalled = isInstalled(ps.alpmHandle, aurPackages[i].Name)
+				for i := 0; i < len(aurPackages); i++ {
+					aurPackages[i].IsInstalled = isInstalled(ps.alpmHandle, aurPackages[i].Name)
+				}
+
+				packages = append(packages, aurPackages...)
 			}
 
-			packages = append(packages, aurPackages...)
-		}
-
-		sort.Slice(packages, func(i, j int) bool {
-			return packages[i].Name < packages[j].Name
-		})
-
-		if len(packages) == 0 {
-			ps.app.QueueUpdateDraw(func() {
-				ps.showMessage("No packages found for searh-term: "+text, false)
+			sort.Slice(packages, func(i, j int) bool {
+				return packages[i].Name < packages[j].Name
 			})
-		}
-		if len(packages) > ps.conf.MaxResults {
-			packages = packages[:ps.conf.MaxResults]
+
+			if len(packages) == 0 {
+				ps.app.QueueUpdateDraw(func() {
+					ps.showMessage("No packages found for search-term: "+text, false)
+				})
+			}
+			if len(packages) > ps.conf.MaxResults {
+				packages = packages[:ps.conf.MaxResults]
+			}
+
+			ps.cache.Set("[search]"+text, packages, cache.DefaultExpiration)
+
+		} else {
+			packages = packagesCache.([]Package)
 		}
 
 		// draw packages
@@ -546,6 +569,14 @@ func (ps *UI) showPackages(text string) {
 				return
 			}
 			ps.drawPackages(packages)
+			if ps.right.GetItem(0) == ps.settings {
+				ps.right.Clear()
+				ps.right.AddItem(ps.details, 0, 1, false)
+			}
+			r, _ := ps.packages.GetSelection()
+			if r > 1 {
+				ps.packages.Select(1, 0)
+			}
 		})
 	}()
 }
@@ -791,8 +822,9 @@ func (ps *UI) runCommand(command string, args []string) {
 		cmd.Stderr = os.Stderr
 
 		// handle SIGINT and forward to the child process
+		cmd.Start()
 		quit := handleSigint(cmd)
-		cmd.Run()
+		cmd.Wait()
 		quit <- true
 	})
 	// we need to reinitialize the alpm handler to get the proper install state
@@ -851,6 +883,8 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	order := []string{
 		"Description",
 		"Version",
+		"Provides",
+		"Conflicts",
 		"Licenses",
 		"Maintainer",
 		"Dependencies",
@@ -863,28 +897,43 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	fields := map[string]string{}
 	fields[order[0]] = i.Description
 	fields[order[1]] = i.Version
-	fields[order[2]] = strings.Join(i.License, ", ")
-	fields[order[3]] = i.Maintainer
+	fields[order[2]] = strings.Join(i.Provides, ", ")
+	fields[order[3]] = strings.Join(i.Conflicts, ", ")
+	fields[order[4]] = strings.Join(i.License, ", ")
+	fields[order[5]] = i.Maintainer
 
+	fields[order[6]] = getDependenciesJoined(i)
+	fields[order[7]] = i.URL
+	if i.Source == "AUR" {
+		fields[order[8]] = fmt.Sprintf("%d", i.NumVotes)
+		fields[order[9]] = fmt.Sprintf("%f", i.Popularity)
+	}
+	fields[order[10]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
+
+	return fields, order
+}
+
+// join and format different dependencies as string
+func getDependenciesJoined(i InfoRecord) string {
 	mdeps := strings.Join(i.MakeDepends, " (make), ")
 	if mdeps != "" {
-		mdeps = "\n" + mdeps
 		mdeps += " (make)"
 	}
 	odeps := strings.Join(i.OptDepends, " (opt), ")
 	if odeps != "" {
-		odeps = "\n" + odeps
 		odeps += " (opt)"
 	}
-	fields[order[4]] = strings.Join(i.Depends, ", ") + mdeps + odeps
-	fields[order[5]] = i.URL
-	if i.Source == "AUR" {
-		fields[order[6]] = fmt.Sprintf("%d", i.NumVotes)
-		fields[order[7]] = fmt.Sprintf("%f", i.Popularity)
-	}
-	fields[order[8]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
 
-	return fields, order
+	deps := strings.Join(i.Depends, ", ")
+	if deps != "" && mdeps != "" {
+		deps += "\n"
+	}
+	deps += mdeps
+	if deps != "" && odeps != "" {
+		deps += "\n"
+	}
+	deps += odeps
+	return deps
 }
 
 // handles SIGINT call and passes it to a cmd process
@@ -899,7 +948,6 @@ func handleSigint(cmd *exec.Cmd) chan bool {
 				cmd.Process.Signal(os.Interrupt)
 			}
 		case <-quit:
-			return
 		}
 	}()
 	return quit
