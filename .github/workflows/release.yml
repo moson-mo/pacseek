@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux/archlinux:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install go, gcc
+        shell: bash
+        run: |
+          echo 'Server = https://mirror.moson.org/arch/$repo/os/$arch' > /etc/pacman.d/mirrorlist
+          pacman -Syu --noconfirm go gcc
+
+      - name: Build
+        run: go build -ldflags="-s -w" .
+
+      - name: Package
+        run: tar -cvzf pacseek-linux-x64-${{ github.ref_name }}.tar.gz assets pacseek LICENSE
+
+      - name: Upload assets
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: pacseek-linux-x64-${{ github.ref_name }}.tar.gz
