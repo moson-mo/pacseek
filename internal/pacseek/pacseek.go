@@ -22,7 +22,7 @@ const (
 	colorHighlight = "[#1793d1]"
 	colorTitle     = "[#00dfff]"
 
-	version = "1.0.1"
+	version = "1.1.0"
 )
 
 // UI is holding our application information and all tview components
@@ -66,8 +66,8 @@ func New(config *config.Settings) (*UI, error) {
 		messageLocker:   &sync.RWMutex{},
 		quitSpin:        make(chan bool),
 		settingsChanged: false,
-		infoCache:       cache.New(5*time.Minute, 1*time.Minute),
-		searchCache:     cache.New(5*time.Minute, 1*time.Minute),
+		infoCache:       cache.New(time.Duration(config.CacheExpiry)*time.Minute, 1*time.Minute),
+		searchCache:     cache.New(time.Duration(config.CacheExpiry)*time.Minute, 1*time.Minute),
 	}
 
 	var err error
@@ -288,18 +288,17 @@ func (ps *UI) setupSettingsForm() {
 		}
 
 		// input fields
+		ps.settings.AddCheckbox("Disable AUR: ", ps.conf.DisableAur, func(checked bool) { ps.settingsChanged = true })
 		if !ps.conf.DisableAur {
 			ps.settings.AddInputField("AUR RPC URL: ", ps.conf.AurRpcUrl, 40, nil, sc)
 			ps.settings.AddInputField("AUR timeout (ms): ", strconv.Itoa(ps.conf.AurTimeout), 6, nil, sc)
 			ps.settings.AddInputField("AUR search delay (ms): ", strconv.Itoa(ps.conf.AurSearchDelay), 6, nil, sc)
 		}
-		ps.settings.AddCheckbox("Disable AUR: ", ps.conf.DisableAur, func(checked bool) { ps.settingsChanged = true })
+		ps.settings.AddCheckbox("Disable Cache: ", ps.conf.DisableCache, func(checked bool) { ps.settingsChanged = true })
+		if !ps.conf.DisableCache {
+			ps.settings.AddInputField("Cache expiry (m): ", strconv.Itoa(ps.conf.CacheExpiry), 6, nil, sc)
+		}
 		ps.settings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, sc)
-		ps.settings.AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, sc)
-		ps.settings.AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, sc)
-		ps.settings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, sc)
-		ps.settings.AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc)
-		ps.settings.AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, sc)
 		ps.settings.AddDropDown("Search mode: ", []string{"StartsWith", "Contains"}, mode, nil)
 		if dd, ok := ps.settings.GetFormItemByLabel("Search mode: ").(*tview.DropDown); ok {
 			dd.SetSelectedFunc(func(text string, index int) {
@@ -316,9 +315,15 @@ func (ps *UI) setupSettingsForm() {
 				}
 			})
 		}
+		ps.settings.AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, sc)
+		ps.settings.AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, sc)
+		ps.settings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, sc)
+		ps.settings.AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc)
+		ps.settings.AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, sc)
 
 		// key bindings
 		ps.settings.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			// CTRL + Left navigates to the previous control
 			if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModCtrl {
 				if ps.prevControl != nil {
 					ps.app.SetFocus(ps.prevControl)
@@ -327,73 +332,40 @@ func (ps *UI) setupSettingsForm() {
 				}
 				return nil
 			}
-			return event
-		})
-
-		// form input items
-		for i := 0; i < ps.settings.GetFormItemCount(); i++ {
-			item := ps.settings.GetFormItem(i)
-			if i+1 < ps.settings.GetFormItemCount() {
-				next := ps.settings.GetFormItem(i + 1)
-				var prev tview.FormItem
-				if i > 0 {
-					prev = ps.settings.GetFormItem(i - 1)
+			// Down / Up / TAB for form navigation
+			if event.Key() == tcell.KeyDown ||
+				event.Key() == tcell.KeyUp ||
+				event.Key() == tcell.KeyTab {
+				i, b := ps.settings.GetFocusedItemIndex()
+				if b > -1 {
+					i = ps.settings.GetFormItemCount() + b
 				}
-				item.SetFinishedFunc(func(key tcell.Key) {
-					if key == tcell.KeyUp {
-						if prev != nil {
-							ps.app.SetFocus(prev)
-							return
+				n := i
+				if event.Key() == tcell.KeyUp {
+					n-- // move up
+				} else {
+					n++ // move down
+				}
+				if i >= 0 && i < ps.settings.GetFormItemCount() {
+					// drop downs are excluded from Up / Down handling
+					if _, ok := ps.settings.GetFormItem(i).(*tview.DropDown); ok {
+						if event.Key() != tcell.KeyTAB && event.Modifiers() != tcell.ModCtrl {
+							return event
 						}
-						ps.app.SetFocus(ps.packages)
-					} else {
-						ps.app.SetFocus(next)
 					}
-				})
-				if cb, ok := item.(*tview.Checkbox); ok {
-					cb.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-						if event.Key() == tcell.KeyUp {
-							if prev != nil {
-								ps.app.SetFocus(prev)
-							} else {
-								ps.app.SetFocus(ps.packages)
-							}
-							return nil
-						}
-						if event.Key() == tcell.KeyDown {
-							ps.app.SetFocus(next)
-							return nil
-						}
-						return event
-					})
 				}
-			} else {
-				item.SetFinishedFunc(func(key tcell.Key) {
-					ps.app.SetFocus(ps.settings.GetButton(0))
-				})
-			}
-		}
-
-		// Save button
-		ps.settings.GetButton(0).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			if event.Key() == tcell.KeyTAB || event.Key() == tcell.KeyDown {
-				ps.app.SetFocus(ps.settings.GetButton(1))
+				// Leave settings from
+				if b == ps.settings.GetButtonCount()-1 && event.Key() != tcell.KeyUp {
+					ps.app.SetFocus(ps.search)
+					return nil
+				}
+				if i == 0 && event.Key() == tcell.KeyUp {
+					ps.app.SetFocus(ps.packages)
+					return nil
+				}
+				ps.settings.SetFocus(n)
+				ps.app.SetFocus(ps.settings)
 				return nil
-			}
-			if event.Key() == tcell.KeyUp {
-				ps.app.SetFocus(ps.settings.GetFormItem(ps.settings.GetFormItemCount() - 1))
-			}
-			return event
-		})
-
-		// Defaults button
-		ps.settings.GetButton(1).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			if event.Key() == tcell.KeyTAB || event.Key() == tcell.KeyDown {
-				ps.app.SetFocus(ps.search)
-				return nil
-			}
-			if event.Key() == tcell.KeyUp {
-				ps.app.SetFocus(ps.settings.GetButton(0))
 			}
 			return event
 		})
@@ -455,7 +427,9 @@ func (ps *UI) showPackageInfo(row, column int) {
 			} else {
 				info = infoPacman(ps.alpmHandle, pkg)
 			}
-			ps.infoCache.Set(pkg, info, cache.DefaultExpiration)
+			if !ps.conf.DisableCache {
+				ps.infoCache.Set(pkg, info, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+			}
 		} else {
 			info = infoCached.(RpcResult)
 		}
@@ -559,8 +533,9 @@ func (ps *UI) showPackages(text string) {
 				packages = packages[:ps.conf.MaxResults]
 			}
 
-			ps.searchCache.Set(text, packages, cache.DefaultExpiration)
-
+			if !ps.conf.DisableCache {
+				ps.searchCache.Set(text, packages, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+			}
 		} else {
 			packages = packagesCache.([]Package)
 		}
@@ -729,6 +704,12 @@ func (ps *UI) saveSettings(defaults bool) {
 					ps.showMessage("Can't convert max results value to int", true)
 					return
 				}
+			case "Cache expiry (m): ":
+				ps.conf.CacheExpiry, err = strconv.Atoi(txt)
+				if err != nil {
+					ps.showMessage("Can't convert cache expiry value to int", true)
+					return
+				}
 			}
 		} else if dd, ok := item.(*tview.DropDown); ok {
 			_, opt := dd.GetCurrentOption()
@@ -742,6 +723,8 @@ func (ps *UI) saveSettings(defaults bool) {
 			switch cb.GetLabel() {
 			case "Disable AUR: ":
 				ps.conf.DisableAur = cb.IsChecked()
+			case "Disable Cache: ":
+				ps.conf.DisableCache = cb.IsChecked()
 			}
 		}
 	}
@@ -757,6 +740,9 @@ func (ps *UI) saveSettings(defaults bool) {
 	ps.showMessage(msg, false)
 	ps.settingsChanged = false
 	ps.searchCache.Flush()
+	if ps.conf.DisableCache {
+		ps.infoCache.Flush()
+	}
 }
 
 // starts the spinner

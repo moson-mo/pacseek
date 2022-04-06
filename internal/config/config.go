@@ -21,6 +21,8 @@ type Settings struct {
 	SysUpgradeCommand string
 	SearchMode        string
 	SearchBy          string
+	CacheExpiry       int
+	DisableCache      bool
 }
 
 // Defaults returns the default settings
@@ -38,6 +40,8 @@ func Defaults() *Settings {
 		SearchMode:        "StartsWith",
 		SysUpgradeCommand: "yay -Syu",
 		SearchBy:          "Name",
+		CacheExpiry:       5,
+		DisableCache:      false,
 	}
 
 	return &s
@@ -106,6 +110,12 @@ func (s *Settings) applyUpgradeFixes() {
 	// search by: added with 0.2.7
 	if s.SearchBy == "" {
 		s.SearchBy = Defaults().SearchBy
+		fixApplied = true
+	}
+
+	// cache expiry: added with 1.1.0
+	if s.CacheExpiry == 0 {
+		s.CacheExpiry = Defaults().CacheExpiry
 		fixApplied = true
 	}
 

@@ -50,4 +50,5 @@ The settings form can be opened with CTRL+S.
 
 * Improve test code
 * ~~Implement caching for package data to have less lookups (AUR)~~ - done
-* Add config options for disabling caching and setting the expiry time for cached entries
+* ~~Add config options for disabling caching and setting the expiry time for cached entries~~ - done
+* Add docs / wiki
