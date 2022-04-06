@@ -22,7 +22,7 @@ const (
 	colorHighlight = "[#1793d1]"
 	colorTitle     = "[#00dfff]"
 
-	version = "1.0.0"
+	version = "1.0.1"
 )
 
 // UI is holding our application information and all tview components
@@ -53,7 +53,8 @@ type UI struct {
 	width           int
 	selectedPackage *InfoRecord
 	settingsChanged bool
-	cache           *cache.Cache
+	infoCache       *cache.Cache
+	searchCache     *cache.Cache
 }
 
 // New creates a UI object and makes sure everything is initialized
@@ -65,7 +66,8 @@ func New(config *config.Settings) (*UI, error) {
 		messageLocker:   &sync.RWMutex{},
 		quitSpin:        make(chan bool),
 		settingsChanged: false,
-		cache:           cache.New(5*time.Minute, 1*time.Minute),
+		infoCache:       cache.New(5*time.Minute, 1*time.Minute),
+		searchCache:     cache.New(5*time.Minute, 1*time.Minute),
 	}
 
 	var err error
@@ -427,7 +429,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 	source := ps.packages.GetCell(row, 1).Text
 
 	go func() {
-		infoCached, foundCached := ps.cache.Get(pkg)
+		infoCached, foundCached := ps.infoCache.Get(pkg)
 		if source == "AUR" && !foundCached {
 			time.Sleep(time.Duration(ps.conf.AurSearchDelay) * time.Millisecond)
 		}
@@ -453,7 +455,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 			} else {
 				info = infoPacman(ps.alpmHandle, pkg)
 			}
-			ps.cache.Set(pkg, info, cache.DefaultExpiration)
+			ps.infoCache.Set(pkg, info, cache.DefaultExpiration)
 		} else {
 			info = infoCached.(RpcResult)
 		}
@@ -519,7 +521,7 @@ func (ps *UI) showPackages(text string) {
 		defer ps.app.QueueUpdate(func() { ps.showPackageInfo(1, 0) })
 
 		var packages []Package
-		packagesCache, foundCache := ps.cache.Get("[search]" + text)
+		packagesCache, foundCache := ps.searchCache.Get(text)
 
 		if !foundCache {
 			var err error
@@ -557,7 +559,7 @@ func (ps *UI) showPackages(text string) {
 				packages = packages[:ps.conf.MaxResults]
 			}
 
-			ps.cache.Set("[search]"+text, packages, cache.DefaultExpiration)
+			ps.searchCache.Set(text, packages, cache.DefaultExpiration)
 
 		} else {
 			packages = packagesCache.([]Package)
@@ -754,6 +756,7 @@ func (ps *UI) saveSettings(defaults bool) {
 	}
 	ps.showMessage(msg, false)
 	ps.settingsChanged = false
+	ps.searchCache.Flush()
 }
 
 // starts the spinner

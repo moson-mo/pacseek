@@ -6,12 +6,12 @@ require (
 	github.com/Jguer/go-alpm/v2 v2.1.2
 	github.com/Morganamilo/go-pacmanconf v0.0.0-20210502114700-cff030e927a5
 	github.com/gdamore/tcell/v2 v2.4.1-0.20210905002822-f057f0a857a1
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rivo/tview v0.0.0-20220307222120-9994674d60a8
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.0 // indirect
-	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )

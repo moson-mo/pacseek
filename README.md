@@ -20,6 +20,7 @@ In the default configuration, [yay](https://github.com/Jguer/yay) is being used.
 
 * [tview](https://github.com/rivo/tview) for the tui components
 * [go-alpm](https://github.com/Jguer/go-alpm) for searching the package DB's
+* [go-cache](https://github.com/patrickmn/go-cache) to cache search results and package data
 * [goaurrpc](https://github.com/moson-mo/goaurrpc) self-hosted backend for the AUR REST API calls (to not stress the official aur.archlinux.org/rpc endpoint)
 
 #### How to build / run / install
@@ -48,4 +49,5 @@ The settings form can be opened with CTRL+S.
 #### ToDo's
 
 * Improve test code
-* Implement caching for package data to have less lookups (AUR)
+* ~~Implement caching for package data to have less lookups (AUR)~~ - done
+* Add config options for disabling caching and setting the expiry time for cached entries
