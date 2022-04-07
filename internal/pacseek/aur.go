@@ -2,8 +2,11 @@ package pacseek
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
+	ur "net/url"
+	"sort"
 	"strings"
 	"time"
 )
@@ -50,6 +53,16 @@ func searchAur(url, term string, timeout int, mode string, by string, maxResults
 		if err != nil {
 			return packages, err
 		}
+
+		if s.Error != "" {
+			return packages, errors.New(s.Error)
+		}
+
+		// we need to sort our results here. The official aurweb /rpc endpoint is not ordering by name...
+		sort.Slice(s.Results, func(i, j int) bool {
+			return s.Results[i].Name < s.Results[j].Name
+		})
+
 		i := 0
 		for _, pkg := range s.Results {
 			if mode == "StartsWith" && (strings.HasPrefix(pkg.Name, term) || strings.HasPrefix(pkg.Description, term)) {
@@ -74,11 +87,21 @@ func searchAur(url, term string, timeout int, mode string, by string, maxResults
 }
 
 // calls the AUR rpc API (info type) and returns package information
-func infoAur(url, pkg string, timeout int) RpcResult {
+func infoAur(url string, pkg []string, timeout int) RpcResult {
 	client := http.Client{
 		Timeout: time.Millisecond * time.Duration(timeout),
 	}
-	r, err := client.Get(url + "?v=5&type=info&arg=" + pkg)
+
+	var r *http.Response
+	var err error
+
+	data := ur.Values{}
+	data.Add("v", "5")
+	data.Add("type", "info")
+	for _, p := range pkg {
+		data.Add("arg[]", p)
+	}
+	r, err = client.Post(url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
 	if err != nil {
 		return RpcResult{Error: err.Error()}
 	}
@@ -96,5 +119,6 @@ func infoAur(url, pkg string, timeout int) RpcResult {
 	for i := 0; i < len(p.Results); i++ {
 		p.Results[i].Source = "AUR"
 	}
+
 	return p
 }

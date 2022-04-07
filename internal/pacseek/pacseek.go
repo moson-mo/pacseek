@@ -423,9 +423,9 @@ func (ps *UI) showPackageInfo(row, column int) {
 		var info RpcResult
 		if !foundCached {
 			if source == "AUR" {
-				info = infoAur(ps.conf.AurRpcUrl, pkg, ps.conf.AurTimeout)
+				info = infoAur(ps.conf.AurRpcUrl, []string{pkg}, ps.conf.AurTimeout)
 			} else {
-				info = infoPacman(ps.alpmHandle, pkg)
+				info = infoPacman(ps.alpmHandle, []string{pkg})
 			}
 			if !ps.conf.DisableCache {
 				ps.infoCache.Set(pkg, info, time.Duration(ps.conf.CacheExpiry)*time.Minute)
@@ -491,6 +491,8 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 func (ps *UI) showPackages(text string) {
 	go func() {
 		ps.locker.Lock()
+		ps.startSpin()
+		defer ps.stopSpin()
 		defer ps.locker.Unlock()
 		defer ps.app.QueueUpdate(func() { ps.showPackageInfo(1, 0) })
 
@@ -533,7 +535,29 @@ func (ps *UI) showPackages(text string) {
 				packages = packages[:ps.conf.MaxResults]
 			}
 
+			aurPkgs := []string{}
+			for _, pkg := range packages {
+				if pkg.Source == "AUR" {
+					aurPkgs = append(aurPkgs, pkg.Name)
+				}
+			}
+			repoPkgs := []string{}
+			for _, pkg := range packages {
+				if pkg.Source != "AUR" {
+					repoPkgs = append(repoPkgs, pkg.Name)
+				}
+			}
+
 			if !ps.conf.DisableCache {
+				aurInfos := infoAur(ps.conf.AurRpcUrl, aurPkgs, ps.conf.AurTimeout)
+				for _, pkg := range aurInfos.Results {
+					ps.infoCache.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+				}
+				repoInfos := infoPacman(ps.alpmHandle, repoPkgs)
+				for _, pkg := range repoInfos.Results {
+					ps.infoCache.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+				}
+
 				ps.searchCache.Set(text, packages, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 			}
 		} else {

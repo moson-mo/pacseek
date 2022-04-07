@@ -90,7 +90,7 @@ func isInstalled(h *alpm.Handle, pkg string) bool {
 }
 
 // retrieves package information from the pacman DB's and returns it in the same format as the AUR call
-func infoPacman(h *alpm.Handle, pkg string) RpcResult {
+func infoPacman(h *alpm.Handle, pkgs []string) RpcResult {
 	r := RpcResult{
 		Results: []InfoRecord{},
 	}
@@ -102,44 +102,45 @@ func infoPacman(h *alpm.Handle, pkg string) RpcResult {
 	}
 
 	for _, db := range dbs.Slice() {
-		p := db.Pkg(pkg)
-		if p == nil {
-			continue
-		}
+		for _, pkg := range pkgs {
+			p := db.Pkg(pkg)
+			if p == nil {
+				continue
+			}
 
-		deps := []string{}
-		makedeps := []string{}
-		odeps := []string{}
-		prov := []string{}
-		conf := []string{}
-		for _, d := range p.Depends().Slice() {
-			deps = append(deps, d.Name)
-		}
-		for _, d := range p.MakeDepends().Slice() {
-			makedeps = append(makedeps, d.Name)
-		}
-		for _, d := range p.OptionalDepends().Slice() {
-			odeps = append(odeps, d.Name)
-		}
+			deps := []string{}
+			makedeps := []string{}
+			odeps := []string{}
+			prov := []string{}
+			conf := []string{}
+			for _, d := range p.Depends().Slice() {
+				deps = append(deps, d.Name)
+			}
+			for _, d := range p.MakeDepends().Slice() {
+				makedeps = append(makedeps, d.Name)
+			}
+			for _, d := range p.OptionalDepends().Slice() {
+				odeps = append(odeps, d.Name)
+			}
 
-		i := InfoRecord{
-			Name:         p.Name(),
-			Description:  p.Description(),
-			Provides:     prov,
-			Conflicts:    conf,
-			Version:      p.Version(),
-			License:      p.Licenses().Slice(),
-			Maintainer:   p.Packager(),
-			Depends:      deps,
-			MakeDepends:  makedeps,
-			OptDepends:   odeps,
-			URL:          p.URL(),
-			LastModified: int(p.BuildDate().UTC().Unix()),
-			Source:       db.Name(),
-		}
+			i := InfoRecord{
+				Name:         p.Name(),
+				Description:  p.Description(),
+				Provides:     prov,
+				Conflicts:    conf,
+				Version:      p.Version(),
+				License:      p.Licenses().Slice(),
+				Maintainer:   p.Packager(),
+				Depends:      deps,
+				MakeDepends:  makedeps,
+				OptDepends:   odeps,
+				URL:          p.URL(),
+				LastModified: int(p.BuildDate().UTC().Unix()),
+				Source:       db.Name(),
+			}
 
-		r.Results = append(r.Results, i)
-		return r
+			r.Results = append(r.Results, i)
+		}
 	}
 	return r
 }
