@@ -1,2 +1,4 @@
 .vscode
 /pacseek
+/coverage.out
+/testcoverage.out
