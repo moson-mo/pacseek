@@ -23,7 +23,7 @@ const (
 	colorHighlight = "[#1793d1]"
 	colorTitle     = "[#00dfff]"
 
-	version = "1.1.0"
+	version = "1.2.0"
 )
 
 // UI is holding our application information and all tview components
