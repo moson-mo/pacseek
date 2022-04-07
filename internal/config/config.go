@@ -9,20 +9,23 @@ import (
 
 // Settings is a structure containing our configuration data
 type Settings struct {
-	AurRpcUrl         string
-	AurTimeout        int
-	AurSearchDelay    int
-	DisableAur        bool
-	MaxResults        int
-	PacmanDbPath      string
-	PacmanConfigPath  string
-	InstallCommand    string
-	UninstallCommand  string
-	SysUpgradeCommand string
-	SearchMode        string
-	SearchBy          string
-	CacheExpiry       int
-	DisableCache      bool
+	AurRpcUrl               string
+	AurTimeout              int
+	AurSearchDelay          int
+	AurUseDifferentCommands bool
+	AurInstallCommand       string
+	AurUpgradeCommand       string
+	DisableAur              bool
+	MaxResults              int
+	PacmanDbPath            string
+	PacmanConfigPath        string
+	InstallCommand          string
+	UninstallCommand        string
+	SysUpgradeCommand       string
+	SearchMode              string
+	SearchBy                string
+	CacheExpiry             int
+	DisableCache            bool
 }
 
 // Defaults returns the default settings

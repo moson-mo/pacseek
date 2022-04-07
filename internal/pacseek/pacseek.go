@@ -1,6 +1,7 @@
 package pacseek
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -155,7 +156,7 @@ func (ps *UI) setupComponents() {
 func (ps *UI) setupKeyBindings() {
 	// app / global
 	ps.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// CTRL+Q
+		// CTRL+Q - Quit
 		if event.Key() == tcell.KeyCtrlQ {
 			ps.alpmHandle.Release()
 			if ps.settingsChanged {
@@ -174,7 +175,7 @@ func (ps *UI) setupKeyBindings() {
 				ps.app.Stop()
 			}
 		}
-		// CTRL+S
+		// CTRL+S - Show settings
 		if event.Key() == tcell.KeyCtrlS {
 			if ps.right.GetItem(0) != ps.settings {
 				ps.right.Clear()
@@ -186,7 +187,7 @@ func (ps *UI) setupKeyBindings() {
 			}
 			return nil
 		}
-		// CTRL+H
+		// CTRL+H - Show help
 		if event.Key() == tcell.KeyCtrlH {
 			ps.showHelp()
 			if ps.right.GetItem(0) == ps.settings {
@@ -195,12 +196,18 @@ func (ps *UI) setupKeyBindings() {
 			}
 			return nil
 		}
-		// CTRL+U
+		// CTRL+U - Upgrade
 		if event.Key() == tcell.KeyCtrlU {
-			ps.performSyncSysUpgrade()
+			ps.performUpgrade(false)
 			return nil
 		}
+		// CTRL+A - AUR upgrade
 		if event.Key() == tcell.KeyCtrlA {
+			ps.performUpgrade(true)
+			return nil
+		}
+		// CTRL+B - Show about
+		if event.Key() == tcell.KeyCtrlB {
 			ps.showAbout()
 			return nil
 		}
@@ -273,121 +280,151 @@ func (ps *UI) setupKeyBindings() {
 
 // sets up settings form
 func (ps *UI) setupSettingsForm() {
-	addFields := func() {
-		mode := 0
-		if ps.conf.SearchMode != "StartsWith" {
-			mode = 1
-		}
-		by := 0
-		if ps.conf.SearchBy != "Name" {
-			by = 1
-		}
-
-		sc := func(txt string) {
-			ps.settingsChanged = true
-		}
-
-		// input fields
-		ps.settings.AddCheckbox("Disable AUR: ", ps.conf.DisableAur, func(checked bool) { ps.settingsChanged = true })
-		if !ps.conf.DisableAur {
-			ps.settings.AddInputField("AUR RPC URL: ", ps.conf.AurRpcUrl, 40, nil, sc)
-			ps.settings.AddInputField("AUR timeout (ms): ", strconv.Itoa(ps.conf.AurTimeout), 6, nil, sc)
-			ps.settings.AddInputField("AUR search delay (ms): ", strconv.Itoa(ps.conf.AurSearchDelay), 6, nil, sc)
-		}
-		ps.settings.AddCheckbox("Disable Cache: ", ps.conf.DisableCache, func(checked bool) { ps.settingsChanged = true })
-		if !ps.conf.DisableCache {
-			ps.settings.AddInputField("Cache expiry (m): ", strconv.Itoa(ps.conf.CacheExpiry), 6, nil, sc)
-		}
-		ps.settings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, sc)
-		ps.settings.AddDropDown("Search mode: ", []string{"StartsWith", "Contains"}, mode, nil)
-		if dd, ok := ps.settings.GetFormItemByLabel("Search mode: ").(*tview.DropDown); ok {
-			dd.SetSelectedFunc(func(text string, index int) {
-				if text != ps.conf.SearchMode {
-					ps.settingsChanged = true
-				}
-			})
-		}
-		ps.settings.AddDropDown("Search by: ", []string{"Name", "Name & Description"}, by, nil)
-		if dd, ok := ps.settings.GetFormItemByLabel("Search by: ").(*tview.DropDown); ok {
-			dd.SetSelectedFunc(func(text string, index int) {
-				if text != ps.conf.SearchBy {
-					ps.settingsChanged = true
-				}
-			})
-		}
-		ps.settings.AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, sc)
-		ps.settings.AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, sc)
-		ps.settings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, sc)
-		ps.settings.AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc)
-		ps.settings.AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, sc)
-
-		// key bindings
-		ps.settings.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			// CTRL + Left navigates to the previous control
-			if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModCtrl {
-				if ps.prevControl != nil {
-					ps.app.SetFocus(ps.prevControl)
-				} else {
-					ps.app.SetFocus(ps.packages)
-				}
-				return nil
-			}
-			// Down / Up / TAB for form navigation
-			if event.Key() == tcell.KeyDown ||
-				event.Key() == tcell.KeyUp ||
-				event.Key() == tcell.KeyTab {
-				i, b := ps.settings.GetFocusedItemIndex()
-				if b > -1 {
-					i = ps.settings.GetFormItemCount() + b
-				}
-				n := i
-				if event.Key() == tcell.KeyUp {
-					n-- // move up
-				} else {
-					n++ // move down
-				}
-				if i >= 0 && i < ps.settings.GetFormItemCount() {
-					// drop downs are excluded from Up / Down handling
-					if _, ok := ps.settings.GetFormItem(i).(*tview.DropDown); ok {
-						if event.Key() != tcell.KeyTAB && event.Modifiers() != tcell.ModCtrl {
-							return event
-						}
-					}
-				}
-				// Leave settings from
-				if b == ps.settings.GetButtonCount()-1 && event.Key() != tcell.KeyUp {
-					ps.app.SetFocus(ps.search)
-					return nil
-				}
-				if i == 0 && event.Key() == tcell.KeyUp {
-					ps.app.SetFocus(ps.packages)
-					return nil
-				}
-				ps.settings.SetFocus(n)
-				ps.app.SetFocus(ps.settings)
-				return nil
-			}
-			return event
-		})
-	}
-
 	// Save button clicked
 	ps.settings.AddButton("Apply & Save", func() {
 		ps.saveSettings(false)
-		ps.settings.Clear(false)
-		addFields()
+		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands)
 	})
 
 	// Defaults button clicked
 	ps.settings.AddButton("Defaults", func() {
 		ps.conf = config.Defaults()
-		ps.settings.Clear(false)
-		addFields()
+		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands)
 		ps.saveSettings(true)
 	})
 
 	// add our input fields
-	addFields()
+	ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands)
+}
+
+// draws input fields on settings form
+func (ps *UI) drawSettingsFields(daur, dcache, ecom bool) {
+	ps.settings.Clear(false)
+	mode := 0
+	if ps.conf.SearchMode != "StartsWith" {
+		mode = 1
+	}
+	by := 0
+	if ps.conf.SearchBy != "Name" {
+		by = 1
+	}
+
+	// handle text/drop-down field changes
+	sc := func(txt string) {
+		ps.settingsChanged = true
+	}
+
+	// input fields
+	ps.settings.AddCheckbox("Disable AUR: ", daur, func(checked bool) {
+		ps.settingsChanged = true
+		ps.drawSettingsFields(checked, dcache, ecom)
+		ps.app.SetFocus(ps.settings)
+	})
+	if !daur {
+		ps.settings.AddInputField("AUR RPC URL: ", ps.conf.AurRpcUrl, 40, nil, sc).
+			AddInputField("AUR timeout (ms): ", strconv.Itoa(ps.conf.AurTimeout), 6, nil, sc).
+			AddInputField("AUR search delay (ms): ", strconv.Itoa(ps.conf.AurSearchDelay), 6, nil, sc)
+	}
+	ps.settings.AddCheckbox("Disable Cache: ", dcache, func(checked bool) {
+		ps.settingsChanged = true
+		i, _ := ps.settings.GetFocusedItemIndex()
+		ps.drawSettingsFields(daur, checked, ecom)
+		ps.settings.SetFocus(i)
+		ps.app.SetFocus(ps.settings)
+	})
+	if !dcache {
+		ps.settings.AddInputField("Cache expiry (m): ", strconv.Itoa(ps.conf.CacheExpiry), 6, nil, sc)
+	}
+	ps.settings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, sc).
+		AddDropDown("Search mode: ", []string{"StartsWith", "Contains"}, mode, nil)
+	if dd, ok := ps.settings.GetFormItemByLabel("Search mode: ").(*tview.DropDown); ok {
+		dd.SetSelectedFunc(func(text string, index int) {
+			if text != ps.conf.SearchMode {
+				ps.settingsChanged = true
+			}
+		})
+	}
+	ps.settings.AddDropDown("Search by: ", []string{"Name", "Name & Description"}, by, nil)
+	if dd, ok := ps.settings.GetFormItemByLabel("Search by: ").(*tview.DropDown); ok {
+		dd.SetSelectedFunc(func(text string, index int) {
+			if text != ps.conf.SearchBy {
+				ps.settingsChanged = true
+			}
+		})
+	}
+	ps.settings.AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, sc).
+		AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, sc).
+		AddCheckbox("Use separate commands for AUR packages: ", ecom, func(checked bool) {
+			ps.settingsChanged = true
+			i, _ := ps.settings.GetFocusedItemIndex()
+			ps.drawSettingsFields(daur, dcache, checked)
+			ps.settings.SetFocus(i)
+			ps.app.SetFocus(ps.settings)
+		})
+	if ecom {
+		icom := ps.conf.AurInstallCommand
+		if icom == "" {
+			icom = ps.conf.InstallCommand
+		}
+		ucom := ps.conf.AurUpgradeCommand
+		if ucom == "" {
+			ucom = ps.conf.SysUpgradeCommand
+		}
+		ps.settings.AddInputField("AUR Install command: ", icom, 40, nil, sc).
+			AddInputField("AUR Upgrade command: ", ucom, 40, nil, sc)
+	}
+	ps.settings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, sc).
+		AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, sc).
+		AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc)
+
+	// key bindings
+	ps.settings.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// CTRL + Left navigates to the previous control
+		if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModCtrl {
+			if ps.prevControl != nil {
+				ps.app.SetFocus(ps.prevControl)
+			} else {
+				ps.app.SetFocus(ps.packages)
+			}
+			return nil
+		}
+		// Down / Up / TAB for form navigation
+		if event.Key() == tcell.KeyDown ||
+			event.Key() == tcell.KeyUp ||
+			event.Key() == tcell.KeyTab {
+			i, b := ps.settings.GetFocusedItemIndex()
+			if b > -1 {
+				i = ps.settings.GetFormItemCount() + b
+			}
+			n := i
+			if event.Key() == tcell.KeyUp {
+				n-- // move up
+			} else {
+				n++ // move down
+			}
+			if i >= 0 && i < ps.settings.GetFormItemCount() {
+				// drop downs are excluded from Up / Down handling
+				if _, ok := ps.settings.GetFormItem(i).(*tview.DropDown); ok {
+					if event.Key() != tcell.KeyTAB && event.Modifiers() != tcell.ModCtrl {
+						return event
+					}
+				}
+			}
+			// Leave settings from
+			if b == ps.settings.GetButtonCount()-1 && event.Key() != tcell.KeyUp {
+				ps.app.SetFocus(ps.search)
+				return nil
+			}
+			if i == 0 && event.Key() == tcell.KeyUp {
+				ps.app.SetFocus(ps.packages)
+				return nil
+			}
+			ps.settings.SetFocus(n)
+			ps.app.SetFocus(ps.settings)
+			return nil
+		}
+		return event
+	})
 }
 
 // retrieves package information from repo/AUR and displays them
@@ -664,7 +701,8 @@ func (ps *UI) showHelp() {
 		SetCellSimple(3, 0, "CTRL+S: Open/Close settings").
 		SetCellSimple(4, 0, "CTRL+H: Show these instructions").
 		SetCellSimple(5, 0, "CTRL+U: Perform sysupgrade").
-		SetCellSimple(7, 0, "CTRL+Q: Quit")
+		SetCellSimple(6, 0, "CTRL+A: Perform AUR upgrade (if configured)").
+		SetCellSimple(8, 0, "CTRL+Q: Quit")
 }
 
 // show about text
@@ -720,8 +758,12 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.InstallCommand = txt
 			case "Uninstall command: ":
 				ps.conf.UninstallCommand = txt
+			case "AUR Install command: ":
+				ps.conf.AurInstallCommand = txt
 			case "Upgrade command: ":
 				ps.conf.SysUpgradeCommand = txt
+			case "AUR Upgrade command: ":
+				ps.conf.AurUpgradeCommand = txt
 			case "Max search results: ":
 				ps.conf.MaxResults, err = strconv.Atoi(txt)
 				if err != nil {
@@ -749,6 +791,8 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.DisableAur = cb.IsChecked()
 			case "Disable Cache: ":
 				ps.conf.DisableCache = cb.IsChecked()
+			case "Use separate commands for AUR packages: ":
+				ps.conf.AurUseDifferentCommands = cb.IsChecked()
 			}
 		}
 	}
@@ -803,11 +847,14 @@ func (ps *UI) startSpin() {
 func (ps *UI) installPackage() {
 	row, _ := ps.packages.GetSelection()
 	pkg := ps.packages.GetCell(row, 0).Text
+	source := ps.packages.GetCell(row, 1).Text
 	installed := ps.packages.GetCell(row, 2).Text
 
 	command := ps.conf.InstallCommand
 	if installed == "Y" {
 		command = ps.conf.UninstallCommand
+	} else if source == "AUR" && ps.conf.AurUseDifferentCommands {
+		command = ps.conf.AurInstallCommand
 	}
 
 	com := strings.Split(command, " ")[0]
@@ -837,7 +884,14 @@ func (ps *UI) runCommand(command string, args []string) {
 		// handle SIGINT and forward to the child process
 		cmd.Start()
 		quit := handleSigint(cmd)
-		cmd.Wait()
+		err := cmd.Wait()
+		if err != nil {
+			if err.Error() != "signal: interrupt" {
+				cmd.Stdout.Write([]byte("\n" + err.Error() + "\nPress ENTER to return to pacseek\n"))
+				r := bufio.NewReader(cmd.Stdin)
+				r.ReadLine()
+			}
+		}
 		quit <- true
 	})
 	// we need to reinitialize the alpm handler to get the proper install state
@@ -848,10 +902,15 @@ func (ps *UI) runCommand(command string, args []string) {
 	}
 }
 
-// issues "pacman -Syu"
-func (ps *UI) performSyncSysUpgrade() {
-	com := strings.Split(ps.conf.SysUpgradeCommand, " ")[0]
-	args := strings.Split(ps.conf.SysUpgradeCommand, " ")[1:]
+// issues "Update command"
+func (ps *UI) performUpgrade(aur bool) {
+	utype := ps.conf.SysUpgradeCommand
+	if aur && ps.conf.AurUseDifferentCommands {
+		utype = ps.conf.AurUpgradeCommand
+	}
+
+	com := strings.Split(utype, " ")[0]
+	args := strings.Split(utype, " ")[1:]
 
 	ps.runCommand(com, args)
 }
