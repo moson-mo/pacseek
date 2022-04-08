@@ -32,8 +32,9 @@ var archRepos = []string{"core", "community", "community-testing", "extra", "kde
 
 // UI is holding our application information and all tview components
 type UI struct {
-	conf *config.Settings
-	app  *tview.Application
+	conf  *config.Settings
+	app   *tview.Application
+	shell string
 
 	alpmHandle *alpm.Handle
 
@@ -75,6 +76,13 @@ func New(config *config.Settings) (*UI, error) {
 		searchCache:     cache.New(time.Duration(config.CacheExpiry)*time.Minute, 1*time.Minute),
 	}
 
+	// get users default shell
+	ui.shell = os.Getenv("SHELL")
+	if ui.shell == "" {
+		ui.shell = "/bin/sh" // fallback
+	}
+
+	// get a handle to the pacman DB's
 	var err error
 	ui.alpmHandle, err = initPacmanDbs(config.PacmanDbPath, config.PacmanConfigPath)
 	if err != nil {
@@ -846,18 +854,26 @@ func (ps *UI) installPackage() {
 	source := ps.packages.GetCell(row, 1).Text
 	installed := ps.packages.GetCell(row, 2).Text
 
+	// set command based on source and install status
 	command := ps.conf.InstallCommand
 	if installed == "Y" {
 		command = ps.conf.UninstallCommand
-	} else if source == "AUR" && ps.conf.AurUseDifferentCommands {
+	} else if source == "AUR" && ps.conf.AurUseDifferentCommands && ps.conf.AurInstallCommand != "" {
 		command = ps.conf.AurInstallCommand
 	}
 
-	com := strings.Split(command, " ")[0]
-	args := strings.Split(command, " ")[1:]
-	args = append(args, pkg)
+	// if our command contains {pkg}, replace it with the package name, otherwise concat it
+	if strings.Contains(command, "{pkg}") {
+		command = strings.Replace(command, "{pkg}", pkg, -1)
+	} else {
+		command += " " + pkg
+	}
 
-	ps.runCommand(com, args)
+	// Here I'm assuming -c is the argument for passing a command to the shell
+	// This might not be valid for all of em though.
+	args := []string{"-c", command}
+
+	ps.runCommand(ps.shell, args)
 
 	// update package install status
 	if isInstalled(ps.alpmHandle, pkg) {
@@ -900,15 +916,14 @@ func (ps *UI) runCommand(command string, args []string) {
 
 // issues "Update command"
 func (ps *UI) performUpgrade(aur bool) {
-	utype := ps.conf.SysUpgradeCommand
-	if aur && ps.conf.AurUseDifferentCommands {
-		utype = ps.conf.AurUpgradeCommand
+	command := ps.conf.SysUpgradeCommand
+	if aur && ps.conf.AurUseDifferentCommands && ps.conf.AurUpgradeCommand != "" {
+		command = ps.conf.AurUpgradeCommand
 	}
 
-	com := strings.Split(utype, " ")[0]
-	args := strings.Split(utype, " ")[1:]
+	args := []string{"-c", command}
 
-	ps.runCommand(com, args)
+	ps.runCommand(ps.shell, args)
 }
 
 // checks if a given package is currently selected in the package list
