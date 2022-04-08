@@ -154,14 +154,14 @@ func (ps *UI) setupComponents() {
 		SetBorder(true)
 
 	// layouting
-	ps.root.AddItem(ps.container, 0, 1, true)
-	ps.root.AddItem(ps.status, 0, 0, false)
-	ps.container.AddItem(ps.left, 0, 4, true)
-	ps.container.AddItem(ps.right, 0, 6, false)
-	ps.left.AddItem(ps.topleft, 3, 1, true)
-	ps.topleft.AddItem(ps.search, 0, 1, true)
-	ps.topleft.AddItem(ps.spinner, 3, 1, false)
-	ps.left.AddItem(ps.packages, 0, 1, false)
+	ps.root.AddItem(ps.container, 0, 1, true).
+		AddItem(ps.status, 0, 0, false)
+	ps.container.AddItem(ps.left, 0, 4, true).
+		AddItem(ps.right, 0, 6, false)
+	ps.left.AddItem(ps.topleft, 3, 1, true).
+		AddItem(ps.packages, 0, 1, false)
+	ps.topleft.AddItem(ps.search, 0, 1, true).
+		AddItem(ps.spinner, 3, 1, false)
 	ps.right.AddItem(ps.details, 0, 1, false)
 }
 
@@ -172,21 +172,20 @@ func (ps *UI) setupKeyBindings() {
 		// CTRL+Q - Quit
 		if event.Key() == tcell.KeyCtrlQ {
 			ps.alpmHandle.Release()
-			if ps.settingsChanged {
-				ask := tview.NewModal().
-					AddButtons([]string{"Yes", "No"}).
-					SetText("It seems you've made changes to the settings.\nDo you want to save them?").
-					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-						if buttonIndex == 0 {
-							ps.saveSettings(false)
-						}
-						ps.app.Stop()
-					})
-
-				ps.app.SetRoot(ask, true)
-			} else {
+			if !ps.settingsChanged {
 				ps.app.Stop()
 			}
+			ask := tview.NewModal().
+				AddButtons([]string{"Yes", "No"}).
+				SetText("It seems you've made changes to the settings.\nDo you want to save them?").
+				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+					if buttonIndex == 0 {
+						ps.saveSettings(false)
+					}
+					ps.app.Stop()
+				})
+
+			ps.app.SetRoot(ask, true)
 		}
 		// CTRL+S - Show settings
 		if event.Key() == tcell.KeyCtrlS {
@@ -311,7 +310,7 @@ func (ps *UI) setupSettingsForm() {
 }
 
 // draws input fields on settings form
-func (ps *UI) drawSettingsFields(daur, dcache, ecom bool) {
+func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands bool) {
 	ps.settings.Clear(false)
 	mode := 0
 	if ps.conf.SearchMode != "StartsWith" {
@@ -328,24 +327,24 @@ func (ps *UI) drawSettingsFields(daur, dcache, ecom bool) {
 	}
 
 	// input fields
-	ps.settings.AddCheckbox("Disable AUR: ", daur, func(checked bool) {
+	ps.settings.AddCheckbox("Disable AUR: ", disableAur, func(checked bool) {
 		ps.settingsChanged = true
-		ps.drawSettingsFields(checked, dcache, ecom)
+		ps.drawSettingsFields(checked, disableCache, separateAurCommands)
 		ps.app.SetFocus(ps.settings)
 	})
-	if !daur {
+	if !disableAur {
 		ps.settings.AddInputField("AUR RPC URL: ", ps.conf.AurRpcUrl, 40, nil, sc).
 			AddInputField("AUR timeout (ms): ", strconv.Itoa(ps.conf.AurTimeout), 6, nil, sc).
 			AddInputField("AUR search delay (ms): ", strconv.Itoa(ps.conf.AurSearchDelay), 6, nil, sc)
 	}
-	ps.settings.AddCheckbox("Disable Cache: ", dcache, func(checked bool) {
+	ps.settings.AddCheckbox("Disable Cache: ", disableCache, func(checked bool) {
 		ps.settingsChanged = true
 		i, _ := ps.settings.GetFocusedItemIndex()
-		ps.drawSettingsFields(daur, checked, ecom)
+		ps.drawSettingsFields(disableAur, checked, separateAurCommands)
 		ps.settings.SetFocus(i)
 		ps.app.SetFocus(ps.settings)
 	})
-	if !dcache {
+	if !disableCache {
 		ps.settings.AddInputField("Cache expiry (m): ", strconv.Itoa(ps.conf.CacheExpiry), 6, nil, sc)
 	}
 	ps.settings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, sc).
@@ -367,14 +366,14 @@ func (ps *UI) drawSettingsFields(daur, dcache, ecom bool) {
 	}
 	ps.settings.AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, sc).
 		AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, sc).
-		AddCheckbox("Use separate commands for AUR packages: ", ecom, func(checked bool) {
+		AddCheckbox("Use separate commands for AUR packages: ", separateAurCommands, func(checked bool) {
 			ps.settingsChanged = true
 			i, _ := ps.settings.GetFocusedItemIndex()
-			ps.drawSettingsFields(daur, dcache, checked)
+			ps.drawSettingsFields(disableAur, disableCache, checked)
 			ps.settings.SetFocus(i)
 			ps.app.SetFocus(ps.settings)
 		})
-	if ecom {
+	if separateAurCommands {
 		icom := ps.conf.AurInstallCommand
 		if icom == "" {
 			icom = ps.conf.InstallCommand
