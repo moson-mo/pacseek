@@ -26,7 +26,7 @@ const (
 	aurPackageUrl  = "https://aur.archlinux.org/packages/"
 	packageUrl     = "https://archlinux.org/packages/"
 
-	version = "1.2.0"
+	version = "1.2.1"
 )
 
 var archRepos = []string{"core", "community", "community-testing", "extra", "kde-unstable", "multilib", "multilib-testing", "testing"}
