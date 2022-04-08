@@ -15,6 +15,7 @@ import (
 	"github.com/Jguer/go-alpm/v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/moson-mo/pacseek/internal/config"
+	"github.com/moson-mo/pacseek/internal/util"
 	"github.com/patrickmn/go-cache"
 	"github.com/rivo/tview"
 )
@@ -992,7 +993,7 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 		fields[order[8]] = fmt.Sprintf("%d", i.NumVotes)
 		fields[order[9]] = fmt.Sprintf("%f", i.Popularity)
 		fields[order[11]] = aurPackageUrl + i.Name
-	} else if stringSliceContains(archRepos, i.Source) {
+	} else if util.StringSliceContains(archRepos, i.Source) {
 		fields[order[11]] = packageUrl + i.Source + "/" + i.Architecture + "/" + i.Name
 	}
 	fields[order[10]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
