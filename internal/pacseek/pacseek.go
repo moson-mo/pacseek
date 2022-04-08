@@ -135,7 +135,7 @@ func (ps *UI) setupComponents() {
 		NotSelectable: true,
 		Color:         tcell.ColorYellow,
 	})
-	ps.spinner.SetText("|").
+	ps.spinner.SetText("").
 		SetBorder(true)
 	ps.settings.SetItemPadding(0).
 		SetBorder(true).
@@ -819,28 +819,20 @@ func (ps *UI) saveSettings(defaults bool) {
 
 // starts the spinner
 func (ps *UI) startSpin() {
+	chars := "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
 	go func() {
 		for {
 			select {
 			case <-ps.quitSpin:
 				return
 			default:
-				ms := time.Duration(60)
-				ps.app.QueueUpdateDraw(func() {
-					ps.spinner.SetText("/")
-				})
-				time.Sleep(ms * time.Millisecond)
-				ps.app.QueueUpdateDraw(func() {
-					ps.spinner.SetText("-")
-				})
-				time.Sleep(ms * time.Millisecond)
-				ps.app.QueueUpdateDraw(func() {
-					ps.spinner.SetText("\\")
-				})
-				time.Sleep(ms * time.Millisecond)
-				ps.app.QueueUpdateDraw(func() {
-					ps.spinner.SetText("|")
-				})
+				ms := time.Duration(40)
+				for _, c := range chars {
+					ps.app.QueueUpdateDraw(func() {
+						ps.spinner.SetText(string(c))
+					})
+					time.Sleep(ms * time.Millisecond)
+				}
 			}
 		}
 	}()
