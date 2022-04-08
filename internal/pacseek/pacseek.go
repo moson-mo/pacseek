@@ -22,9 +22,13 @@ import (
 const (
 	colorHighlight = "[#1793d1]"
 	colorTitle     = "[#00dfff]"
+	aurPackageUrl  = "https://aur.archlinux.org/packages/"
+	packageUrl     = "https://archlinux.org/packages/"
 
 	version = "1.2.0"
 )
+
+var archRepos = []string{"core", "community", "community-testing", "extra", "kde-unstable", "multilib", "multilib-testing", "testing"}
 
 // UI is holding our application information and all tview components
 type UI struct {
@@ -503,7 +507,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 	for _, k := range order {
 		//_, _, w, _ := ps.details.GetInnerRect()
 		if v, ok := fields[k]; ok {
-			if ln == 1 || ln == len(fields)-1 {
+			if ln == 1 || k == "Last modified" {
 				r++
 			}
 			// split lines if they do not fit on the screen
@@ -964,6 +968,7 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 		"Votes",
 		"Popularity",
 		"Last modified",
+		"Package URL",
 	}
 
 	fields := map[string]string{}
@@ -979,6 +984,9 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	if i.Source == "AUR" {
 		fields[order[8]] = fmt.Sprintf("%d", i.NumVotes)
 		fields[order[9]] = fmt.Sprintf("%f", i.Popularity)
+		fields[order[11]] = aurPackageUrl + i.Name
+	} else if stringSliceContains(archRepos, i.Source) {
+		fields[order[11]] = packageUrl + i.Source + "/" + i.Architecture + "/" + i.Name
 	}
 	fields[order[10]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
 

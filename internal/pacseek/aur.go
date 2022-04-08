@@ -5,14 +5,14 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	ur "net/url"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
 )
 
 // calls the AUR rpc API (suggest type) and returns found packages (beginning with "term")
-func searchAur(url, term string, timeout int, mode string, by string, maxResults int) ([]Package, error) {
+func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResults int) ([]Package, error) {
 	packages := []Package{}
 	client := http.Client{
 		Timeout: time.Millisecond * time.Duration(timeout),
@@ -25,7 +25,7 @@ func searchAur(url, term string, timeout int, mode string, by string, maxResults
 		t = "search"
 	}
 
-	r, err := client.Get(url + "?v=5&type=" + t + "&arg=" + term)
+	r, err := client.Get(aurUrl + "?v=5&type=" + t + "&arg=" + term)
 	if err != nil {
 		return packages, err
 	}
@@ -87,7 +87,7 @@ func searchAur(url, term string, timeout int, mode string, by string, maxResults
 }
 
 // calls the AUR rpc API (info type) and returns package information
-func infoAur(url string, pkg []string, timeout int) RpcResult {
+func infoAur(aurUrl string, pkg []string, timeout int) RpcResult {
 	client := http.Client{
 		Timeout: time.Millisecond * time.Duration(timeout),
 	}
@@ -95,13 +95,13 @@ func infoAur(url string, pkg []string, timeout int) RpcResult {
 	var r *http.Response
 	var err error
 
-	data := ur.Values{}
+	data := url.Values{}
 	data.Add("v", "5")
 	data.Add("type", "info")
 	for _, p := range pkg {
 		data.Add("arg[]", p)
 	}
-	r, err = client.Post(url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+	r, err = client.Post(aurUrl, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
 	if err != nil {
 		return RpcResult{Error: err.Error()}
 	}

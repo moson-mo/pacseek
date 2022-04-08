@@ -137,6 +137,7 @@ func infoPacman(h *alpm.Handle, pkgs []string) RpcResult {
 				URL:          p.URL(),
 				LastModified: int(p.BuildDate().UTC().Unix()),
 				Source:       db.Name(),
+				Architecture: p.Architecture(),
 			}
 
 			r.Results = append(r.Results, i)

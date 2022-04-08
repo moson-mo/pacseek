@@ -97,28 +97,29 @@ func Load() (*Settings, error) {
 // fix settings in case of version upgrades (e.g. new config options that have to be set)
 func (s *Settings) applyUpgradeFixes() {
 	fixApplied := false
+	def := Defaults()
 
 	// search mode: added with 0.1.2
 	if s.SearchMode == "" {
-		s.SearchMode = Defaults().SearchMode
+		s.SearchMode = def.SearchMode
 		fixApplied = true
 	}
 
 	// sysupgrade command: added with 0.2.4
 	if s.SysUpgradeCommand == "" {
-		s.SysUpgradeCommand = Defaults().SysUpgradeCommand
+		s.SysUpgradeCommand = def.SysUpgradeCommand
 		fixApplied = true
 	}
 
 	// search by: added with 0.2.7
 	if s.SearchBy == "" {
-		s.SearchBy = Defaults().SearchBy
+		s.SearchBy = def.SearchBy
 		fixApplied = true
 	}
 
 	// cache expiry: added with 1.1.0
 	if s.CacheExpiry == 0 {
-		s.CacheExpiry = Defaults().CacheExpiry
+		s.CacheExpiry = def.CacheExpiry
 		fixApplied = true
 	}
 
