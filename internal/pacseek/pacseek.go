@@ -366,7 +366,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 	}
 	ps.settings.AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, sc).
 		AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, sc).
-		AddCheckbox("Use separate commands for AUR packages: ", separateAurCommands, func(checked bool) {
+		AddCheckbox("Separate AUR commands: ", separateAurCommands, func(checked bool) {
 			ps.settingsChanged = true
 			i, _ := ps.settings.GetFocusedItemIndex()
 			ps.drawSettingsFields(disableAur, disableCache, checked)
@@ -803,7 +803,7 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.DisableAur = cb.IsChecked()
 			case "Disable Cache: ":
 				ps.conf.DisableCache = cb.IsChecked()
-			case "Use separate commands for AUR packages: ":
+			case "Separate AUR commands: ":
 				ps.conf.AurUseDifferentCommands = cb.IsChecked()
 			}
 		}
