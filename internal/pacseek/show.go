@@ -198,7 +198,8 @@ func (ps *UI) showHelp() {
 		SetCellSimple(4, 0, "CTRL+H: Show these instructions").
 		SetCellSimple(5, 0, "CTRL+U: Perform sysupgrade").
 		SetCellSimple(6, 0, "CTRL+A: Perform AUR upgrade (if configured)").
-		SetCellSimple(8, 0, "CTRL+Q: Quit")
+		SetCellSimple(7, 0, "CTRL+W: Wipe cache").
+		SetCellSimple(9, 0, "CTRL+Q: Quit")
 }
 
 // show about text

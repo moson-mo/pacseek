@@ -124,6 +124,13 @@ func (ps *UI) setupKeyBindings() {
 			ps.showAbout()
 			return nil
 		}
+
+		// CTRL+W - Wipe cache
+		if event.Key() == tcell.KeyCtrlW {
+			ps.searchCache.Flush()
+			ps.infoCache.Flush()
+			return nil
+		}
 		return event
 	})
 
