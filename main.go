@@ -24,7 +24,6 @@ Usage / Navigation instructions are displayed
 when you start pacseek (without arguments)
 
 Please visit the wiki for further information:
-(well, working on it...)
 
 https://github.com/moson-mo/pacseek/wiki
 
