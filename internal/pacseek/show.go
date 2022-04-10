@@ -11,8 +11,6 @@ import (
 func (ps *UI) showPackages(text string) {
 	go func() {
 		ps.locker.Lock()
-		ps.startSpin()
-		defer ps.stopSpin()
 		defer ps.locker.Unlock()
 		defer ps.app.QueueUpdate(func() { ps.showPackageInfo(1, 0) })
 
@@ -20,6 +18,9 @@ func (ps *UI) showPackages(text string) {
 		packagesCache, foundCache := ps.searchCache.Get(text)
 
 		if !foundCache {
+			ps.startSpin()
+			defer ps.stopSpin()
+
 			var err error
 			packages, err = searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
 			if err != nil {
