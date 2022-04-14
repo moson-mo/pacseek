@@ -55,10 +55,11 @@ func (ps *UI) setupComponents() {
 		SetBorder(true)
 
 	// layouting
+	ps.leftProportion = 4
 	ps.root.AddItem(ps.container, 0, 1, true).
 		AddItem(ps.status, 0, 0, false)
-	ps.container.AddItem(ps.left, 0, 4, true).
-		AddItem(ps.right, 0, 6, false)
+	ps.container.AddItem(ps.left, 0, ps.leftProportion, true).
+		AddItem(ps.right, 0, 10-ps.leftProportion, false)
 	ps.left.AddItem(ps.topleft, 3, 1, true).
 		AddItem(ps.packages, 0, 1, false)
 	ps.topleft.AddItem(ps.search, 0, 1, true).
@@ -68,6 +69,15 @@ func (ps *UI) setupComponents() {
 
 // set up handlers for keyboard bindings
 func (ps *UI) setupKeyBindings() {
+	// resize function is called when resize keys are used
+	resize := func() {
+		ps.container.ResizeItem(ps.left, 0, ps.leftProportion)
+		ps.container.ResizeItem(ps.right, 0, 10-ps.leftProportion)
+		if ps.selectedPackage != nil {
+			ps.drawPackageInfo(*ps.selectedPackage, ps.width)
+		}
+	}
+
 	// app / global
 	ps.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// CTRL+Q - Quit
@@ -129,6 +139,22 @@ func (ps *UI) setupKeyBindings() {
 		if event.Key() == tcell.KeyCtrlW {
 			ps.searchCache.Flush()
 			ps.infoCache.Flush()
+			return nil
+		}
+		// Shift+Left - decrease size of left container
+		if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModShift {
+			if ps.leftProportion != 1 {
+				ps.leftProportion--
+				resize()
+			}
+			return nil
+		}
+		// Shift+Right - increase size of left container
+		if event.Key() == tcell.KeyRight && event.Modifiers() == tcell.ModShift {
+			if ps.leftProportion != 9 {
+				ps.leftProportion++
+				resize()
+			}
 			return nil
 		}
 		return event

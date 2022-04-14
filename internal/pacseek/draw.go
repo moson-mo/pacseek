@@ -156,7 +156,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 				r++
 			}
 			// split lines if they do not fit on the screen
-			w := width - (int(float64(width)*0.4) + 21) // left box = 40% size, then we use 13 characters for column 0, 2 for padding and 6 for borders
+			w := width - (int(float64(width)*(float64(ps.leftProportion)/10)) + 21) // left box = 40% size, then we use 13 characters for column 0, 2 for padding and 6 for borders
 			lines := tview.WordWrap(v, w)
 			mr := r
 			ps.details.SetCellSimple(r, 0, colorHighlight+"[::b]"+k)

@@ -49,6 +49,7 @@ type UI struct {
 
 	quitSpin        chan bool
 	width           int
+	leftProportion  int
 	selectedPackage *InfoRecord
 	settingsChanged bool
 	infoCache       *cache.Cache
