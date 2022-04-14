@@ -193,8 +193,9 @@ func (ps *UI) drawPackages(packages []Package) {
 
 		ps.packages.SetCellSimple(i+1, 0, pkg.Name)
 		ps.packages.SetCell(i+1, 1, &tview.TableCell{
-			Text:  pkg.Source,
-			Color: color,
+			Text:            pkg.Source,
+			Color:           color,
+			BackgroundColor: tcell.ColorBlack,
 		})
 		ps.packages.SetCell(i+1, 2, &tview.TableCell{
 			Text:            installed,
@@ -208,21 +209,15 @@ func (ps *UI) drawPackages(packages []Package) {
 
 // adds header row to package table
 func (ps *UI) drawPackagesHeader() {
-	ps.packages.SetCell(0, 0, &tview.TableCell{
-		Text:          "Package",
-		NotSelectable: true,
-		Color:         tcell.ColorYellow,
-	})
-	ps.packages.SetCell(0, 1, &tview.TableCell{
-		Text:          "Source",
-		NotSelectable: true,
-		Color:         tcell.ColorYellow,
-	})
-	ps.packages.SetCell(0, 2, &tview.TableCell{
-		Text:          "Installed",
-		NotSelectable: true,
-		Color:         tcell.ColorYellow,
-	})
+	columns := []string{"Package", "Source", "Installed"}
+	for i, col := range columns {
+		ps.packages.SetCell(0, i, &tview.TableCell{
+			Text:            col,
+			NotSelectable:   true,
+			Color:           tcell.ColorYellow,
+			BackgroundColor: tcell.ColorBlack,
+		})
+	}
 }
 
 // composes a map with fields and values (package information) for our details box

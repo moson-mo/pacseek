@@ -41,9 +41,10 @@ func (ps *UI) setupComponents() {
 		SetBorder(true).
 		SetTitleAlign(tview.AlignLeft)
 	ps.packages.SetCell(0, 0, &tview.TableCell{
-		Text:          "Package - Source - Installed",
-		NotSelectable: true,
-		Color:         tcell.ColorYellow,
+		Text:            "Package - Source - Installed",
+		NotSelectable:   true,
+		Color:           tcell.ColorYellow,
+		BackgroundColor: tcell.ColorBlack,
 	})
 	ps.spinner.SetText("").
 		SetBorder(true)
