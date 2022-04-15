@@ -32,7 +32,7 @@ $ go build .
 $ ./pacseek
 ```
 
-Binaries are available on the [Releases](releases/) page.  
+Binaries are available on the [Releases](https://github.com/moson-mo/pacseek/releases/) page.  
 Also an [AUR package](https://aur.archlinux.org/packages/pacseek/) is available.
 
 #### Navigation / Usage
@@ -45,7 +45,7 @@ To install/remove a package, press ENTER.
 
 The settings form can be opened with CTRL+S.  
 
-More detailed information can be found in the [Wiki](wiki/)
+More detailed information can be found in the [Wiki](https://github.com/moson-mo/pacseek/wiki/)
 
 
 #### ToDo's
