@@ -281,3 +281,31 @@ func getDependenciesJoined(i InfoRecord) string {
 	deps += odeps
 	return deps
 }
+
+// updates the "install state" of all packages in cache and package list
+func (ps *UI) updateInstalledState() {
+	// update cached packages
+	sterm := ps.search.GetText()
+	cpkg, exp, found := ps.searchCache.GetWithExpiration(sterm)
+	scpkg := cpkg.([]Package)
+	if found {
+		for i := 0; i < len(scpkg); i++ {
+			scpkg[i].IsInstalled = isInstalled(ps.alpmHandle, scpkg[i].Name)
+		}
+		ps.searchCache.Set(sterm, scpkg, exp.Sub(time.Now()))
+	}
+
+	// update currently shown packages
+	for i := 1; i < ps.packages.GetRowCount(); i++ {
+		newCell := &tview.TableCell{
+			Text:            "-",
+			Expansion:       1000,
+			Color:           tcell.ColorWhite,
+			BackgroundColor: tcell.ColorBlack,
+		}
+		if isInstalled(ps.alpmHandle, ps.packages.GetCell(i, 0).Text) {
+			newCell.Text = "Y"
+		}
+		ps.packages.SetCell(i, 2, newCell)
+	}
+}

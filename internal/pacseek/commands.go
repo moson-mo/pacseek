@@ -37,11 +37,7 @@ func (ps *UI) installPackage() {
 	ps.runCommand(ps.shell, args)
 
 	// update package install status
-	if isInstalled(ps.alpmHandle, pkg) {
-		ps.packages.SetCellSimple(row, 2, "Y")
-	} else {
-		ps.packages.SetCellSimple(row, 2, "-")
-	}
+	ps.updateInstalledState()
 }
 
 // issues "Update command"
