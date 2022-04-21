@@ -287,8 +287,8 @@ func (ps *UI) updateInstalledState() {
 	// update cached packages
 	sterm := ps.search.GetText()
 	cpkg, exp, found := ps.searchCache.GetWithExpiration(sterm)
-	scpkg := cpkg.([]Package)
 	if found {
+		scpkg := cpkg.([]Package)
 		for i := 0; i < len(scpkg); i++ {
 			scpkg[i].IsInstalled = isInstalled(ps.alpmHandle, scpkg[i].Name)
 		}
