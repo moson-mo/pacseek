@@ -30,7 +30,7 @@ func initPacmanDbs(dbPath, confPath string) (*alpm.Handle, error) {
 }
 
 // searches the pacman databases and returns packages that could be found (starting with "term")
-func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults int) ([]Package, error) {
+func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults int, localOnly bool) ([]Package, error) {
 	packages := []Package{}
 	if h == nil {
 		return packages, errors.New("alpm handle is nil")
@@ -44,13 +44,17 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 		return packages, err
 	}
 
+	searchDbs := dbs.Slice()
+	if localOnly {
+		searchDbs = []alpm.IDB{local}
+	}
+
 	counter := 0
-	for _, db := range dbs.Slice() {
+	for _, db := range searchDbs {
 		for _, pkg := range db.PkgCache().Slice() {
 			if counter >= maxResults {
 				break
 			}
-
 			compFunc := strings.HasPrefix
 			if mode == "Contains" {
 				compFunc = strings.Contains
@@ -101,8 +105,15 @@ func infoPacman(h *alpm.Handle, pkgs []string) RpcResult {
 		return r
 	}
 
-	for _, db := range dbs.Slice() {
-		for _, pkg := range pkgs {
+	local, err := h.LocalDB()
+	if err != nil {
+		r.Error = err.Error()
+		return r
+	}
+	dbslice := append(dbs.Slice(), local)
+
+	for _, pkg := range pkgs {
+		for _, db := range dbslice {
 			p := db.Pkg(pkg)
 			if p == nil {
 				continue
@@ -138,6 +149,9 @@ func infoPacman(h *alpm.Handle, pkgs []string) RpcResult {
 				LastModified: int(p.BuildDate().UTC().Unix()),
 				Source:       db.Name(),
 				Architecture: p.Architecture(),
+			}
+			if db.Name() == "local" {
+				i.Description = p.Description() + "\n[red]* Package not found in repositories/AUR *"
 			}
 
 			r.Results = append(r.Results, i)

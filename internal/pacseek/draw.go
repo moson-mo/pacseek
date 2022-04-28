@@ -150,8 +150,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 
 	fields, order := getDetailFields(i)
 	for _, k := range order {
-		//_, _, w, _ := ps.details.GetInnerRect()
-		if v, ok := fields[k]; ok {
+		if v, ok := fields[k]; ok && v != "" {
 			if ln == 1 || k == "Last modified" {
 				r++
 			}
@@ -244,7 +243,6 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	fields[order[3]] = strings.Join(i.Conflicts, ", ")
 	fields[order[4]] = strings.Join(i.License, ", ")
 	fields[order[5]] = i.Maintainer
-
 	fields[order[6]] = getDependenciesJoined(i)
 	fields[order[7]] = i.URL
 	if i.Source == "AUR" {
@@ -254,7 +252,9 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	} else if util.StringSliceContains(archRepos, i.Source) {
 		fields[order[11]] = packageUrl + i.Source + "/" + i.Architecture + "/" + i.Name
 	}
-	fields[order[10]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
+	if i.LastModified != 0 {
+		fields[order[10]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
+	}
 
 	return fields, order
 }

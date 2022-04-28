@@ -22,7 +22,13 @@ func (ps *UI) showPackages(text string) {
 			defer ps.stopSpin()
 
 			var err error
-			packages, err = searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
+			packages, err = searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults, false)
+			if err != nil {
+				ps.app.QueueUpdateDraw(func() {
+					ps.showMessage(err.Error(), true)
+				})
+			}
+			localPackages, err := searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults, true)
 			if err != nil {
 				ps.app.QueueUpdateDraw(func() {
 					ps.showMessage(err.Error(), true)
@@ -41,6 +47,18 @@ func (ps *UI) showPackages(text string) {
 				}
 
 				packages = append(packages, aurPackages...)
+			}
+			for _, lpkg := range localPackages {
+				found := false
+				for _, pkg := range packages {
+					if pkg.Name == lpkg.Name {
+						found = true
+						break
+					}
+				}
+				if !found {
+					packages = append(packages, lpkg)
+				}
 			}
 
 			sort.Slice(packages, func(i, j int) bool {
@@ -158,7 +176,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 					errorMsg = info.Error
 				}
 				ps.details.SetTitle(" [red]Error ")
-				ps.details.SetCellSimple(0, 0, "[red]s"+errorMsg)
+				ps.details.SetCellSimple(0, 0, "[red]"+errorMsg)
 				return
 			}
 			ps.selectedPackage = &info.Results[0]

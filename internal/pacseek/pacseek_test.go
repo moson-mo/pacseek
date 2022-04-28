@@ -48,19 +48,19 @@ func (suite *pacseekTestSuite) TestSearchPacmanDbs() {
 	suite.Nil(err, err)
 
 	// ok
-	p, err := searchRepos(h, "glibc", "StartsWith", "Name", 1)
+	p, err := searchRepos(h, "glibc", "StartsWith", "Name", 1, false)
 	suite.Nil(err, err)
 	suite.Equal(suite.ExpectedPackages, p, "Package not found")
-	p, err = searchRepos(h, "glibc", "StartsWith", "Name & Description", 1)
+	p, err = searchRepos(h, "glibc", "StartsWith", "Name & Description", 1, false)
 	suite.Nil(err, err)
 	suite.Equal(suite.ExpectedPackages, p, "Package not found")
 
 	// nok
-	p, err = searchRepos(h, "nonsense_nonsense", "StartsWith", "Name", 1)
+	p, err = searchRepos(h, "nonsense_nonsense", "StartsWith", "Name", 1, false)
 	suite.Nil(err, err)
 	suite.Equal([]Package{}, p, "[]Packages not empty")
 
-	p, err = searchRepos(nil, "nonsense_nonsense", "StartsWith", "Name", 1)
+	p, err = searchRepos(nil, "nonsense_nonsense", "StartsWith", "Name", 1, false)
 	suite.NotNil(err, err)
 	suite.Equal([]Package{}, p, "[]Packages not empty")
 }
@@ -73,7 +73,7 @@ func (suite *pacseekTestSuite) TestInfoPacmanDbs() {
 	// ok
 	p := infoPacman(h, []string{"glibc"})
 	suite.Equal("", p.Error, "error not empty")
-	suite.Equal(1, len(p.Results), "Results not 1")
+	suite.Equal(2, len(p.Results), "Results not 2")
 	suite.Equal("glibc", p.Results[0].Name, "Name not glibc")
 
 	// nok
