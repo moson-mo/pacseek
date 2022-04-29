@@ -153,8 +153,8 @@ func infoPacman(h *alpm.Handle, pkgs []string) RpcResult {
 			if db.Name() == "local" {
 				i.Description = p.Description() + "\n[red]* Package not found in repositories/AUR *"
 			}
-
 			r.Results = append(r.Results, i)
+			break
 		}
 	}
 	return r
