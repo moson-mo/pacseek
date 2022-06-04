@@ -2,6 +2,7 @@ package pacseek
 
 import (
 	"fmt"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -163,7 +164,18 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 				if mr != r {
 					ps.details.SetCellSimple(r, 0, "") // we need to add some blank content otherwise it looks weird with some terminal configs
 				}
-				ps.details.SetCellSimple(r, 1, l)
+				cell := &tview.TableCell{
+					Text:            l,
+					Color:           tcell.ColorWhite,
+					BackgroundColor: tcell.ColorBlack,
+				}
+				if strings.Contains(k, "URL") {
+					cell.SetClickedFunc(func() bool {
+						exec.Command("xdg-open", v).Run()
+						return true
+					})
+				}
+				ps.details.SetCell(r, 1, cell)
 				r++
 			}
 			ln++
