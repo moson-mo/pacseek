@@ -1,5 +1,5 @@
-[![pacseek](https://img.shields.io/static/v1?label=pacseek&message=v1.3.1-1&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek/)
-[![pacseek-bin](https://img.shields.io/static/v1?label=pacseek-bin&message=v1.3.1-1&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek-bin/)
+[![pacseek](https://img.shields.io/static/v1?label=pacseek&message=v1.3.2-1&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek/)
+[![pacseek-bin](https://img.shields.io/static/v1?label=pacseek-bin&message=v1.3.2-1&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek-bin/)
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/moson-mo/pacseek/Build)](https://github.com/moson-mo/pacseek/actions) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/moson-mo/pacseek)](https://goreportcard.com/report/github.com/moson-mo/pacseek)
