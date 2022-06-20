@@ -51,23 +51,17 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 		ps.settings.AddInputField("Cache expiry (m): ", strconv.Itoa(ps.conf.CacheExpiry), 6, nil, sc)
 	}
 	ps.settings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, sc).
-		AddDropDown("Search mode: ", []string{"StartsWith", "Contains"}, mode, nil)
-	if dd, ok := ps.settings.GetFormItemByLabel("Search mode: ").(*tview.DropDown); ok {
-		dd.SetSelectedFunc(func(text string, index int) {
+		AddDropDown("Search mode: ", []string{"StartsWith", "Contains"}, mode, func(text string, index int) {
 			if text != ps.conf.SearchMode {
 				ps.settingsChanged = true
 			}
-		})
-	}
-	ps.settings.AddDropDown("Search by: ", []string{"Name", "Name & Description"}, by, nil)
-	if dd, ok := ps.settings.GetFormItemByLabel("Search by: ").(*tview.DropDown); ok {
-		dd.SetSelectedFunc(func(text string, index int) {
+		}).
+		AddDropDown("Search by: ", []string{"Name", "Name & Description"}, by, func(text string, index int) {
 			if text != ps.conf.SearchBy {
 				ps.settingsChanged = true
 			}
-		})
-	}
-	ps.settings.AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, sc).
+		}).
+		AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, sc).
 		AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, sc).
 		AddCheckbox("Separate AUR commands: ", separateAurCommands, func(checked bool) {
 			ps.settingsChanged = true
