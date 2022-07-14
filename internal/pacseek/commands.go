@@ -106,7 +106,7 @@ func (ps *UI) reinitPacmanDbs() error {
 	if err != nil {
 		return err
 	}
-	ps.alpmHandle, err = initPacmanDbs(ps.conf.PacmanDbPath, ps.conf.PacmanConfigPath)
+	ps.alpmHandle, err = initPacmanDbs(ps.conf.PacmanDbPath, ps.conf.PacmanConfigPath, ps.repos)
 	if err != nil {
 		return err
 	}

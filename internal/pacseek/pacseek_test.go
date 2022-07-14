@@ -28,22 +28,22 @@ func TestRunTestSuite(t *testing.T) {
 
 func (suite *pacseekTestSuite) TestInitPacmanDbs() {
 	// ok
-	h, err := initPacmanDbs("/var/lib/pacman", "/etc/pacman.conf")
+	h, err := initPacmanDbs("/var/lib/pacman", "/etc/pacman.conf", []string{})
 	suite.NotNil(h, err)
 	suite.Nil(err, err)
 
 	// nok
-	h, err = initPacmanDbs("/var/lib/pacman", "nonsense")
+	h, err = initPacmanDbs("/var/lib/pacman", "nonsense", []string{})
 	suite.Nil(h)
 	suite.NotNil(err)
 
-	h, err = initPacmanDbs("nonsense", "/etc/pacman.conf")
+	h, err = initPacmanDbs("nonsense", "/etc/pacman.conf", []string{})
 	suite.Nil(h)
 	suite.NotNil(err)
 }
 
 func (suite *pacseekTestSuite) TestSearchPacmanDbs() {
-	h, err := initPacmanDbs("/var/lib/pacman", "/etc/pacman.conf")
+	h, err := initPacmanDbs("/var/lib/pacman", "/etc/pacman.conf", []string{})
 	suite.NotNil(h, err)
 	suite.Nil(err, err)
 
@@ -66,7 +66,7 @@ func (suite *pacseekTestSuite) TestSearchPacmanDbs() {
 }
 
 func (suite *pacseekTestSuite) TestInfoPacmanDbs() {
-	h, err := initPacmanDbs("/var/lib/pacman", "/etc/pacman.conf")
+	h, err := initPacmanDbs("/var/lib/pacman", "/etc/pacman.conf", []string{})
 	suite.NotNil(h, err)
 	suite.Nil(err, err)
 
@@ -83,7 +83,7 @@ func (suite *pacseekTestSuite) TestInfoPacmanDbs() {
 }
 
 func (suite *pacseekTestSuite) TestIsInstalled() {
-	h, err := initPacmanDbs("/var/lib/pacman", "/etc/pacman.conf")
+	h, err := initPacmanDbs("/var/lib/pacman", "/etc/pacman.conf", []string{})
 	suite.NotNil(h, err)
 	suite.Nil(err, err)
 

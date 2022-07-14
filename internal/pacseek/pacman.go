@@ -6,10 +6,11 @@ import (
 
 	"github.com/Jguer/go-alpm/v2"
 	pconf "github.com/Morganamilo/go-pacmanconf"
+	"github.com/moson-mo/pacseek/internal/util"
 )
 
 // creates the alpm handler used to search packages
-func initPacmanDbs(dbPath, confPath string) (*alpm.Handle, error) {
+func initPacmanDbs(dbPath, confPath string, repos []string) (*alpm.Handle, error) {
 	h, err := alpm.Initialize("/", dbPath)
 	if err != nil {
 		return nil, err
@@ -21,9 +22,11 @@ func initPacmanDbs(dbPath, confPath string) (*alpm.Handle, error) {
 	}
 
 	for _, repo := range conf.Repos {
-		_, err := h.RegisterSyncDB(repo.Name, 0)
-		if err != nil {
-			return nil, err
+		if (len(repos) > 0 && util.StringSliceContains(repos, repo.Name)) || len(repos) == 0 {
+			_, err := h.RegisterSyncDB(repo.Name, 0)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return h, nil

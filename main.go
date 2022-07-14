@@ -1,9 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
-	"os/user"
+	"strings"
 
 	"github.com/moson-mo/pacseek/internal/config"
 	"github.com/moson-mo/pacseek/internal/pacseek"
@@ -13,15 +14,30 @@ import (
 var helpArgs = []string{"-h", "--h", "-help", "--help", "-?", "--?"}
 
 const helpText = `
+Usage: pacseek [OPTION]
+	-r 	Limit searching to a comma separated list of repositories
+	-s	Search term
 
-For the moment, there is only one argument
-that you can pass to pacseek: a search term
+Examples:
 
-For example "pacseek pacseek" will trigger an
-immediate search for, you guessed it, "pacseek" :)
+pacseek -r core -s linux
+-> Searches for "linux" in the "core" repository
 
-Usage / Navigation instructions are displayed
-when you start pacseek (without arguments)
+pacseek -r core,extra -s linux
+-> Searches for "linux" in the "core" and "extra" repository
+
+pacseek -r core,extra
+-> Does not start an immediate search,
+   but limits searching to "core" and "extra" repositories
+
+Alternatively you can use "pacseek [SEARCH_TERM]":
+pacseek pacseek
+-> Searches for "pacseek" in all repositories
+
+----------------------------------------------------------------
+
+UI usage / navigation instructions are displayed
+when you start pacseek (without specifying a search term)
 
 Please visit the wiki for further information:
 
@@ -34,13 +50,24 @@ func main() {
 		fmt.Println("pacseek should not be run as root.")
 	}
 	term := ""
-	if len(os.Args) > 1 {
+	repos := []string{}
+	if len(os.Args) == 2 && !util.StringSliceContains(helpArgs, os.Args[1]) {
 		term = os.Args[1]
-		if util.StringSliceContains(helpArgs, term) {
-			printHelp()
-			os.Exit(0)
+	} else if len(os.Args) > 1 && util.StringSliceContains(helpArgs, os.Args[1]) {
+		printHelp()
+		os.Exit(0)
+	} else if len(os.Args) > 2 {
+		r := flag.String("r", "", "Comma separated list of repositories")
+		s := flag.String("s", "", "Search term")
+		flag.Usage = printHelp
+		flag.Parse()
+
+		term = *s
+		if *r != "" {
+			repos = strings.Split(*r, ",")
 		}
 	}
+
 	conf, err := config.Load()
 	if err != nil {
 		if os.IsNotExist(err) && conf != nil {
@@ -52,7 +79,7 @@ func main() {
 			printErrorExit("Error loading configuration file", err)
 		}
 	}
-	ps, err := pacseek.New(conf)
+	ps, err := pacseek.New(conf, repos)
 	if err != nil {
 		printErrorExit("Error during pacseek initialization", err)
 	}
@@ -67,12 +94,5 @@ func printErrorExit(message string, err error) {
 }
 
 func printHelp() {
-	var name string
-	usr, err := user.Current()
-	if err != nil {
-		name = "my friend"
-	} else {
-		name = usr.Username
-	}
-	fmt.Printf("Hello %s,%s", name, helpText)
+	fmt.Printf("%s", helpText)
 }

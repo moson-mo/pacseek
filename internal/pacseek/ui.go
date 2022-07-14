@@ -54,10 +54,11 @@ type UI struct {
 	settingsChanged bool
 	infoCache       *cache.Cache
 	searchCache     *cache.Cache
+	repos           []string
 }
 
 // New creates a UI object and makes sure everything is initialized
-func New(config *config.Settings) (*UI, error) {
+func New(config *config.Settings, repos []string) (*UI, error) {
 	ui := UI{
 		conf:            config,
 		app:             tview.NewApplication(),
@@ -67,6 +68,7 @@ func New(config *config.Settings) (*UI, error) {
 		settingsChanged: false,
 		infoCache:       cache.New(time.Duration(config.CacheExpiry)*time.Minute, 1*time.Minute),
 		searchCache:     cache.New(time.Duration(config.CacheExpiry)*time.Minute, 1*time.Minute),
+		repos:           repos,
 	}
 
 	// get users default shell
@@ -74,7 +76,7 @@ func New(config *config.Settings) (*UI, error) {
 
 	// get a handle to the pacman DB's
 	var err error
-	ui.alpmHandle, err = initPacmanDbs(config.PacmanDbPath, config.PacmanConfigPath)
+	ui.alpmHandle, err = initPacmanDbs(config.PacmanDbPath, config.PacmanConfigPath, repos)
 	if err != nil {
 		return nil, err
 	}
