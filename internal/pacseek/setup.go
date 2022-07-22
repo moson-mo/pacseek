@@ -74,14 +74,14 @@ func (ps *UI) setASCIIMode() {
 	tview.Borders.HorizontalFocus = '-'
 	tview.Borders.Vertical = '|'
 	tview.Borders.VerticalFocus = '|'
-	tview.Borders.BottomLeft = '|'
-	tview.Borders.BottomLeftFocus = '|'
-	tview.Borders.BottomRight = '|'
-	tview.Borders.BottomRightFocus = '|'
-	tview.Borders.TopLeft = '|'
-	tview.Borders.TopLeftFocus = '|'
-	tview.Borders.TopRight = '|'
-	tview.Borders.TopRightFocus = '|'
+	tview.Borders.BottomLeft = '+'
+	tview.Borders.BottomLeftFocus = '+'
+	tview.Borders.BottomRight = '+'
+	tview.Borders.BottomRightFocus = '+'
+	tview.Borders.TopLeft = '+'
+	tview.Borders.TopLeftFocus = '+'
+	tview.Borders.TopRight = '+'
+	tview.Borders.TopRightFocus = '+'
 
 	ps.spinner.SetBorder(false).
 		SetBorderPadding(1, 1, 1, 1)
