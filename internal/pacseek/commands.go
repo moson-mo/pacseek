@@ -79,7 +79,6 @@ func (ps *UI) runCommand(command string, args []string) {
 	err := ps.reinitPacmanDbs()
 	if err != nil {
 		ps.showMessage(err.Error(), true)
-		return
 	}
 }
 

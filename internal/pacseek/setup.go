@@ -100,8 +100,10 @@ func (ps *UI) setupKeyBindings() {
 
 	// app / global
 	ps.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		settingsVisible := ps.right.GetItem(0) == ps.settings
 		// CTRL+Q - Quit
-		if event.Key() == tcell.KeyCtrlQ {
+		if event.Key() == tcell.KeyCtrlQ ||
+			(event.Key() == tcell.KeyEscape && !settingsVisible) {
 			ps.alpmHandle.Release()
 			if !ps.settingsChanged {
 				ps.app.Stop()
@@ -119,14 +121,19 @@ func (ps *UI) setupKeyBindings() {
 			ps.app.SetRoot(ask, true)
 		}
 		// CTRL+S - Show settings
-		if event.Key() == tcell.KeyCtrlS {
-			if ps.right.GetItem(0) != ps.settings {
+		if event.Key() == tcell.KeyCtrlS ||
+			(event.Key() == tcell.KeyEscape && settingsVisible) {
+			if !settingsVisible {
 				ps.right.Clear()
 				ps.right.AddItem(ps.settings, 0, 1, false)
 			} else {
 				ps.right.Clear()
 				ps.right.AddItem(ps.details, 0, 1, false)
 				ps.app.SetFocus(ps.search)
+				if event.Key() == tcell.KeyEscape {
+					ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands)
+					ps.settingsChanged = false
+				}
 			}
 			return nil
 		}
