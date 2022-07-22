@@ -8,7 +8,6 @@ import (
 
 	"github.com/moson-mo/pacseek/internal/config"
 	"github.com/moson-mo/pacseek/internal/pacseek"
-	"github.com/moson-mo/pacseek/internal/util"
 )
 
 var helpArgs = []string{"-h", "--h", "-help", "--help", "-?", "--?"}
@@ -17,6 +16,7 @@ const helpText = `
 Usage: pacseek [OPTION]
 	-r 	Limit searching to a comma separated list of repositories
 	-s	Search term
+	-i	ASCII mode
 
 Examples:
 
@@ -51,21 +51,20 @@ func main() {
 	}
 	term := ""
 	repos := []string{}
-	if len(os.Args) == 2 && !util.StringSliceContains(helpArgs, os.Args[1]) {
-		term = os.Args[1]
-	} else if len(os.Args) > 1 && util.StringSliceContains(helpArgs, os.Args[1]) {
-		printHelp()
-		os.Exit(0)
-	} else if len(os.Args) > 2 {
-		r := flag.String("r", "", "Comma separated list of repositories")
-		s := flag.String("s", "", "Search term")
-		flag.Usage = printHelp
-		flag.Parse()
+	asciiMode := false
 
-		term = *s
-		if *r != "" {
-			repos = strings.Split(*r, ",")
-		}
+	r := flag.String("r", "", "Comma separated list of repositories")
+	flag.StringVar(&term, "s", "", "Search term")
+	flag.BoolVar(&asciiMode, "i", false, "ASCII mode")
+	flag.Usage = printHelp
+	flag.Parse()
+
+	if *r != "" {
+		repos = strings.Split(*r, ",")
+	}
+
+	if len(os.Args) == 2 && !strings.HasPrefix(os.Args[1], "-") {
+		term = os.Args[1]
 	}
 
 	conf, err := config.Load()
@@ -79,7 +78,7 @@ func main() {
 			printErrorExit("Error loading configuration file", err)
 		}
 	}
-	ps, err := pacseek.New(conf, repos)
+	ps, err := pacseek.New(conf, repos, asciiMode)
 	if err != nil {
 		printErrorExit("Error during pacseek initialization", err)
 	}

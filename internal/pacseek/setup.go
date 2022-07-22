@@ -68,6 +68,25 @@ func (ps *UI) setupComponents() {
 	ps.right.AddItem(ps.details, 0, 1, false)
 }
 
+// replace border characters for ASCII mode
+func (ps *UI) setASCIIMode() {
+	tview.Borders.Horizontal = '-'
+	tview.Borders.HorizontalFocus = '-'
+	tview.Borders.Vertical = '|'
+	tview.Borders.VerticalFocus = '|'
+	tview.Borders.BottomLeft = '|'
+	tview.Borders.BottomLeftFocus = '|'
+	tview.Borders.BottomRight = '|'
+	tview.Borders.BottomRightFocus = '|'
+	tview.Borders.TopLeft = '|'
+	tview.Borders.TopLeftFocus = '|'
+	tview.Borders.TopRight = '|'
+	tview.Borders.TopRightFocus = '|'
+
+	ps.spinner.SetBorder(false).
+		SetBorderPadding(1, 1, 1, 1)
+}
+
 // set up handlers for keyboard bindings
 func (ps *UI) setupKeyBindings() {
 	// resize function is called when resize keys are used

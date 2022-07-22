@@ -55,10 +55,11 @@ type UI struct {
 	infoCache       *cache.Cache
 	searchCache     *cache.Cache
 	repos           []string
+	asciiMode       bool
 }
 
 // New creates a UI object and makes sure everything is initialized
-func New(config *config.Settings, repos []string) (*UI, error) {
+func New(config *config.Settings, repos []string, asciiMode bool) (*UI, error) {
 	ui := UI{
 		conf:            config,
 		app:             tview.NewApplication(),
@@ -69,6 +70,7 @@ func New(config *config.Settings, repos []string) (*UI, error) {
 		infoCache:       cache.New(time.Duration(config.CacheExpiry)*time.Minute, 1*time.Minute),
 		searchCache:     cache.New(time.Duration(config.CacheExpiry)*time.Minute, 1*time.Minute),
 		repos:           repos,
+		asciiMode:       asciiMode,
 	}
 
 	// get users default shell
@@ -83,6 +85,9 @@ func New(config *config.Settings, repos []string) (*UI, error) {
 
 	// setup UI
 	ui.setupComponents()
+	if asciiMode {
+		ui.setASCIIMode()
+	}
 	ui.setupKeyBindings()
 	ui.setupSettingsForm()
 

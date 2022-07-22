@@ -5,6 +5,9 @@ import "time"
 // starts the spinner
 func (ps *UI) startSpin() {
 	chars := "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+	if ps.asciiMode {
+		chars = "|/-\\"
+	}
 	go func() {
 		for {
 			select {
