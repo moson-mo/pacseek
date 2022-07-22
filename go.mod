@@ -5,9 +5,9 @@ go 1.18
 require (
 	github.com/Jguer/go-alpm/v2 v2.1.2
 	github.com/Morganamilo/go-pacmanconf v0.0.0-20210502114700-cff030e927a5
-	github.com/gdamore/tcell/v2 v2.4.1-0.20210905002822-f057f0a857a1
+	github.com/gdamore/tcell/v2 v2.5.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/rivo/tview v0.0.0-20220307222120-9994674d60a8
+	github.com/rivo/tview v0.0.0-20220709181631-73bf2902b59a
 )
 
 require (
@@ -22,7 +22,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/stretchr/testify v1.7.1
-	golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
