@@ -137,8 +137,8 @@ func (ps *UI) setupKeyBindings() {
 			}
 			return nil
 		}
-		// CTRL+H - Show help
-		if event.Key() == tcell.KeyCtrlH {
+		// CTRL+I - Show help/instructions
+		if event.Key() == tcell.KeyCtrlI {
 			ps.showHelp()
 			if ps.right.GetItem(0) == ps.settings {
 				ps.right.Clear()
@@ -217,7 +217,6 @@ func (ps *UI) setupKeyBindings() {
 			ps.prevControl = ps.search
 			return nil
 		}
-
 		return event
 	})
 
