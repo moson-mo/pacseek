@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	colorHighlight = "[#1793d1]"
-	colorTitle     = "[#00dfff]"
-	aurPackageUrl  = "https://aur.archlinux.org/packages/"
-	packageUrl     = "https://archlinux.org/packages/"
+	colorHighlight    = "[#1793d1]"
+	colorSearchBarHex = 0x0564A0
+	colorTitle        = "[#00dfff]"
+	aurPackageUrl     = "https://aur.archlinux.org/packages/"
+	packageUrl        = "https://archlinux.org/packages/"
 
 	version = "1.3.4"
 )

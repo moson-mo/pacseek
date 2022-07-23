@@ -43,7 +43,8 @@ While the search bar is focused, use the ENTER key to search for packages.
 With TAB you can navigate to the package list. Use the cursor keys to navigate within the list.  
 To install/remove a package, press ENTER.  
 
-The settings form can be opened with CTRL+S.  
+The settings form can be opened with CTRL+S.
+To quit pacseek, you can use CTRL+Q, CTRL+C or ESC.
 
 More detailed information can be found in the [Wiki](https://github.com/moson-mo/pacseek/wiki/)
 

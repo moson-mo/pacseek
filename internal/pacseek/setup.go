@@ -29,8 +29,8 @@ func (ps *UI) setupComponents() {
 	ps.root.SetBorder(true).
 		SetTitle(" " + colorTitle + "[::b]pacseek - v" + version + " ").
 		SetTitleAlign(tview.AlignLeft)
-	ps.search.SetLabelStyle(tcell.StyleDefault.Attributes(tcell.AttrBold)).
-		SetFieldBackgroundColor(tcell.NewRGBColor(5, 100, 160)).
+	ps.search.SetLabelStyle(tcell.StyleDefault.Bold(true)).
+		SetFieldBackgroundColor(tcell.NewHexColor(colorSearchBarHex)).
 		SetBorder(true)
 	ps.details.SetBorder(true).
 		SetTitleAlign(tview.AlignLeft).
