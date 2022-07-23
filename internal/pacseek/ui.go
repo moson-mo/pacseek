@@ -6,22 +6,33 @@ import (
 	"time"
 
 	"github.com/Jguer/go-alpm/v2"
+	"github.com/gdamore/tcell/v2"
 	"github.com/moson-mo/pacseek/internal/config"
 	"github.com/patrickmn/go-cache"
 	"github.com/rivo/tview"
 )
 
 const (
-	colorHighlight    = "[#1793d1]"
-	colorSearchBarHex = 0x0564A0
-	colorTitle        = "[#00dfff]"
-	aurPackageUrl     = "https://aur.archlinux.org/packages/"
-	packageUrl        = "https://archlinux.org/packages/"
+	aurPackageUrl = "https://aur.archlinux.org/packages/"
+	packageUrl    = "https://archlinux.org/packages/"
 
 	version = "1.3.4"
 )
 
-var archRepos = []string{"core", "community", "community-testing", "extra", "kde-unstable", "multilib", "multilib-testing", "testing"}
+var (
+	colorHighlight          = tcell.NewHexColor(0x1793d1)
+	colorTitle              = tcell.NewHexColor(0x00dfff)
+	colorSearchBar          = tcell.NewHexColor(0x0564A0)
+	colorRepoPkg            = tcell.ColorGreen
+	colorAurPkg             = tcell.NewHexColor(0x1793d1)
+	colorPkglistHeader      = tcell.ColorYellow
+	colorSettingsBackground = tcell.ColorBlue
+	colorSettingsText       = tcell.ColorWhite
+	colorSettingsLabel      = tcell.ColorYellow
+	colorSettingsDropdown   = tcell.ColorDarkBlue
+
+	archRepos = []string{"core", "community", "community-testing", "extra", "kde-unstable", "multilib", "multilib-testing", "testing"}
+)
 
 // UI is holding our application information and all tview components
 type UI struct {
@@ -60,7 +71,7 @@ type UI struct {
 }
 
 // New creates a UI object and makes sure everything is initialized
-func New(config *config.Settings, repos []string, asciiMode bool) (*UI, error) {
+func New(config *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, error) {
 	ui := UI{
 		conf:            config,
 		app:             tview.NewApplication(),
@@ -85,6 +96,9 @@ func New(config *config.Settings, repos []string, asciiMode bool) (*UI, error) {
 	}
 
 	// setup UI
+	if monoMode {
+		ui.setMonoMode()
+	}
 	ui.setupComponents()
 	if asciiMode {
 		ui.setASCIIMode()

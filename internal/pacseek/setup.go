@@ -27,10 +27,11 @@ func (ps *UI) setupComponents() {
 
 	// component config
 	ps.root.SetBorder(true).
-		SetTitle(" " + colorTitle + "[::b]pacseek - v" + version + " ").
+		SetTitle(" [::b]pacseek - v" + version + " ").
+		SetTitleColor(colorTitle).
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Bold(true)).
-		SetFieldBackgroundColor(tcell.NewHexColor(colorSearchBarHex)).
+		SetFieldBackgroundColor(colorSearchBar).
 		SetBorder(true)
 	ps.details.SetBorder(true).
 		SetTitleAlign(tview.AlignLeft).
@@ -43,15 +44,16 @@ func (ps *UI) setupComponents() {
 	ps.packages.SetCell(0, 0, &tview.TableCell{
 		Text:            "Package - Source - Installed",
 		NotSelectable:   true,
-		Color:           tcell.ColorYellow,
+		Color:           colorPkglistHeader,
 		BackgroundColor: tcell.ColorBlack,
 	})
 	ps.spinner.SetText("").
 		SetBorder(true)
 	ps.settings.SetItemPadding(0).
 		SetBorder(true).
-		SetTitle(" " + colorTitle + "[::b]Settings ").
-		SetTitleAlign(tview.AlignLeft)
+		SetTitle(" [::b]Settings ").
+		SetTitleAlign(tview.AlignLeft).
+		SetTitleColor(colorTitle)
 	ps.status.SetDynamicColors(true).
 		SetBorder(true)
 
@@ -85,6 +87,20 @@ func (ps *UI) setASCIIMode() {
 
 	ps.spinner.SetBorder(false).
 		SetBorderPadding(1, 1, 1, 1)
+}
+
+// sets monochrome colors
+func (ps *UI) setMonoMode() {
+	colorHighlight = tcell.ColorWhite
+	colorTitle = tcell.ColorWhite
+	colorSearchBar = tcell.ColorBlack
+	colorRepoPkg = tcell.ColorWhite
+	colorAurPkg = tcell.ColorWhite
+	colorPkglistHeader = tcell.ColorWhite
+	colorSettingsBackground = tcell.ColorBlack
+	colorSettingsLabel = tcell.ColorWhite
+	colorSettingsText = tcell.ColorWhite
+	colorSettingsDropdown = tcell.ColorBlack
 }
 
 // set up handlers for keyboard bindings
@@ -252,6 +268,13 @@ func (ps *UI) setupKeyBindings() {
 
 // sets up settings form
 func (ps *UI) setupSettingsForm() {
+	// Colors
+	ps.settings.SetFieldBackgroundColor(colorSettingsBackground).
+		SetFieldTextColor(colorSettingsText).
+		SetButtonBackgroundColor(colorSettingsBackground).
+		SetButtonTextColor(colorSettingsText).
+		SetLabelColor(colorSettingsLabel)
+
 	// Save button clicked
 	ps.settings.AddButton("Apply & Save", func() {
 		ps.saveSettings(false)

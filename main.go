@@ -17,6 +17,7 @@ Usage: pacseek [OPTION]
 	-r 	Limit searching to a comma separated list of repositories
 	-s	Search term
 	-i	ASCII mode
+	-m	Monochrome mode
 
 Examples:
 
@@ -52,10 +53,12 @@ func main() {
 	term := ""
 	repos := []string{}
 	asciiMode := false
+	monoMode := false
 
 	r := flag.String("r", "", "Comma separated list of repositories")
 	flag.StringVar(&term, "s", "", "Search term")
 	flag.BoolVar(&asciiMode, "i", false, "ASCII mode")
+	flag.BoolVar(&monoMode, "m", false, "Monochrome mode")
 	flag.Usage = printHelp
 	flag.Parse()
 
@@ -78,7 +81,7 @@ func main() {
 			printErrorExit("Error loading configuration file", err)
 		}
 	}
-	ps, err := pacseek.New(conf, repos, asciiMode)
+	ps, err := pacseek.New(conf, repos, asciiMode, monoMode)
 	if err != nil {
 		printErrorExit("Error during pacseek initialization", err)
 	}

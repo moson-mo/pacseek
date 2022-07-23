@@ -86,6 +86,14 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 		AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, sc).
 		AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc)
 
+	// Dropdown colors
+	for _, title := range []string{"Search mode: ", "Search by: "} {
+		if dd, ok := ps.settings.GetFormItemByLabel(title).(*tview.DropDown); ok {
+			dd.SetListStyles(tcell.StyleDefault.Background(colorSettingsDropdown).Foreground(colorSettingsText),
+				tcell.StyleDefault.Background(colorSettingsText).Foreground(colorSettingsDropdown))
+		}
+	}
+
 	// key bindings
 	ps.settings.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// CTRL + Left navigates to the previous control
@@ -139,7 +147,8 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 // draw package information on screen
 func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 	ps.details.Clear()
-	ps.details.SetTitle(" "+colorTitle+"[::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1)
+	ps.details.SetTitle(" [::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1).
+		SetTitleColor(colorTitle)
 	r := 0
 	ln := 0
 
@@ -153,7 +162,11 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 			w := width - (int(float64(width)*(float64(ps.leftProportion)/10)) + 21) // left box = 40% size, then we use 13 characters for column 0, 2 for padding and 6 for borders
 			lines := tview.WordWrap(v, w)
 			mr := r
-			ps.details.SetCellSimple(r, 0, colorHighlight+"[::b]"+k)
+			ps.details.SetCell(r, 0, &tview.TableCell{
+				Text:            "[::b]" + k,
+				Color:           colorHighlight,
+				BackgroundColor: tcell.ColorBlack,
+			})
 			for _, l := range lines {
 				if mr != r {
 					ps.details.SetCellSimple(r, 0, "") // we need to add some blank content otherwise it looks weird with some terminal configs
@@ -187,13 +200,13 @@ func (ps *UI) drawPackages(packages []Package) {
 
 	// rows
 	for i, pkg := range packages {
-		color := tcell.ColorGreen
+		color := colorRepoPkg
 		installed := "-"
 		if pkg.IsInstalled {
 			installed = "Y"
 		}
 		if pkg.Source == "AUR" {
-			color = tcell.NewRGBColor(23, 147, 209)
+			color = colorAurPkg
 		}
 
 		ps.packages.SetCellSimple(i+1, 0, pkg.Name)
@@ -219,7 +232,7 @@ func (ps *UI) drawPackagesHeader() {
 		ps.packages.SetCell(0, i, &tview.TableCell{
 			Text:            col,
 			NotSelectable:   true,
-			Color:           tcell.ColorYellow,
+			Color:           colorPkglistHeader,
 			BackgroundColor: tcell.ColorBlack,
 		})
 	}

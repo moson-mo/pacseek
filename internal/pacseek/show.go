@@ -4,6 +4,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -141,7 +142,8 @@ func (ps *UI) showPackageInfo(row, column int) {
 			return
 		}
 		ps.app.QueueUpdateDraw(func() {
-			ps.details.SetTitle(" " + colorTitle + "[::b]" + pkg + " - Retrieving data... ")
+			ps.details.SetTitle(" [::b]" + pkg + " - Retrieving data... ").
+				SetTitleColor(colorTitle)
 		})
 
 		ps.locker.Lock()
@@ -208,14 +210,15 @@ func (ps *UI) showMessage(message string, isError bool) {
 
 // show help text
 func (ps *UI) showHelp() {
-	ps.details.SetTitle(" " + colorTitle + "[::b]Usage ")
+	ps.details.SetTitle(" [::b]Usage ").
+		SetTitleColor(colorTitle)
 	ps.details.Clear().
 		SetCellSimple(0, 0, "ENTER: Search; Install or remove a selected package").
 		SetCellSimple(1, 0, "TAB / CTRL+Up/Down/Right/Left: Navigate between boxes").
 		SetCellSimple(2, 0, "Up/Down: Navigate within package list").
 		SetCellSimple(3, 0, "Shift+Left/Right: Change size of package list").
 		SetCellSimple(4, 0, "CTRL+S: Open/Close settings").
-		SetCellSimple(5, 0, "CTRL+I: Show these instructions").
+		SetCellSimple(5, 0, "CTRL+H: Show these instructions").
 		SetCellSimple(6, 0, "CTRL+U: Perform sysupgrade").
 		SetCellSimple(7, 0, "CTRL+A: Perform AUR upgrade (if configured)").
 		SetCellSimple(8, 0, "CTRL+W: Wipe cache").
@@ -224,13 +227,26 @@ func (ps *UI) showHelp() {
 
 // show about text
 func (ps *UI) showAbout() {
-	ps.details.SetTitle(" " + colorTitle + "[::b]About ")
+	ps.details.SetTitle(" [::b]About ").
+		SetTitleColor(colorTitle)
 	ps.details.Clear().
-		SetCellSimple(0, 0, colorHighlight+"[::b]Version").
+		SetCell(0, 0, &tview.TableCell{
+			Text:            "[::b]Version",
+			Color:           colorHighlight,
+			BackgroundColor: tcell.ColorBlack,
+		}).
 		SetCellSimple(0, 1, version).
-		SetCellSimple(1, 0, colorHighlight+"[::b]Author").
+		SetCell(1, 0, &tview.TableCell{
+			Text:            "[::b]Author",
+			Color:           colorHighlight,
+			BackgroundColor: tcell.ColorBlack,
+		}).
 		SetCellSimple(1, 1, "Mario Oenning").
-		SetCellSimple(2, 0, colorHighlight+"[::b]URL").
+		SetCell(2, 0, &tview.TableCell{
+			Text:            "[::b]URL",
+			Color:           colorHighlight,
+			BackgroundColor: tcell.ColorBlack,
+		}).
 		SetCellSimple(2, 1, "https://github.com/moson-mo/pacseek")
 
 	pic := `
