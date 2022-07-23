@@ -153,8 +153,8 @@ func (ps *UI) setupKeyBindings() {
 			}
 			return nil
 		}
-		// CTRL+I - Show help/instructions
-		if event.Key() == tcell.KeyCtrlI {
+		// CTRL+N - Show help/instructions
+		if event.Key() == tcell.KeyCtrlN {
 			ps.showHelp()
 			if ps.right.GetItem(0) == ps.settings {
 				ps.right.Clear()

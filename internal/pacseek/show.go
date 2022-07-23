@@ -218,7 +218,7 @@ func (ps *UI) showHelp() {
 		SetCellSimple(2, 0, "Up/Down: Navigate within package list").
 		SetCellSimple(3, 0, "Shift+Left/Right: Change size of package list").
 		SetCellSimple(4, 0, "CTRL+S: Open/Close settings").
-		SetCellSimple(5, 0, "CTRL+H: Show these instructions").
+		SetCellSimple(5, 0, "CTRL+N: Show these instructions").
 		SetCellSimple(6, 0, "CTRL+U: Perform sysupgrade").
 		SetCellSimple(7, 0, "CTRL+A: Perform AUR upgrade (if configured)").
 		SetCellSimple(8, 0, "CTRL+W: Wipe cache").
