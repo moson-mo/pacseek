@@ -1,9 +1,9 @@
 package util
 
-// checks if a slice of strings contains a string
-func StringSliceContains(slice []string, item string) bool {
-	for _, str := range slice {
-		if str == item {
+// checks if a slice contains a certain element
+func SliceContains[T comparable](values []T, value T) bool {
+	for _, v := range values {
+		if v == value {
 			return true
 		}
 	}

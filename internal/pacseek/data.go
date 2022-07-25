@@ -41,7 +41,8 @@ type InfoRecord struct {
 
 // Package is a data structure for the package tview table
 type Package struct {
-	Name        string
-	Source      string
-	IsInstalled bool
+	Name         string
+	Source       string
+	IsInstalled  bool
+	LastModified int
 }

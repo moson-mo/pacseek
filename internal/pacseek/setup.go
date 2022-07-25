@@ -1,10 +1,12 @@
 package pacseek
 
 import (
+	"sort"
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/moson-mo/pacseek/internal/config"
+	"github.com/moson-mo/pacseek/internal/util"
 	"github.com/rivo/tview"
 )
 
@@ -222,7 +224,8 @@ func (ps *UI) setupKeyBindings() {
 		}
 		// ENTER
 		if event.Key() == tcell.KeyEnter {
-			ps.showPackages(ps.search.GetText())
+			ps.lastTerm = ps.search.GetText()
+			ps.showPackages(ps.lastTerm)
 			return nil
 		}
 		// CTRL+Right
@@ -261,9 +264,77 @@ func (ps *UI) setupKeyBindings() {
 			ps.installPackage()
 			return nil
 		}
+
+		// sorting keys
+		if util.SliceContains([]rune{'N', 'S', 'I', 'M'}, event.Rune()) {
+			ps.sortPackageList(event.Rune())
+			ps.sortAsc = !ps.sortAsc
+			ps.drawPackages(ps.shownPackages)
+			ps.packages.Select(1, 0)
+			return nil
+		}
+
 		return event
 	})
 	ps.packages.SetSelectionChangedFunc(ps.showPackageInfo)
+}
+
+func (ps *UI) sortPackageList(runeKey rune) {
+	// n - sort by name
+	switch runeKey {
+	case 'N': // sort by name
+		if ps.sortAsc {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				return ps.shownPackages[i].Name > ps.shownPackages[j].Name
+			})
+		} else {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+			})
+		}
+	case 'S': // sort by source
+		if ps.sortAsc {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].Source == ps.shownPackages[j].Source {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[i].Source > ps.shownPackages[j].Source
+			})
+		} else {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].Source == ps.shownPackages[j].Source {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[j].Source > ps.shownPackages[i].Source
+			})
+		}
+	case 'I': // sort by installed state
+		if ps.sortAsc {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].IsInstalled == ps.shownPackages[j].IsInstalled {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[i].IsInstalled
+			})
+		} else {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].IsInstalled == ps.shownPackages[j].IsInstalled {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[j].IsInstalled
+			})
+		}
+	case 'M': // sort by last modified date
+		if ps.sortAsc {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				return ps.shownPackages[i].LastModified > ps.shownPackages[j].LastModified
+			})
+		} else {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				return ps.shownPackages[j].LastModified > ps.shownPackages[i].LastModified
+			})
+		}
+	}
 }
 
 // sets up settings form

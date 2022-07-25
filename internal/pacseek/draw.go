@@ -268,7 +268,7 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 		fields[order[8]] = fmt.Sprintf("%d", i.NumVotes)
 		fields[order[9]] = fmt.Sprintf("%f", i.Popularity)
 		fields[order[11]] = aurPackageUrl + i.Name
-	} else if util.StringSliceContains(archRepos, i.Source) {
+	} else if util.SliceContains(archRepos, i.Source) {
 		fields[order[11]] = packageUrl + i.Source + "/" + i.Architecture + "/" + i.Name
 	}
 	if i.LastModified != 0 {

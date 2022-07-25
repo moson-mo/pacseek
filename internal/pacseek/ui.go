@@ -36,9 +36,8 @@ var (
 
 // UI is holding our application information and all tview components
 type UI struct {
-	conf  *config.Settings
-	app   *tview.Application
-	shell string
+	conf *config.Settings
+	app  *tview.Application
 
 	alpmHandle *alpm.Handle
 
@@ -68,6 +67,10 @@ type UI struct {
 	searchCache     *cache.Cache
 	repos           []string
 	asciiMode       bool
+	shell           string
+	lastTerm        string
+	shownPackages   []Package
+	sortAsc         bool
 }
 
 // New creates a UI object and makes sure everything is initialized
@@ -83,6 +86,7 @@ func New(config *config.Settings, repos []string, asciiMode, monoMode bool) (*UI
 		searchCache:     cache.New(time.Duration(config.CacheExpiry)*time.Minute, 1*time.Minute),
 		repos:           repos,
 		asciiMode:       asciiMode,
+		sortAsc:         true,
 	}
 
 	// get users default shell

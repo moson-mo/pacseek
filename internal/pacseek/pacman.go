@@ -22,7 +22,7 @@ func initPacmanDbs(dbPath, confPath string, repos []string) (*alpm.Handle, error
 	}
 
 	for _, repo := range conf.Repos {
-		if (len(repos) > 0 && util.StringSliceContains(repos, repo.Name)) || len(repos) == 0 {
+		if (len(repos) > 0 && util.SliceContains(repos, repo.Name)) || len(repos) == 0 {
 			_, err := h.RegisterSyncDB(repo.Name, 0)
 			if err != nil {
 				return nil, err
@@ -70,9 +70,10 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 					installed = true
 				}
 				packages = append(packages, Package{
-					Name:        pkg.Name(),
-					Source:      db.Name(),
-					IsInstalled: installed,
+					Name:         pkg.Name(),
+					Source:       db.Name(),
+					IsInstalled:  installed,
+					LastModified: int(pkg.BuildDate().Unix()),
 				})
 				counter++
 			}

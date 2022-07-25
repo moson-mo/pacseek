@@ -65,15 +65,12 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 
 		i := 0
 		for _, pkg := range s.Results {
-			if mode == "StartsWith" && (strings.HasPrefix(pkg.Name, term) || strings.HasPrefix(pkg.Description, term)) {
+			if (mode == "StartsWith" && (strings.HasPrefix(pkg.Name, term) || strings.HasPrefix(pkg.Description, term))) ||
+				mode == "Contains" {
 				packages = append(packages, Package{
-					Name:   pkg.Name,
-					Source: "AUR",
-				})
-			} else if mode == "Contains" {
-				packages = append(packages, Package{
-					Name:   pkg.Name,
-					Source: "AUR",
+					Name:         pkg.Name,
+					Source:       "AUR",
+					LastModified: pkg.LastModified,
 				})
 			}
 			if len(packages) >= maxResults {

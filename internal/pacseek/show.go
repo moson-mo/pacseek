@@ -103,6 +103,7 @@ func (ps *UI) showPackages(text string) {
 		} else {
 			packages = packagesCache.([]Package)
 		}
+		ps.shownPackages = packages
 
 		// draw packages
 		ps.app.QueueUpdateDraw(func() {
