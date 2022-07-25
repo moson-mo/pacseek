@@ -2,6 +2,7 @@ package pacseek
 
 import (
 	"errors"
+	"math"
 	"strings"
 
 	"github.com/Jguer/go-alpm/v2"
@@ -74,6 +75,7 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 					Source:       db.Name(),
 					IsInstalled:  installed,
 					LastModified: int(pkg.BuildDate().Unix()),
+					Popularity:   math.MaxFloat64,
 				})
 				counter++
 			}

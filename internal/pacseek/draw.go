@@ -307,6 +307,22 @@ func (ps *UI) sortAndRedrawPkgList(runeKey rune) {
 				return ps.shownPackages[j].LastModified > ps.shownPackages[i].LastModified
 			})
 		}
+	case 'P': // sort by popularity
+		if ps.sortAsc {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].Popularity == ps.shownPackages[j].Popularity {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[i].Popularity > ps.shownPackages[j].Popularity
+			})
+		} else {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].Popularity == ps.shownPackages[j].Popularity {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[j].Popularity > ps.shownPackages[i].Popularity
+			})
+		}
 	}
 	ps.sortAsc = !ps.sortAsc
 	ps.drawPackages(ps.shownPackages)

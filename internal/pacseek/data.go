@@ -46,4 +46,5 @@ type Package struct {
 	Source       string
 	IsInstalled  bool
 	LastModified int
+	Popularity   float64
 }

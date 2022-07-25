@@ -265,7 +265,7 @@ func (ps *UI) setupKeyBindings() {
 		}
 
 		// sorting keys
-		if util.SliceContains([]rune{'N', 'S', 'I', 'M'}, event.Rune()) {
+		if util.SliceContains([]rune{'N', 'S', 'I', 'M', 'P'}, event.Rune()) {
 			ps.sortAndRedrawPkgList(event.Rune())
 			return nil
 		}
