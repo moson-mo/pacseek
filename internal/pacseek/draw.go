@@ -3,6 +3,7 @@ package pacseek
 import (
 	"fmt"
 	"os/exec"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -229,13 +230,87 @@ func (ps *UI) drawPackages(packages []Package) {
 func (ps *UI) drawPackagesHeader() {
 	columns := []string{"Package", "Source", "Installed"}
 	for i, col := range columns {
+		col := col
 		ps.packages.SetCell(0, i, &tview.TableCell{
 			Text:            col,
 			NotSelectable:   true,
 			Color:           colorPkglistHeader,
 			BackgroundColor: tcell.ColorBlack,
+			Clicked: func() bool {
+				switch col {
+				case "Package":
+					ps.sortAndRedrawPkgList('N')
+				case "Source":
+					ps.sortAndRedrawPkgList('S')
+				case "Installed":
+					ps.sortAndRedrawPkgList('I')
+				}
+				return true
+			},
 		})
 	}
+}
+
+// sorts and redraws the list of packages
+func (ps *UI) sortAndRedrawPkgList(runeKey rune) {
+	// n - sort by name
+	switch runeKey {
+	case 'N': // sort by name
+		if ps.sortAsc {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				return ps.shownPackages[i].Name > ps.shownPackages[j].Name
+			})
+		} else {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+			})
+		}
+	case 'S': // sort by source
+		if ps.sortAsc {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].Source == ps.shownPackages[j].Source {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[i].Source > ps.shownPackages[j].Source
+			})
+		} else {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].Source == ps.shownPackages[j].Source {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[j].Source > ps.shownPackages[i].Source
+			})
+		}
+	case 'I': // sort by installed state
+		if ps.sortAsc {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].IsInstalled == ps.shownPackages[j].IsInstalled {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[i].IsInstalled
+			})
+		} else {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].IsInstalled == ps.shownPackages[j].IsInstalled {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[j].IsInstalled
+			})
+		}
+	case 'M': // sort by last modified date
+		if ps.sortAsc {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				return ps.shownPackages[i].LastModified > ps.shownPackages[j].LastModified
+			})
+		} else {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				return ps.shownPackages[j].LastModified > ps.shownPackages[i].LastModified
+			})
+		}
+	}
+	ps.sortAsc = !ps.sortAsc
+	ps.drawPackages(ps.shownPackages)
+	ps.packages.Select(1, 0)
 }
 
 // composes a map with fields and values (package information) for our details box
