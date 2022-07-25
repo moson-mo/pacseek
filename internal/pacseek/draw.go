@@ -252,6 +252,7 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 		"Votes",
 		"Popularity",
 		"Last modified",
+		"Flagged out of date",
 		"Package URL",
 	}
 
@@ -267,12 +268,15 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	if i.Source == "AUR" {
 		fields[order[8]] = fmt.Sprintf("%d", i.NumVotes)
 		fields[order[9]] = fmt.Sprintf("%f", i.Popularity)
-		fields[order[11]] = aurPackageUrl + i.Name
+		fields[order[12]] = aurPackageUrl + i.Name
 	} else if util.SliceContains(archRepos, i.Source) {
-		fields[order[11]] = packageUrl + i.Source + "/" + i.Architecture + "/" + i.Name
+		fields[order[12]] = packageUrl + i.Source + "/" + i.Architecture + "/" + i.Name
 	}
 	if i.LastModified != 0 {
 		fields[order[10]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
+	}
+	if i.OutOfDate != 0 {
+		fields[order[11]] = time.Unix(int64(i.OutOfDate), 0).UTC().Format("[red]2006-01-02 - 15:04:05 (UTC)")
 	}
 
 	return fields, order
