@@ -248,6 +248,7 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 		"Licenses",
 		"Maintainer",
 		"Dependencies",
+		"Required by",
 		"URL",
 		"Votes",
 		"Popularity",
@@ -257,26 +258,27 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	}
 
 	fields := map[string]string{}
-	fields[order[0]] = i.Description
+	fields[order[0]] = "[::b]" + i.Description
 	fields[order[1]] = i.Version
 	fields[order[2]] = strings.Join(i.Provides, ", ")
 	fields[order[3]] = strings.Join(i.Conflicts, ", ")
 	fields[order[4]] = strings.Join(i.License, ", ")
 	fields[order[5]] = i.Maintainer
 	fields[order[6]] = getDependenciesJoined(i)
-	fields[order[7]] = i.URL
+	fields[order[7]] = strings.Join(i.RequiredBy, ", ")
+	fields[order[8]] = i.URL
 	if i.Source == "AUR" {
-		fields[order[8]] = fmt.Sprintf("%d", i.NumVotes)
-		fields[order[9]] = fmt.Sprintf("%f", i.Popularity)
-		fields[order[12]] = aurPackageUrl + i.Name
+		fields[order[9]] = fmt.Sprintf("%d", i.NumVotes)
+		fields[order[10]] = fmt.Sprintf("%f", i.Popularity)
+		fields[order[13]] = aurPackageUrl + i.Name
 	} else if util.SliceContains(archRepos, i.Source) {
-		fields[order[12]] = packageUrl + i.Source + "/" + i.Architecture + "/" + i.Name
+		fields[order[13]] = packageUrl + i.Source + "/" + i.Architecture + "/" + i.Name
 	}
 	if i.LastModified != 0 {
-		fields[order[10]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
+		fields[order[11]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
 	}
 	if i.OutOfDate != 0 {
-		fields[order[11]] = time.Unix(int64(i.OutOfDate), 0).UTC().Format("[red]2006-01-02 - 15:04:05 (UTC)")
+		fields[order[12]] = time.Unix(int64(i.OutOfDate), 0).UTC().Format("[red]2006-01-02 - 15:04:05 (UTC)")
 	}
 
 	return fields, order

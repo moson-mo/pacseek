@@ -32,6 +32,7 @@ type InfoRecord struct {
 	Popularity     float64  `json:"Popularity"`
 	Provides       []string `json:"Provides,omitempty"`
 	Replaces       []string `json:"Replaces,omitempty"`
+	RequiredBy     []string `json:"RequiredBy,omitempty"`
 	URL            string   `json:"URL"`
 	URLPath        string   `json:"URLPath"`
 	Version        string   `json:"Version"`
