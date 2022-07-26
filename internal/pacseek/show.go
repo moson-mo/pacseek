@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/rivo/tview"
 )
 
@@ -105,6 +106,20 @@ func (ps *UI) showPackages(text string) {
 		}
 		ps.shownPackages = packages
 
+		// rank packages and save index of closest one to search term
+		bestMatch := 0
+		prevRank := 9999
+		for i := 0; i < len(packages); i++ {
+			rank := fuzzy.RankMatch(text, packages[i].Name)
+			if rank < prevRank {
+				bestMatch = i
+				prevRank = rank
+			}
+			if rank == 0 {
+				break
+			}
+		}
+
 		// draw packages
 		ps.app.QueueUpdateDraw(func() {
 			if text != ps.search.GetText() {
@@ -115,10 +130,7 @@ func (ps *UI) showPackages(text string) {
 				ps.right.Clear()
 				ps.right.AddItem(ps.details, 0, 1, false)
 			}
-			r, _ := ps.packages.GetSelection()
-			if r > 1 {
-				ps.packages.Select(1, 0)
-			}
+			ps.packages.Select(bestMatch+1, 0) // select the best match
 		})
 	}()
 }

@@ -6,6 +6,7 @@ require (
 	github.com/Jguer/go-alpm/v2 v2.1.2
 	github.com/Morganamilo/go-pacmanconf v0.0.0-20210502114700-cff030e927a5
 	github.com/gdamore/tcell/v2 v2.5.1
+	github.com/lithammer/fuzzysearch v1.1.5
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rivo/tview v0.0.0-20220709181631-73bf2902b59a
 )
