@@ -50,7 +50,12 @@ func (ps *UI) setupComponents() {
 	})
 	ps.spinner.SetText("").
 		SetBorder(true)
-	ps.settings.SetItemPadding(0).
+	ps.settings.SetFieldBackgroundColor(colorSettingsBackground).
+		SetFieldTextColor(colorSettingsText).
+		SetButtonBackgroundColor(colorSettingsBackground).
+		SetButtonTextColor(colorSettingsText).
+		SetLabelColor(colorSettingsLabel).
+		SetItemPadding(0).
 		SetBorder(true).
 		SetTitle(" [::b]Settings ").
 		SetTitleAlign(tview.AlignLeft).
@@ -277,13 +282,6 @@ func (ps *UI) setupKeyBindings() {
 
 // sets up settings form
 func (ps *UI) setupSettingsForm() {
-	// Colors
-	ps.settings.SetFieldBackgroundColor(colorSettingsBackground).
-		SetFieldTextColor(colorSettingsText).
-		SetButtonBackgroundColor(colorSettingsBackground).
-		SetButtonTextColor(colorSettingsText).
-		SetLabelColor(colorSettingsLabel)
-
 	// Save button clicked
 	ps.settings.AddButton("Apply & Save", func() {
 		ps.saveSettings(false)

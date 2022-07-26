@@ -16,7 +16,7 @@ const (
 	aurPackageUrl = "https://aur.archlinux.org/packages/"
 	packageUrl    = "https://archlinux.org/packages/"
 
-	version = "1.4.0"
+	version = "1.4.1"
 )
 
 var (
