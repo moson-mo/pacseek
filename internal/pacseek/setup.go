@@ -85,7 +85,7 @@ func (ps *UI) setupColors() {
 		c := ps.packages.GetCell(i, 1)
 		col := ps.conf.Colors().PackagelistSourceRepository
 		if c.Text == "AUR" {
-			col = ps.conf.Colors().PackageListSourceAUR
+			col = ps.conf.Colors().PackagelistSourceAUR
 		}
 		c.SetTextColor(col)
 	}

@@ -222,7 +222,7 @@ func (ps *UI) drawPackages(packages []Package) {
 			installed = "Y"
 		}
 		if pkg.Source == "AUR" {
-			color = ps.conf.Colors().PackageListSourceAUR
+			color = ps.conf.Colors().PackagelistSourceAUR
 		}
 
 		ps.packages.SetCellSimple(i+1, 0, pkg.Name)

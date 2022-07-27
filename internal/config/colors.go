@@ -19,7 +19,7 @@ type Colors struct {
 	Title                       tcell.Color
 	SearchBar                   tcell.Color
 	PackagelistSourceRepository tcell.Color
-	PackageListSourceAUR        tcell.Color
+	PackagelistSourceAUR        tcell.Color
 	PackagelistHeader           tcell.Color
 	SettingsFieldBackground     tcell.Color
 	SettingsFieldText           tcell.Color
@@ -41,7 +41,7 @@ var (
 			Title:                       tcell.NewHexColor(0x00dfff),
 			SearchBar:                   tcell.NewHexColor(0x0564A0),
 			PackagelistSourceRepository: tcell.ColorGreen,
-			PackageListSourceAUR:        tcell.NewHexColor(0x1793d1),
+			PackagelistSourceAUR:        tcell.NewHexColor(0x1793d1),
 			PackagelistHeader:           tcell.ColorYellow,
 			SettingsFieldBackground:     tcell.NewHexColor(0x0564A0),
 			SettingsFieldText:           tcell.ColorWhite,
@@ -53,7 +53,7 @@ var (
 			Title:                       tcell.NewHexColor(0x7f3fbf),
 			SearchBar:                   tcell.NewHexColor(0x7f3fbf),
 			PackagelistSourceRepository: tcell.NewHexColor(0xff7f7f),
-			PackageListSourceAUR:        tcell.NewHexColor(0x7f3fbf),
+			PackagelistSourceAUR:        tcell.NewHexColor(0x7f3fbf),
 			PackagelistHeader:           tcell.ColorYellow,
 			SettingsFieldBackground:     tcell.NewHexColor(0x7f3fbf),
 			SettingsFieldText:           tcell.ColorWhite,
@@ -65,7 +65,7 @@ var (
 			Title:                       tcell.ColorWhite,
 			SearchBar:                   tcell.ColorBlack,
 			PackagelistSourceRepository: tcell.ColorWhite,
-			PackageListSourceAUR:        tcell.ColorWhite,
+			PackagelistSourceAUR:        tcell.ColorWhite,
 			PackagelistHeader:           tcell.ColorWhite,
 			SettingsFieldBackground:     tcell.ColorBlack,
 			SettingsFieldText:           tcell.ColorWhite,
@@ -145,7 +145,7 @@ func (c *Colors) marshalJSON() ([]byte, error) {
 		Title                       string
 		SearchBar                   string
 		PackagelistSourceRepository string
-		PackageListSourceAUR        string
+		PackagelistSourceAUR        string
 		PackagelistHeader           string
 		SettingsFieldBackground     string
 		SettingsFieldText           string
@@ -156,7 +156,7 @@ func (c *Colors) marshalJSON() ([]byte, error) {
 		Title:                       fmt.Sprintf("%06x", c.Title.Hex()),
 		SearchBar:                   fmt.Sprintf("%06x", c.SearchBar.Hex()),
 		PackagelistSourceRepository: fmt.Sprintf("%06x", c.PackagelistSourceRepository.Hex()),
-		PackageListSourceAUR:        fmt.Sprintf("%06x", c.PackageListSourceAUR.Hex()),
+		PackagelistSourceAUR:        fmt.Sprintf("%06x", c.PackagelistSourceAUR.Hex()),
 		PackagelistHeader:           fmt.Sprintf("%06x", c.PackagelistHeader.Hex()),
 		SettingsFieldBackground:     fmt.Sprintf("%06x", c.SettingsFieldBackground.Hex()),
 		SettingsFieldText:           fmt.Sprintf("%06x", c.SettingsFieldText.Hex()),
@@ -172,7 +172,7 @@ func (c *Colors) unmarshalJSON(data []byte) error {
 		Title                       string
 		SearchBar                   string
 		PackagelistSourceRepository string
-		PackageListSourceAUR        string
+		PackagelistSourceAUR        string
 		PackagelistHeader           string
 		SettingsFieldBackground     string
 		SettingsFieldText           string
@@ -188,7 +188,7 @@ func (c *Colors) unmarshalJSON(data []byte) error {
 	c.Title = c.colorFromHexString(d.Title)
 	c.SearchBar = c.colorFromHexString(d.SearchBar)
 	c.PackagelistSourceRepository = c.colorFromHexString(d.PackagelistSourceRepository)
-	c.PackageListSourceAUR = c.colorFromHexString(d.PackageListSourceAUR)
+	c.PackagelistSourceAUR = c.colorFromHexString(d.PackagelistSourceAUR)
 	c.PackagelistHeader = c.colorFromHexString(d.PackagelistHeader)
 	c.SettingsFieldBackground = c.colorFromHexString(d.SettingsFieldBackground)
 	c.SettingsFieldText = c.colorFromHexString(d.SettingsFieldText)
