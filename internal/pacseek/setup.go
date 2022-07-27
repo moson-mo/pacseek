@@ -29,10 +29,8 @@ func (ps *UI) setupComponents() {
 	// component config
 	ps.root.SetBorder(true).
 		SetTitle(" [::b]pacseek - v" + version + " ").
-		SetTitleColor(colorTitle).
 		SetTitleAlign(tview.AlignLeft)
 	ps.search.SetLabelStyle(tcell.StyleDefault.Bold(true)).
-		SetFieldBackgroundColor(colorSearchBar).
 		SetBorder(true)
 	ps.details.SetBorder(true).
 		SetTitleAlign(tview.AlignLeft).
@@ -42,24 +40,13 @@ func (ps *UI) setupComponents() {
 		SetFixed(1, 1).
 		SetBorder(true).
 		SetTitleAlign(tview.AlignLeft)
-	ps.packages.SetCell(0, 0, &tview.TableCell{
-		Text:            "Package - Source - Installed",
-		NotSelectable:   true,
-		Color:           colorPkglistHeader,
-		BackgroundColor: tcell.ColorBlack,
-	})
 	ps.spinner.SetText("").
 		SetBorder(true)
-	ps.settings.SetFieldBackgroundColor(colorSettingsBackground).
-		SetFieldTextColor(colorSettingsText).
-		SetButtonBackgroundColor(colorSettingsBackground).
-		SetButtonTextColor(colorSettingsText).
-		SetLabelColor(colorSettingsLabel).
+	ps.settings.
 		SetItemPadding(0).
 		SetBorder(true).
 		SetTitle(" [::b]Settings ").
-		SetTitleAlign(tview.AlignLeft).
-		SetTitleColor(colorTitle)
+		SetTitleAlign(tview.AlignLeft)
 	ps.status.SetDynamicColors(true).
 		SetBorder(true)
 
@@ -74,6 +61,51 @@ func (ps *UI) setupComponents() {
 	ps.topleft.AddItem(ps.search, 0, 1, true).
 		AddItem(ps.spinner, 3, 1, false)
 	ps.right.AddItem(ps.details, 0, 1, false)
+}
+
+// apply colors from color scheme
+func (ps *UI) setupColors() {
+	// containers
+	ps.root.SetTitleColor(ps.conf.Colors().Title)
+	ps.settings.SetTitleColor(ps.conf.Colors().Title)
+	ps.details.SetTitleColor(ps.conf.Colors().Title)
+	ps.search.SetFieldBackgroundColor(ps.conf.Colors().SearchBar)
+
+	// settings form
+	ps.settings.SetFieldBackgroundColor(ps.conf.Colors().SettingsFieldBackground).
+		SetFieldTextColor(ps.conf.Colors().SettingsFieldText).
+		SetButtonBackgroundColor(ps.conf.Colors().SettingsFieldBackground).
+		SetButtonTextColor(ps.conf.Colors().SettingsFieldText).
+		SetLabelColor(ps.conf.Colors().SettingsFieldLabel)
+	ps.setupDropDownColors()
+
+	// package list
+	ps.drawPackagesHeader()
+	for i := 1; i < ps.packages.GetRowCount(); i++ {
+		c := ps.packages.GetCell(i, 1)
+		col := ps.conf.Colors().PackagelistSourceRepository
+		if c.Text == "AUR" {
+			col = ps.conf.Colors().PackageListSourceAUR
+		}
+		c.SetTextColor(col)
+	}
+
+	// details
+	if ps.details.GetCell(0, 0) != nil && ps.details.GetCell(0, 0).Text == "[::b]Description" {
+		for i := 0; i < ps.details.GetRowCount(); i++ {
+			ps.details.GetCell(i, 0).SetTextColor(ps.conf.Colors().Accent)
+		}
+	}
+}
+
+// apply drop-down colors
+func (ps *UI) setupDropDownColors() {
+	for _, title := range []string{"Search mode: ", "Search by: ", "Color scheme: "} {
+		if dd, ok := ps.settings.GetFormItemByLabel(title).(*tview.DropDown); ok {
+			dd.SetListStyles(tcell.StyleDefault.Background(ps.conf.Colors().SettingsDropdownNotSelected).Foreground(ps.conf.Colors().SettingsFieldText),
+				tcell.StyleDefault.Background(ps.conf.Colors().SettingsFieldText).Foreground(ps.conf.Colors().SettingsDropdownNotSelected))
+		}
+	}
 }
 
 // replace border characters for ASCII mode
@@ -93,20 +125,6 @@ func (ps *UI) setASCIIMode() {
 
 	ps.spinner.SetBorder(false).
 		SetBorderPadding(1, 1, 1, 1)
-}
-
-// sets monochrome colors
-func (ps *UI) setMonoMode() {
-	colorHighlight = tcell.ColorWhite
-	colorTitle = tcell.ColorWhite
-	colorSearchBar = tcell.ColorBlack
-	colorRepoPkg = tcell.ColorWhite
-	colorAurPkg = tcell.ColorWhite
-	colorPkglistHeader = tcell.ColorWhite
-	colorSettingsBackground = tcell.ColorBlack
-	colorSettingsLabel = tcell.ColorWhite
-	colorSettingsText = tcell.ColorWhite
-	colorSettingsDropdown = tcell.ColorBlack
 }
 
 // set up handlers for keyboard bindings
@@ -229,6 +247,10 @@ func (ps *UI) setupKeyBindings() {
 		// ENTER
 		if event.Key() == tcell.KeyEnter {
 			ps.lastTerm = ps.search.GetText()
+			if len(ps.lastTerm) < 2 {
+				ps.showMessage("Minimum number of characters is 2", true)
+				return nil
+			}
 			ps.showPackages(ps.lastTerm)
 			return nil
 		}
@@ -355,6 +377,8 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.SearchMode = opt
 			case "Search by: ":
 				ps.conf.SearchBy = opt
+			case "Color scheme: ":
+				ps.conf.ColorScheme = opt
 			}
 		} else if cb, ok := item.(*tview.Checkbox); ok {
 			switch cb.GetLabel() {

@@ -155,8 +155,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 			return
 		}
 		ps.app.QueueUpdateDraw(func() {
-			ps.details.SetTitle(" [::b]" + pkg + " - Retrieving data... ").
-				SetTitleColor(colorTitle)
+			ps.details.SetTitle(" [::b]" + pkg + " - Retrieving data... ")
 		})
 
 		ps.locker.Lock()
@@ -223,10 +222,9 @@ func (ps *UI) showMessage(message string, isError bool) {
 
 // show help text
 func (ps *UI) showHelp() {
-	ps.details.SetTitle(" [::b]Usage ").
-		SetTitleColor(colorTitle)
 	ps.details.Clear().
-		SetCellSimple(0, 0, "ENTER: Search; Install or remove a selected package").
+		SetTitle(" [::b]Usage ")
+	ps.details.SetCellSimple(0, 0, "ENTER: Search; Install or remove a selected package").
 		SetCellSimple(1, 0, "TAB / CTRL+Up/Down/Right/Left: Navigate between boxes").
 		SetCellSimple(2, 0, "Up/Down: Navigate within package list").
 		SetCellSimple(3, 0, "Shift+Left/Right: Change size of package list").
@@ -240,24 +238,23 @@ func (ps *UI) showHelp() {
 
 // show about text
 func (ps *UI) showAbout() {
-	ps.details.SetTitle(" [::b]About ").
-		SetTitleColor(colorTitle)
+	ps.details.SetTitle(" [::b]About ")
 	ps.details.Clear().
 		SetCell(0, 0, &tview.TableCell{
 			Text:            "[::b]Version",
-			Color:           colorHighlight,
+			Color:           ps.conf.Colors().Accent,
 			BackgroundColor: tcell.ColorBlack,
 		}).
 		SetCellSimple(0, 1, version).
 		SetCell(1, 0, &tview.TableCell{
 			Text:            "[::b]Author",
-			Color:           colorHighlight,
+			Color:           ps.conf.Colors().Accent,
 			BackgroundColor: tcell.ColorBlack,
 		}).
 		SetCellSimple(1, 1, "Mario Oenning").
 		SetCell(2, 0, &tview.TableCell{
 			Text:            "[::b]URL",
-			Color:           colorHighlight,
+			Color:           ps.conf.Colors().Accent,
 			BackgroundColor: tcell.ColorBlack,
 		}).
 		SetCellSimple(2, 1, "https://github.com/moson-mo/pacseek")

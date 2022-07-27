@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/Jguer/go-alpm/v2"
-	"github.com/gdamore/tcell/v2"
 	"github.com/moson-mo/pacseek/internal/config"
 	"github.com/patrickmn/go-cache"
 	"github.com/rivo/tview"
@@ -17,21 +16,6 @@ const (
 	packageUrl    = "https://archlinux.org/packages/"
 
 	version = "1.4.1"
-)
-
-var (
-	colorHighlight          = tcell.NewHexColor(0x1793d1)
-	colorTitle              = tcell.NewHexColor(0x00dfff)
-	colorSearchBar          = tcell.NewHexColor(0x0564A0)
-	colorRepoPkg            = tcell.ColorGreen
-	colorAurPkg             = tcell.NewHexColor(0x1793d1)
-	colorPkglistHeader      = tcell.ColorYellow
-	colorSettingsBackground = tcell.ColorBlue
-	colorSettingsText       = tcell.ColorWhite
-	colorSettingsLabel      = tcell.ColorYellow
-	colorSettingsDropdown   = tcell.ColorDarkBlue
-
-	archRepos = []string{"core", "community", "community-testing", "extra", "kde-unstable", "multilib", "multilib-testing", "testing"}
 )
 
 // UI is holding our application information and all tview components
@@ -74,16 +58,16 @@ type UI struct {
 }
 
 // New creates a UI object and makes sure everything is initialized
-func New(config *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, error) {
+func New(conf *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, error) {
 	ui := UI{
-		conf:            config,
+		conf:            conf,
 		app:             tview.NewApplication(),
 		locker:          &sync.RWMutex{},
 		messageLocker:   &sync.RWMutex{},
 		quitSpin:        make(chan bool),
 		settingsChanged: false,
-		infoCache:       cache.New(time.Duration(config.CacheExpiry)*time.Minute, 1*time.Minute),
-		searchCache:     cache.New(time.Duration(config.CacheExpiry)*time.Minute, 1*time.Minute),
+		infoCache:       cache.New(time.Duration(conf.CacheExpiry)*time.Minute, 1*time.Minute),
+		searchCache:     cache.New(time.Duration(conf.CacheExpiry)*time.Minute, 1*time.Minute),
 		repos:           repos,
 		asciiMode:       asciiMode,
 		sortAsc:         true,
@@ -94,19 +78,20 @@ func New(config *config.Settings, repos []string, asciiMode, monoMode bool) (*UI
 
 	// get a handle to the pacman DB's
 	var err error
-	ui.alpmHandle, err = initPacmanDbs(config.PacmanDbPath, config.PacmanConfigPath, repos)
+	ui.alpmHandle, err = initPacmanDbs(conf.PacmanDbPath, conf.PacmanConfigPath, repos)
 	if err != nil {
 		return nil, err
 	}
 
 	// setup UI
-	if monoMode {
-		ui.setMonoMode()
-	}
 	ui.setupComponents()
+	if monoMode {
+		ui.conf.SetColorScheme("Monochrome")
+	}
 	if asciiMode {
 		ui.setASCIIMode()
 	}
+	ui.setupColors()
 	ui.setupKeyBindings()
 	ui.setupSettingsForm()
 
@@ -129,4 +114,8 @@ func getShell() string {
 		shell = "/bin/sh" // fallback
 	}
 	return shell
+}
+
+func ArchRepos() []string {
+	return []string{"core", "community", "community-testing", "extra", "kde-unstable", "multilib", "multilib-testing", "testing"}
 }

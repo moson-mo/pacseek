@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/moson-mo/pacseek/internal/config"
 	"github.com/moson-mo/pacseek/internal/util"
 	"github.com/rivo/tview"
 )
@@ -24,6 +25,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 	if ps.conf.SearchBy != "Name" {
 		by = 1
 	}
+	cIndex := util.IndexOf(config.ColorSchemes(), ps.conf.ColorScheme)
 
 	// handle text/drop-down field changes
 	sc := func(txt string) {
@@ -31,6 +33,16 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 	}
 
 	// input fields
+	ps.settings.AddDropDown("Color scheme: ", config.ColorSchemes(), cIndex, nil)
+	if dd, ok := ps.settings.GetFormItemByLabel("Color scheme: ").(*tview.DropDown); ok {
+		dd.SetSelectedFunc(func(text string, index int) {
+			ps.conf.SetColorScheme(text)
+			ps.setupColors()
+			if text != ps.conf.ColorScheme {
+				ps.settingsChanged = true
+			}
+		})
+	}
 	ps.settings.AddCheckbox("Disable AUR: ", disableAur, func(checked bool) {
 		ps.settingsChanged = true
 		ps.drawSettingsFields(checked, disableCache, separateAurCommands)
@@ -87,13 +99,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 		AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, sc).
 		AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc)
 
-	// Dropdown colors
-	for _, title := range []string{"Search mode: ", "Search by: "} {
-		if dd, ok := ps.settings.GetFormItemByLabel(title).(*tview.DropDown); ok {
-			dd.SetListStyles(tcell.StyleDefault.Background(colorSettingsDropdown).Foreground(colorSettingsText),
-				tcell.StyleDefault.Background(colorSettingsText).Foreground(colorSettingsDropdown))
-		}
-	}
+	ps.setupDropDownColors()
 
 	// key bindings
 	ps.settings.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -148,8 +154,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 // draw package information on screen
 func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 	ps.details.Clear()
-	ps.details.SetTitle(" [::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1).
-		SetTitleColor(colorTitle)
+	ps.details.SetTitle(" [::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1)
 	r := 0
 	ln := 0
 
@@ -165,7 +170,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 			mr := r
 			ps.details.SetCell(r, 0, &tview.TableCell{
 				Text:            "[::b]" + k,
-				Color:           colorHighlight,
+				Color:           ps.conf.Colors().Accent,
 				BackgroundColor: tcell.ColorBlack,
 			})
 			for _, l := range lines {
@@ -201,13 +206,13 @@ func (ps *UI) drawPackages(packages []Package) {
 
 	// rows
 	for i, pkg := range packages {
-		color := colorRepoPkg
+		color := ps.conf.Colors().PackagelistSourceRepository
 		installed := "-"
 		if pkg.IsInstalled {
 			installed = "Y"
 		}
 		if pkg.Source == "AUR" {
-			color = colorAurPkg
+			color = ps.conf.Colors().PackageListSourceAUR
 		}
 
 		ps.packages.SetCellSimple(i+1, 0, pkg.Name)
@@ -234,7 +239,7 @@ func (ps *UI) drawPackagesHeader() {
 		ps.packages.SetCell(0, i, &tview.TableCell{
 			Text:            col,
 			NotSelectable:   true,
-			Color:           colorPkglistHeader,
+			Color:           ps.conf.Colors().PackagelistHeader,
 			BackgroundColor: tcell.ColorBlack,
 			Clicked: func() bool {
 				switch col {
@@ -362,7 +367,7 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 		fields[order[9]] = fmt.Sprintf("%d", i.NumVotes)
 		fields[order[10]] = fmt.Sprintf("%f", i.Popularity)
 		fields[order[13]] = aurPackageUrl + i.Name
-	} else if util.SliceContains(archRepos, i.Source) {
+	} else if util.SliceContains(ArchRepos(), i.Source) {
 		fields[order[13]] = packageUrl + i.Source + "/" + i.Architecture + "/" + i.Name
 	}
 	if i.LastModified != 0 {

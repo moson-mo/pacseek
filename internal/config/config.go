@@ -26,6 +26,8 @@ type Settings struct {
 	SearchBy                string
 	CacheExpiry             int
 	DisableCache            bool
+	ColorScheme             string
+	colors                  Colors
 }
 
 // Defaults returns the default settings
@@ -45,6 +47,8 @@ func Defaults() *Settings {
 		SearchBy:          "Name",
 		CacheExpiry:       5,
 		DisableCache:      false,
+		ColorScheme:       defaultColorScheme,
+		colors:            colorSchemes[defaultColorScheme],
 	}
 
 	return &s
@@ -91,6 +95,7 @@ func Load() (*Settings, error) {
 		return Defaults(), err
 	}
 	ret.applyUpgradeFixes()
+	ret.SetColorScheme(ret.ColorScheme)
 	return &ret, nil
 }
 
@@ -120,6 +125,12 @@ func (s *Settings) applyUpgradeFixes() {
 	// cache expiry: added with 1.1.0
 	if s.CacheExpiry == 0 {
 		s.CacheExpiry = def.CacheExpiry
+		fixApplied = true
+	}
+
+	// color scheme: added with 1.4.2
+	if s.ColorScheme == "" {
+		s.ColorScheme = "Arch Linux"
 		fixApplied = true
 	}
 
