@@ -26,6 +26,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 		by = 1
 	}
 	cIndex := util.IndexOf(config.ColorSchemes(), ps.conf.ColorScheme)
+	bIndex := util.IndexOf(config.BorderStyles(), ps.conf.BorderStyle)
 
 	// handle text/drop-down field changes
 	sc := func(txt string) {
@@ -39,6 +40,15 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 			ps.conf.SetColorScheme(text)
 			ps.setupColors()
 			if text != ps.conf.ColorScheme {
+				ps.settingsChanged = true
+			}
+		})
+	}
+	ps.settings.AddDropDown("Border style: ", config.BorderStyles(), bIndex, nil)
+	if dd, ok := ps.settings.GetFormItemByLabel("Border style: ").(*tview.DropDown); ok {
+		dd.SetSelectedFunc(func(text string, index int) {
+			ps.conf.SetBorderStyle(text)
+			if text != ps.conf.BorderStyle {
 				ps.settingsChanged = true
 			}
 		})

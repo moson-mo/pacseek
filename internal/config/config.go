@@ -27,6 +27,7 @@ type Settings struct {
 	CacheExpiry             int
 	DisableCache            bool
 	ColorScheme             string
+	BorderStyle             string
 	colors                  Colors
 }
 
@@ -48,6 +49,7 @@ func Defaults() *Settings {
 		CacheExpiry:       5,
 		DisableCache:      false,
 		ColorScheme:       defaultColorScheme,
+		BorderStyle:       "Double",
 		colors:            colorSchemes[defaultColorScheme],
 	}
 
@@ -96,6 +98,7 @@ func Load() (*Settings, error) {
 	}
 	ret.applyUpgradeFixes()
 	ret.SetColorScheme(ret.ColorScheme)
+	ret.SetBorderStyle(ret.BorderStyle)
 	return &ret, nil
 }
 
@@ -131,6 +134,12 @@ func (s *Settings) applyUpgradeFixes() {
 	// color scheme: added with 1.4.2
 	if s.ColorScheme == "" {
 		s.ColorScheme = "Arch Linux"
+		fixApplied = true
+	}
+
+	// border style: added with 1.4.2
+	if s.BorderStyle == "" {
+		s.BorderStyle = "Double"
 		fixApplied = true
 	}
 

@@ -100,7 +100,7 @@ func (ps *UI) setupColors() {
 
 // apply drop-down colors
 func (ps *UI) setupDropDownColors() {
-	for _, title := range []string{"Search mode: ", "Search by: ", "Color scheme: "} {
+	for _, title := range []string{"Search mode: ", "Search by: ", "Color scheme: ", "Border style: "} {
 		if dd, ok := ps.settings.GetFormItemByLabel(title).(*tview.DropDown); ok {
 			dd.SetListStyles(tcell.StyleDefault.Background(ps.conf.Colors().SettingsDropdownNotSelected).Foreground(ps.conf.Colors().SettingsFieldText),
 				tcell.StyleDefault.Background(ps.conf.Colors().SettingsFieldText).Foreground(ps.conf.Colors().SettingsDropdownNotSelected))
@@ -379,6 +379,8 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.SearchBy = opt
 			case "Color scheme: ":
 				ps.conf.ColorScheme = opt
+			case "Border style: ":
+				ps.conf.BorderStyle = opt
 			}
 		} else if cb, ok := item.(*tview.Checkbox); ok {
 			switch cb.GetLabel() {
