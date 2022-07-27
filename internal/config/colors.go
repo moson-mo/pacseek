@@ -141,59 +141,59 @@ func createCustomColorsFile(colorFile string) error {
 // custom JSON marshalling for our colors
 func (c *Colors) marshalJSON() ([]byte, error) {
 	return json.MarshalIndent(&struct {
-		Highlight          string
-		Title              string
-		SearchBar          string
-		RepoPkg            string
-		AurPkg             string
-		PkglistHeader      string
-		SettingsBackground string
-		SettingsText       string
-		SettingsLabel      string
-		SettingsDropdown   string
+		Accent                      string
+		Title                       string
+		SearchBar                   string
+		PackagelistSourceRepository string
+		PackageListSourceAUR        string
+		PackagelistHeader           string
+		SettingsFieldBackground     string
+		SettingsFieldText           string
+		SettingsFieldLabel          string
+		SettingsDropdownNotSelected string
 	}{
-		Highlight:          fmt.Sprintf("%06x", c.Accent.Hex()),
-		Title:              fmt.Sprintf("%06x", c.Title.Hex()),
-		SearchBar:          fmt.Sprintf("%06x", c.SearchBar.Hex()),
-		RepoPkg:            fmt.Sprintf("%06x", c.PackagelistSourceRepository.Hex()),
-		AurPkg:             fmt.Sprintf("%06x", c.PackageListSourceAUR.Hex()),
-		PkglistHeader:      fmt.Sprintf("%06x", c.PackagelistHeader.Hex()),
-		SettingsBackground: fmt.Sprintf("%06x", c.SettingsFieldBackground.Hex()),
-		SettingsText:       fmt.Sprintf("%06x", c.SettingsFieldText.Hex()),
-		SettingsLabel:      fmt.Sprintf("%06x", c.SettingsFieldLabel.Hex()),
-		SettingsDropdown:   fmt.Sprintf("%06x", c.SettingsDropdownNotSelected.Hex()),
+		Accent:                      fmt.Sprintf("%06x", c.Accent.Hex()),
+		Title:                       fmt.Sprintf("%06x", c.Title.Hex()),
+		SearchBar:                   fmt.Sprintf("%06x", c.SearchBar.Hex()),
+		PackagelistSourceRepository: fmt.Sprintf("%06x", c.PackagelistSourceRepository.Hex()),
+		PackageListSourceAUR:        fmt.Sprintf("%06x", c.PackageListSourceAUR.Hex()),
+		PackagelistHeader:           fmt.Sprintf("%06x", c.PackagelistHeader.Hex()),
+		SettingsFieldBackground:     fmt.Sprintf("%06x", c.SettingsFieldBackground.Hex()),
+		SettingsFieldText:           fmt.Sprintf("%06x", c.SettingsFieldText.Hex()),
+		SettingsFieldLabel:          fmt.Sprintf("%06x", c.SettingsFieldLabel.Hex()),
+		SettingsDropdownNotSelected: fmt.Sprintf("%06x", c.SettingsDropdownNotSelected.Hex()),
 	}, "", "\t")
 }
 
 // custom JSON unmarshalling for our colors
 func (c *Colors) unmarshalJSON(data []byte) error {
 	d := &struct {
-		Highlight          string
-		Title              string
-		SearchBar          string
-		RepoPkg            string
-		AurPkg             string
-		PkglistHeader      string
-		SettingsBackground string
-		SettingsText       string
-		SettingsLabel      string
-		SettingsDropdown   string
+		Accent                      string
+		Title                       string
+		SearchBar                   string
+		PackagelistSourceRepository string
+		PackageListSourceAUR        string
+		PackagelistHeader           string
+		SettingsFieldBackground     string
+		SettingsFieldText           string
+		SettingsFieldLabel          string
+		SettingsDropdownNotSelected string
 	}{}
 	err := json.Unmarshal(data, d)
 	if err != nil {
 		return err
 	}
 
-	c.Accent = c.colorFromHexString(d.Highlight)
+	c.Accent = c.colorFromHexString(d.Accent)
 	c.Title = c.colorFromHexString(d.Title)
 	c.SearchBar = c.colorFromHexString(d.SearchBar)
-	c.PackagelistSourceRepository = c.colorFromHexString(d.RepoPkg)
-	c.PackageListSourceAUR = c.colorFromHexString(d.AurPkg)
-	c.PackagelistHeader = c.colorFromHexString(d.PkglistHeader)
-	c.SettingsFieldBackground = c.colorFromHexString(d.SettingsBackground)
-	c.SettingsFieldText = c.colorFromHexString(d.SettingsText)
-	c.SettingsFieldLabel = c.colorFromHexString(d.SettingsLabel)
-	c.SettingsDropdownNotSelected = c.colorFromHexString(d.SettingsDropdown)
+	c.PackagelistSourceRepository = c.colorFromHexString(d.PackagelistSourceRepository)
+	c.PackageListSourceAUR = c.colorFromHexString(d.PackageListSourceAUR)
+	c.PackagelistHeader = c.colorFromHexString(d.PackagelistHeader)
+	c.SettingsFieldBackground = c.colorFromHexString(d.SettingsFieldBackground)
+	c.SettingsFieldText = c.colorFromHexString(d.SettingsFieldText)
+	c.SettingsFieldLabel = c.colorFromHexString(d.SettingsFieldLabel)
+	c.SettingsDropdownNotSelected = c.colorFromHexString(d.SettingsDropdownNotSelected)
 	return nil
 }
 
