@@ -15,7 +15,7 @@ const (
 	aurPackageUrl = "https://aur.archlinux.org/packages/"
 	packageUrl    = "https://archlinux.org/packages/"
 
-	version = "1.4.2"
+	version = "1.4.3"
 )
 
 // UI is holding our application information and all tview components
