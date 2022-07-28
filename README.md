@@ -16,12 +16,41 @@ pacseek is terminal user interface which allows you to browse and search through
 Package installation / removal is done with an AUR helper. Make sure you have one installed.  
 In the default configuration, [yay](https://github.com/Jguer/yay) is being used. You can change this in the settings.  
 
+#### Features
+
+* Search for packages in the Arch repositories and AUR
+  * by: name / name & description
+  * method: contains / starts-with
+* Customizable commands for
+  * Installing / Removing packages¹
+  * Update all packages¹
+  * Update repo packages
+* Adjustable appearance
+  * Color schemes
+  * Border styles
+  * Component sizes / proportions
+* ASCII mode for non unicode terminals
+* Sortable search results by
+  * Package name
+  * Source
+  * Installed state
+  * Modified date
+  * Popularity²
+* Caching of
+  * Search results
+  * Package information
+* Configurable AUR /rpc endpoint URL
+
+¹ (requires an AUR helper. With the default config this is `yay`. You can change this in the settings)  
+² (only applicable to AUR packages)
+
 #### Libraries used
 
-* [tview](https://github.com/rivo/tview) for the tui components
-* [go-alpm](https://github.com/Jguer/go-alpm) for searching the package DB's
-* [go-cache](https://github.com/patrickmn/go-cache) to cache search results and package data
-* [goaurrpc](https://github.com/moson-mo/goaurrpc) self-hosted backend for the AUR REST API calls (to not stress the official aur.archlinux.org/rpc endpoint)
+* [tview](https://github.com/rivo/tview)
+* [fuzzysearch](https://github.com/lithammer/fuzzysearch)
+* [go-alpm](https://github.com/Jguer/go-alpm)
+* [go-cache](https://github.com/patrickmn/go-cache)
+* [goaurrpc](https://github.com/moson-mo/goaurrpc)
 
 #### How to build / run / install
 
@@ -47,11 +76,3 @@ The settings form can be opened with CTRL+S.
 To quit pacseek, you can use CTRL+Q, CTRL+C or ESC.
 
 More detailed information can be found in the [Wiki](https://github.com/moson-mo/pacseek/wiki/)
-
-
-#### ToDo's
-
-* Improve test code
-* ~~Implement caching for package data to have less lookups (AUR)~~ - done
-* ~~Add config options for disabling caching and setting the expiry time for cached entries~~ - done
-* ~~Add docs / wiki~~ - done
