@@ -10,42 +10,42 @@ import (
 )
 
 // gets packages from repos/AUR and displays them
-func (ps *UI) showPackages(text string) {
+func (ps *UI) displayPackages(text string) {
 	go func() {
 		ps.locker.Lock()
 		defer ps.locker.Unlock()
-		defer ps.app.QueueUpdate(func() { ps.showPackageInfo(1, 0) })
+		defer ps.app.QueueUpdate(func() { ps.displayPackageInfo(1, 0) })
 
 		var packages []Package
-		packagesCache, foundCache := ps.searchCache.Get(text)
+		packagesCache, foundCache := ps.cacheSearch.Get(text)
 
 		if !foundCache {
-			ps.startSpin()
-			defer ps.stopSpin()
+			ps.startSpinner()
+			defer ps.stopSpinner()
 
 			var err error
 			packages, err = searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults, false)
 			if err != nil {
 				ps.app.QueueUpdateDraw(func() {
-					ps.showMessage(err.Error(), true)
+					ps.displayMessage(err.Error(), true)
 				})
 			}
 			localPackages, err := searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults, true)
 			if err != nil {
 				ps.app.QueueUpdateDraw(func() {
-					ps.showMessage(err.Error(), true)
+					ps.displayMessage(err.Error(), true)
 				})
 			}
 			if !ps.conf.DisableAur {
 				aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
 				if err != nil {
 					ps.app.QueueUpdateDraw(func() {
-						ps.showMessage(err.Error(), true)
+						ps.displayMessage(err.Error(), true)
 					})
 				}
 
 				for i := 0; i < len(aurPackages); i++ {
-					aurPackages[i].IsInstalled = isInstalled(ps.alpmHandle, aurPackages[i].Name)
+					aurPackages[i].IsInstalled = isPackageInstalled(ps.alpmHandle, aurPackages[i].Name)
 				}
 
 				packages = append(packages, aurPackages...)
@@ -69,7 +69,7 @@ func (ps *UI) showPackages(text string) {
 
 			if len(packages) == 0 {
 				ps.app.QueueUpdateDraw(func() {
-					ps.showMessage("No packages found for search-term: "+text, false)
+					ps.displayMessage("No packages found for search-term: "+text, false)
 				})
 			}
 			if len(packages) > ps.conf.MaxResults {
@@ -92,76 +92,64 @@ func (ps *UI) showPackages(text string) {
 			if !ps.conf.DisableCache {
 				aurInfos := infoAur(ps.conf.AurRpcUrl, aurPkgs, ps.conf.AurTimeout)
 				for _, pkg := range aurInfos.Results {
-					ps.infoCache.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+					ps.cacheInfo.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 				}
 				repoInfos := infoPacman(ps.alpmHandle, repoPkgs)
 				for _, pkg := range repoInfos.Results {
-					ps.infoCache.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+					ps.cacheInfo.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 				}
 
-				ps.searchCache.Set(text, packages, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+				ps.cacheSearch.Set(text, packages, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 			}
 		} else {
 			packages = packagesCache.([]Package)
 		}
 		ps.shownPackages = packages
 
-		// rank packages and save index of closest one to search term
-		bestMatch := 0
-		prevRank := 9999
-		for i := 0; i < len(packages); i++ {
-			rank := fuzzy.RankMatch(text, packages[i].Name)
-			if rank < prevRank {
-				bestMatch = i
-				prevRank = rank
-			}
-			if rank == 0 {
-				break
-			}
-		}
+		best := bestMatch(text, packages) + 1
 
 		// draw packages
 		ps.app.QueueUpdateDraw(func() {
-			if text != ps.search.GetText() {
+			if text != ps.inputSearch.GetText() {
 				return
 			}
-			ps.drawPackages(packages)
-			if ps.right.GetItem(0) == ps.settings {
-				ps.right.Clear()
-				ps.right.AddItem(ps.details, 0, 1, false)
+			ps.drawPackageListContent(packages)
+			if ps.flexRight.GetItem(0) == ps.formSettings {
+				ps.flexRight.Clear()
+				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
 			}
-			ps.packages.Select(bestMatch+1, 0) // select the best match
+			ps.tablePackages.Select(best, 0) // select the best match
 		})
 	}()
 }
 
 // retrieves package information from repo/AUR and displays them
-func (ps *UI) showPackageInfo(row, column int) {
-	if row == -1 || row+1 > ps.packages.GetRowCount() {
+func (ps *UI) displayPackageInfo(row, column int) {
+	if row == -1 || row+1 > ps.tablePackages.GetRowCount() {
 		return
 	}
-	ps.details.SetTitle("")
-	ps.details.Clear()
-	pkg := ps.packages.GetCell(row, 0).Text
-	source := ps.packages.GetCell(row, 1).Text
+	ps.tableDetails.SetTitle("")
+	ps.tableDetails.Clear()
+	pkg := ps.tablePackages.GetCell(row, 0).Text
+	source := ps.tablePackages.GetCell(row, 1).Text
 
 	go func() {
-		infoCached, foundCached := ps.infoCache.Get(pkg)
+		infoCached, foundCached := ps.cacheInfo.Get(pkg)
 		if source == "AUR" && !foundCached {
 			time.Sleep(time.Duration(ps.conf.AurSearchDelay) * time.Millisecond)
 		}
 
-		if !ps.isSelected(pkg, true) {
+		if !ps.isPackageSelected(pkg, true) {
 			return
 		}
 		ps.app.QueueUpdateDraw(func() {
-			ps.details.SetTitle(" [::b]" + pkg + " - Retrieving data... ")
+			ps.tableDetails.SetTitle(" [::b]" + pkg + " - Retrieving data... ")
 		})
 
 		ps.locker.Lock()
 		if !foundCached {
-			ps.startSpin()
-			defer ps.stopSpin()
+			ps.startSpinner()
+			defer ps.stopSpinner()
 		}
 		defer ps.locker.Unlock()
 
@@ -173,7 +161,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 				info = infoPacman(ps.alpmHandle, []string{pkg})
 			}
 			if !ps.conf.DisableCache {
-				ps.infoCache.Set(pkg, info, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+				ps.cacheInfo.Set(pkg, info, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 			}
 		} else {
 			info = infoCached.(RpcResult)
@@ -181,7 +169,7 @@ func (ps *UI) showPackageInfo(row, column int) {
 
 		// draw results
 		ps.app.QueueUpdateDraw(func() {
-			if !ps.isSelected(pkg, false) {
+			if !ps.isPackageSelected(pkg, false) {
 				return
 			}
 			if len(info.Results) != 1 {
@@ -189,42 +177,42 @@ func (ps *UI) showPackageInfo(row, column int) {
 				if info.Error != "" {
 					errorMsg = info.Error
 				}
-				ps.details.SetTitle(" [red]Error ")
-				ps.details.SetCellSimple(0, 0, "[red]"+errorMsg)
+				ps.tableDetails.SetTitle(" [red]Error ")
+				ps.tableDetails.SetCellSimple(0, 0, "[red]"+errorMsg)
 				return
 			}
 			ps.selectedPackage = &info.Results[0]
-			_, _, w, _ := ps.root.GetRect()
+			_, _, w, _ := ps.flexRoot.GetRect()
 			ps.drawPackageInfo(info.Results[0], w)
 		})
 	}()
 }
 
-// shows status bar with error message
-func (ps *UI) showMessage(message string, isError bool) {
+// displays status bar with error message
+func (ps *UI) displayMessage(message string, isError bool) {
 	txt := message
 	if isError {
 		txt = "[red]Error: " + message
 	}
 
-	ps.status.SetText(txt)
-	ps.root.ResizeItem(ps.status, 3, 1)
+	ps.textMessage.SetText(txt)
+	ps.flexRoot.ResizeItem(ps.textMessage, 3, 1)
 
 	go func() {
 		ps.messageLocker.Lock()
 		defer ps.messageLocker.Unlock()
 		time.Sleep(10 * time.Second)
 		ps.app.QueueUpdateDraw(func() {
-			ps.root.ResizeItem(ps.status, 0, 0)
+			ps.flexRoot.ResizeItem(ps.textMessage, 0, 0)
 		})
 	}()
 }
 
-// show help text
-func (ps *UI) showHelp() {
-	ps.details.Clear().
+// displays help text
+func (ps *UI) displayHelp() {
+	ps.tableDetails.Clear().
 		SetTitle(" [::b]Usage ")
-	ps.details.SetCellSimple(0, 0, "ENTER: Search; Install or remove a selected package").
+	ps.tableDetails.SetCellSimple(0, 0, "ENTER: Search; Install or remove a selected package").
 		SetCellSimple(1, 0, "TAB / CTRL+Up/Down/Right/Left: Navigate between boxes").
 		SetCellSimple(2, 0, "Up/Down: Navigate within package list").
 		SetCellSimple(3, 0, "Shift+Left/Right: Change size of package list").
@@ -236,10 +224,10 @@ func (ps *UI) showHelp() {
 		SetCellSimple(10, 0, "CTRL+Q / ESC: Quit")
 }
 
-// show about text
-func (ps *UI) showAbout() {
-	ps.details.SetTitle(" [::b]About ")
-	ps.details.Clear().
+// displays about text
+func (ps *UI) displayAbout() {
+	ps.tableDetails.SetTitle(" [::b]About ")
+	ps.tableDetails.Clear().
 		SetCell(0, 0, &tview.TableCell{
 			Text:            "[::b]Version",
 			Color:           ps.conf.Colors().Accent,
@@ -267,16 +255,16 @@ func (ps *UI) showAbout() {
 `
 	s := 3
 	for i, l := range tview.WordWrap(pic, 100) {
-		ps.details.SetCellSimple(s+i, 0, l)
+		ps.tableDetails.SetCellSimple(s+i, 0, l)
 	}
 }
 
 // checks if a given package is currently selected in the package list
-func (ps *UI) isSelected(pkg string, queue bool) bool {
+func (ps *UI) isPackageSelected(pkg string, queue bool) bool {
 	var sel string
 	f := func() {
-		crow, _ := ps.packages.GetSelection()
-		sel = ps.packages.GetCell(crow, 0).Text
+		crow, _ := ps.tablePackages.GetSelection()
+		sel = ps.tablePackages.GetCell(crow, 0).Text
 	}
 
 	if queue {
@@ -286,4 +274,22 @@ func (ps *UI) isSelected(pkg string, queue bool) bool {
 	}
 
 	return sel == pkg
+}
+
+// returns index of best matching package name
+func bestMatch(text string, packages []Package) int {
+	// rank packages and save index of closest one to search term
+	bestMatch := 0
+	prevRank := 9999
+	for i := 0; i < len(packages); i++ {
+		rank := fuzzy.RankMatch(text, packages[i].Name)
+		if rank < prevRank {
+			bestMatch = i
+			prevRank = rank
+		}
+		if rank == 0 {
+			break
+		}
+	}
+	return bestMatch
 }

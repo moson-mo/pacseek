@@ -88,11 +88,11 @@ func (suite *pacseekTestSuite) TestIsInstalled() {
 	suite.Nil(err, err)
 
 	// ok
-	r := isInstalled(h, "glibc")
+	r := isPackageInstalled(h, "glibc")
 	suite.True(r, "glibc not installed?")
 
 	// nok
-	r = isInstalled(h, "nonsense_nonsense")
+	r = isPackageInstalled(h, "nonsense_nonsense")
 	suite.False(r, "nonsense_nonsense is installed?")
 }
 

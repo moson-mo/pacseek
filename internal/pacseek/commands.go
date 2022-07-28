@@ -10,10 +10,10 @@ import (
 
 // installs or removes a package
 func (ps *UI) installPackage() {
-	row, _ := ps.packages.GetSelection()
-	pkg := ps.packages.GetCell(row, 0).Text
-	source := ps.packages.GetCell(row, 1).Text
-	installed := ps.packages.GetCell(row, 2).Text
+	row, _ := ps.tablePackages.GetSelection()
+	pkg := ps.tablePackages.GetCell(row, 0).Text
+	source := ps.tablePackages.GetCell(row, 1).Text
+	installed := ps.tablePackages.GetCell(row, 2).Text
 
 	// set command based on source and install status
 	command := ps.conf.InstallCommand
@@ -78,8 +78,21 @@ func (ps *UI) runCommand(command string, args []string) {
 	// we need to reinitialize the alpm handler to get the proper install state
 	err := ps.reinitPacmanDbs()
 	if err != nil {
-		ps.showMessage(err.Error(), true)
+		ps.displayMessage(err.Error(), true)
 	}
+}
+
+// re-initializes the alpm handler
+func (ps *UI) reinitPacmanDbs() error {
+	err := ps.alpmHandle.Release()
+	if err != nil {
+		return err
+	}
+	ps.alpmHandle, err = initPacmanDbs(ps.conf.PacmanDbPath, ps.conf.PacmanConfigPath, ps.filterRepos)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // handles SIGINT call and passes it to a cmd process
@@ -97,17 +110,4 @@ func handleSigint(cmd *exec.Cmd) chan bool {
 		}
 	}()
 	return quit
-}
-
-// re-initializes the alpm handler
-func (ps *UI) reinitPacmanDbs() error {
-	err := ps.alpmHandle.Release()
-	if err != nil {
-		return err
-	}
-	ps.alpmHandle, err = initPacmanDbs(ps.conf.PacmanDbPath, ps.conf.PacmanConfigPath, ps.repos)
-	if err != nil {
-		return err
-	}
-	return nil
 }

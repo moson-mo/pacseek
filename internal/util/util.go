@@ -1,5 +1,7 @@
 package util
 
+import "os"
+
 // SliceContains checks if a slice contains a certain element
 func SliceContains[T comparable](values []T, value T) bool {
 	for _, v := range values {
@@ -18,4 +20,13 @@ func IndexOf[T comparable](values []T, value T) int {
 		}
 	}
 	return -1
+}
+
+// Shell returns the users default shell
+func Shell() string {
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		shell = "/bin/sh" // fallback
+	}
+	return shell
 }

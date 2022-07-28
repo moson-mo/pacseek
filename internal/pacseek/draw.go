@@ -16,7 +16,7 @@ import (
 
 // draws input fields on settings form
 func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands bool) {
-	ps.settings.Clear(false)
+	ps.formSettings.Clear(false)
 	mode := 0
 	if ps.conf.SearchMode != "StartsWith" {
 		mode = 1
@@ -34,18 +34,18 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 	}
 
 	// input fields
-	ps.settings.AddDropDown("Color scheme: ", config.ColorSchemes(), cIndex, nil)
-	if dd, ok := ps.settings.GetFormItemByLabel("Color scheme: ").(*tview.DropDown); ok {
+	ps.formSettings.AddDropDown("Color scheme: ", config.ColorSchemes(), cIndex, nil)
+	if dd, ok := ps.formSettings.GetFormItemByLabel("Color scheme: ").(*tview.DropDown); ok {
 		dd.SetSelectedFunc(func(text string, index int) {
 			ps.conf.SetColorScheme(text)
-			ps.setupColors()
+			ps.applyColors()
 			if text != ps.conf.ColorScheme {
 				ps.settingsChanged = true
 			}
 		})
 	}
-	ps.settings.AddDropDown("Border style: ", config.BorderStyles(), bIndex, nil)
-	if dd, ok := ps.settings.GetFormItemByLabel("Border style: ").(*tview.DropDown); ok {
+	ps.formSettings.AddDropDown("Border style: ", config.BorderStyles(), bIndex, nil)
+	if dd, ok := ps.formSettings.GetFormItemByLabel("Border style: ").(*tview.DropDown); ok {
 		dd.SetSelectedFunc(func(text string, index int) {
 			ps.conf.SetBorderStyle(text)
 			if text != ps.conf.BorderStyle {
@@ -53,27 +53,27 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 			}
 		})
 	}
-	ps.settings.AddCheckbox("Disable AUR: ", disableAur, func(checked bool) {
+	ps.formSettings.AddCheckbox("Disable AUR: ", disableAur, func(checked bool) {
 		ps.settingsChanged = true
 		ps.drawSettingsFields(checked, disableCache, separateAurCommands)
-		ps.app.SetFocus(ps.settings)
+		ps.app.SetFocus(ps.formSettings)
 	})
 	if !disableAur {
-		ps.settings.AddInputField("AUR RPC URL: ", ps.conf.AurRpcUrl, 40, nil, sc).
+		ps.formSettings.AddInputField("AUR RPC URL: ", ps.conf.AurRpcUrl, 40, nil, sc).
 			AddInputField("AUR timeout (ms): ", strconv.Itoa(ps.conf.AurTimeout), 6, nil, sc).
 			AddInputField("AUR search delay (ms): ", strconv.Itoa(ps.conf.AurSearchDelay), 6, nil, sc)
 	}
-	ps.settings.AddCheckbox("Disable Cache: ", disableCache, func(checked bool) {
+	ps.formSettings.AddCheckbox("Disable Cache: ", disableCache, func(checked bool) {
 		ps.settingsChanged = true
-		i, _ := ps.settings.GetFocusedItemIndex()
+		i, _ := ps.formSettings.GetFocusedItemIndex()
 		ps.drawSettingsFields(disableAur, checked, separateAurCommands)
-		ps.settings.SetFocus(i)
-		ps.app.SetFocus(ps.settings)
+		ps.formSettings.SetFocus(i)
+		ps.app.SetFocus(ps.formSettings)
 	})
 	if !disableCache {
-		ps.settings.AddInputField("Cache expiry (m): ", strconv.Itoa(ps.conf.CacheExpiry), 6, nil, sc)
+		ps.formSettings.AddInputField("Cache expiry (m): ", strconv.Itoa(ps.conf.CacheExpiry), 6, nil, sc)
 	}
-	ps.settings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, sc).
+	ps.formSettings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, sc).
 		AddDropDown("Search mode: ", []string{"StartsWith", "Contains"}, mode, func(text string, index int) {
 			if text != ps.conf.SearchMode {
 				ps.settingsChanged = true
@@ -88,10 +88,10 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 		AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, sc).
 		AddCheckbox("Separate AUR commands: ", separateAurCommands, func(checked bool) {
 			ps.settingsChanged = true
-			i, _ := ps.settings.GetFocusedItemIndex()
+			i, _ := ps.formSettings.GetFocusedItemIndex()
 			ps.drawSettingsFields(disableAur, disableCache, checked)
-			ps.settings.SetFocus(i)
-			ps.app.SetFocus(ps.settings)
+			ps.formSettings.SetFocus(i)
+			ps.app.SetFocus(ps.formSettings)
 		})
 	if separateAurCommands {
 		icom := ps.conf.AurInstallCommand
@@ -102,23 +102,23 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 		if ucom == "" {
 			ucom = ps.conf.SysUpgradeCommand
 		}
-		ps.settings.AddInputField("AUR Install command: ", icom, 40, nil, sc).
+		ps.formSettings.AddInputField("AUR Install command: ", icom, 40, nil, sc).
 			AddInputField("AUR Upgrade command: ", ucom, 40, nil, sc)
 	}
-	ps.settings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, sc).
+	ps.formSettings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, sc).
 		AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, sc).
 		AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc)
 
-	ps.setupDropDownColors()
+	ps.applyDropDownColors()
 
 	// key bindings
-	ps.settings.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	ps.formSettings.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// CTRL + Left navigates to the previous control
 		if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModCtrl {
-			if ps.prevControl != nil {
-				ps.app.SetFocus(ps.prevControl)
+			if ps.prevComponent != nil {
+				ps.app.SetFocus(ps.prevComponent)
 			} else {
-				ps.app.SetFocus(ps.packages)
+				ps.app.SetFocus(ps.tablePackages)
 			}
 			return nil
 		}
@@ -126,9 +126,9 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 		if event.Key() == tcell.KeyDown ||
 			event.Key() == tcell.KeyUp ||
 			event.Key() == tcell.KeyTab {
-			i, b := ps.settings.GetFocusedItemIndex()
+			i, b := ps.formSettings.GetFocusedItemIndex()
 			if b > -1 {
-				i = ps.settings.GetFormItemCount() + b
+				i = ps.formSettings.GetFormItemCount() + b
 			}
 			n := i
 			if event.Key() == tcell.KeyUp {
@@ -136,25 +136,25 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 			} else {
 				n++ // move down
 			}
-			if i >= 0 && i < ps.settings.GetFormItemCount() {
+			if i >= 0 && i < ps.formSettings.GetFormItemCount() {
 				// drop downs are excluded from Up / Down handling
-				if _, ok := ps.settings.GetFormItem(i).(*tview.DropDown); ok {
+				if _, ok := ps.formSettings.GetFormItem(i).(*tview.DropDown); ok {
 					if event.Key() != tcell.KeyTAB && event.Modifiers() != tcell.ModCtrl {
 						return event
 					}
 				}
 			}
 			// Leave settings from
-			if b == ps.settings.GetButtonCount()-1 && event.Key() != tcell.KeyUp {
-				ps.app.SetFocus(ps.search)
+			if b == ps.formSettings.GetButtonCount()-1 && event.Key() != tcell.KeyUp {
+				ps.app.SetFocus(ps.inputSearch)
 				return nil
 			}
 			if i == 0 && event.Key() == tcell.KeyUp {
-				ps.app.SetFocus(ps.packages)
+				ps.app.SetFocus(ps.tablePackages)
 				return nil
 			}
-			ps.settings.SetFocus(n)
-			ps.app.SetFocus(ps.settings)
+			ps.formSettings.SetFocus(n)
+			ps.app.SetFocus(ps.formSettings)
 			return nil
 		}
 		return event
@@ -163,8 +163,8 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 
 // draw package information on screen
 func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
-	ps.details.Clear()
-	ps.details.SetTitle(" [::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1)
+	ps.tableDetails.Clear()
+	ps.tableDetails.SetTitle(" [::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1)
 	r := 0
 	ln := 0
 
@@ -178,14 +178,14 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 			w := width - (int(float64(width)*(float64(ps.leftProportion)/10)) + 21) // left box = 40% size, then we use 13 characters for column 0, 2 for padding and 6 for borders
 			lines := tview.WordWrap(v, w)
 			mr := r
-			ps.details.SetCell(r, 0, &tview.TableCell{
+			ps.tableDetails.SetCell(r, 0, &tview.TableCell{
 				Text:            "[::b]" + k,
 				Color:           ps.conf.Colors().Accent,
 				BackgroundColor: tcell.ColorBlack,
 			})
 			for _, l := range lines {
 				if mr != r {
-					ps.details.SetCellSimple(r, 0, "") // we need to add some blank content otherwise it looks weird with some terminal configs
+					ps.tableDetails.SetCellSimple(r, 0, "") // we need to add some blank content otherwise it looks weird with some terminal configs
 				}
 				cell := &tview.TableCell{
 					Text:            l,
@@ -198,21 +198,21 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 						return true
 					})
 				}
-				ps.details.SetCell(r, 1, cell)
+				ps.tableDetails.SetCell(r, 1, cell)
 				r++
 			}
 			ln++
 		}
 	}
-	ps.details.ScrollToBeginning()
+	ps.tableDetails.ScrollToBeginning()
 }
 
 // draw packages on screen
-func (ps *UI) drawPackages(packages []Package) {
-	ps.packages.Clear()
+func (ps *UI) drawPackageListContent(packages []Package) {
+	ps.tablePackages.Clear()
 
 	// header
-	ps.drawPackagesHeader()
+	ps.drawPackageListHeader()
 
 	// rows
 	for i, pkg := range packages {
@@ -225,28 +225,28 @@ func (ps *UI) drawPackages(packages []Package) {
 			color = ps.conf.Colors().PackagelistSourceAUR
 		}
 
-		ps.packages.SetCellSimple(i+1, 0, pkg.Name)
-		ps.packages.SetCell(i+1, 1, &tview.TableCell{
+		ps.tablePackages.SetCellSimple(i+1, 0, pkg.Name)
+		ps.tablePackages.SetCell(i+1, 1, &tview.TableCell{
 			Text:            pkg.Source,
 			Color:           color,
 			BackgroundColor: tcell.ColorBlack,
 		})
-		ps.packages.SetCell(i+1, 2, &tview.TableCell{
+		ps.tablePackages.SetCell(i+1, 2, &tview.TableCell{
 			Text:            installed,
 			Expansion:       1000,
 			Color:           tcell.ColorWhite,
 			BackgroundColor: tcell.ColorBlack,
 		})
 	}
-	ps.packages.ScrollToBeginning()
+	ps.tablePackages.ScrollToBeginning()
 }
 
 // adds header row to package table
-func (ps *UI) drawPackagesHeader() {
+func (ps *UI) drawPackageListHeader() {
 	columns := []string{"Package", "Source", "Installed"}
 	for i, col := range columns {
 		col := col
-		ps.packages.SetCell(0, i, &tview.TableCell{
+		ps.tablePackages.SetCell(0, i, &tview.TableCell{
 			Text:            col,
 			NotSelectable:   true,
 			Color:           ps.conf.Colors().PackagelistHeader,
@@ -254,11 +254,11 @@ func (ps *UI) drawPackagesHeader() {
 			Clicked: func() bool {
 				switch col {
 				case "Package":
-					ps.sortAndRedrawPkgList('N')
+					ps.sortAndRedrawPackageList('N')
 				case "Source":
-					ps.sortAndRedrawPkgList('S')
+					ps.sortAndRedrawPackageList('S')
 				case "Installed":
-					ps.sortAndRedrawPkgList('I')
+					ps.sortAndRedrawPackageList('I')
 				}
 				return true
 			},
@@ -267,11 +267,11 @@ func (ps *UI) drawPackagesHeader() {
 }
 
 // sorts and redraws the list of packages
-func (ps *UI) sortAndRedrawPkgList(runeKey rune) {
+func (ps *UI) sortAndRedrawPackageList(runeKey rune) {
 	// n - sort by name
 	switch runeKey {
 	case 'N': // sort by name
-		if ps.sortAsc {
+		if ps.sortAscending {
 			sort.Slice(ps.shownPackages, func(i, j int) bool {
 				return ps.shownPackages[i].Name > ps.shownPackages[j].Name
 			})
@@ -281,7 +281,7 @@ func (ps *UI) sortAndRedrawPkgList(runeKey rune) {
 			})
 		}
 	case 'S': // sort by source
-		if ps.sortAsc {
+		if ps.sortAscending {
 			sort.Slice(ps.shownPackages, func(i, j int) bool {
 				if ps.shownPackages[i].Source == ps.shownPackages[j].Source {
 					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
@@ -297,7 +297,7 @@ func (ps *UI) sortAndRedrawPkgList(runeKey rune) {
 			})
 		}
 	case 'I': // sort by installed state
-		if ps.sortAsc {
+		if ps.sortAscending {
 			sort.Slice(ps.shownPackages, func(i, j int) bool {
 				if ps.shownPackages[i].IsInstalled == ps.shownPackages[j].IsInstalled {
 					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
@@ -313,7 +313,7 @@ func (ps *UI) sortAndRedrawPkgList(runeKey rune) {
 			})
 		}
 	case 'M': // sort by last modified date
-		if ps.sortAsc {
+		if ps.sortAscending {
 			sort.Slice(ps.shownPackages, func(i, j int) bool {
 				return ps.shownPackages[i].LastModified > ps.shownPackages[j].LastModified
 			})
@@ -323,7 +323,7 @@ func (ps *UI) sortAndRedrawPkgList(runeKey rune) {
 			})
 		}
 	case 'P': // sort by popularity
-		if ps.sortAsc {
+		if ps.sortAscending {
 			sort.Slice(ps.shownPackages, func(i, j int) bool {
 				if ps.shownPackages[i].Popularity == ps.shownPackages[j].Popularity {
 					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
@@ -339,9 +339,9 @@ func (ps *UI) sortAndRedrawPkgList(runeKey rune) {
 			})
 		}
 	}
-	ps.sortAsc = !ps.sortAsc
-	ps.drawPackages(ps.shownPackages)
-	ps.packages.Select(1, 0)
+	ps.sortAscending = !ps.sortAscending
+	ps.drawPackageListContent(ps.shownPackages)
+	ps.tablePackages.Select(1, 0)
 }
 
 // composes a map with fields and values (package information) for our details box
@@ -416,27 +416,27 @@ func getDependenciesJoined(i InfoRecord) string {
 // updates the "install state" of all packages in cache and package list
 func (ps *UI) updateInstalledState() {
 	// update cached packages
-	sterm := ps.search.GetText()
-	cpkg, exp, found := ps.searchCache.GetWithExpiration(sterm)
+	sterm := ps.inputSearch.GetText()
+	cpkg, exp, found := ps.cacheSearch.GetWithExpiration(sterm)
 	if found {
 		scpkg := cpkg.([]Package)
 		for i := 0; i < len(scpkg); i++ {
-			scpkg[i].IsInstalled = isInstalled(ps.alpmHandle, scpkg[i].Name)
+			scpkg[i].IsInstalled = isPackageInstalled(ps.alpmHandle, scpkg[i].Name)
 		}
-		ps.searchCache.Set(sterm, scpkg, exp.Sub(time.Now()))
+		ps.cacheSearch.Set(sterm, scpkg, exp.Sub(time.Now()))
 	}
 
 	// update currently shown packages
-	for i := 1; i < ps.packages.GetRowCount(); i++ {
+	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
 		newCell := &tview.TableCell{
 			Text:            "-",
 			Expansion:       1000,
 			Color:           tcell.ColorWhite,
 			BackgroundColor: tcell.ColorBlack,
 		}
-		if isInstalled(ps.alpmHandle, ps.packages.GetCell(i, 0).Text) {
+		if isPackageInstalled(ps.alpmHandle, ps.tablePackages.GetCell(i, 0).Text) {
 			newCell.Text = "Y"
 		}
-		ps.packages.SetCell(i, 2, newCell)
+		ps.tablePackages.SetCell(i, 2, newCell)
 	}
 }

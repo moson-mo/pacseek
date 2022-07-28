@@ -1,12 +1,12 @@
 package pacseek
 
 import (
-	"os"
 	"sync"
 	"time"
 
 	"github.com/Jguer/go-alpm/v2"
 	"github.com/moson-mo/pacseek/internal/config"
+	"github.com/moson-mo/pacseek/internal/util"
 	"github.com/patrickmn/go-cache"
 	"github.com/rivo/tview"
 )
@@ -25,19 +25,19 @@ type UI struct {
 
 	alpmHandle *alpm.Handle
 
-	root      *tview.Flex
-	left      *tview.Flex
-	topleft   *tview.Flex
-	right     *tview.Flex
-	container *tview.Flex
+	flexRoot      *tview.Flex
+	flexLeft      *tview.Flex
+	flexTopLeft   *tview.Flex
+	flexRight     *tview.Flex
+	flexContainer *tview.Flex
 
-	search      *tview.InputField
-	packages    *tview.Table
-	details     *tview.Table
-	spinner     *tview.TextView
-	settings    *tview.Form
-	status      *tview.TextView
-	prevControl tview.Primitive
+	inputSearch   *tview.InputField
+	tablePackages *tview.Table
+	tableDetails  *tview.Table
+	spinner       *tview.TextView
+	formSettings  *tview.Form
+	textMessage   *tview.TextView
+	prevComponent tview.Primitive
 
 	locker        *sync.RWMutex
 	messageLocker *sync.RWMutex
@@ -47,14 +47,14 @@ type UI struct {
 	leftProportion  int
 	selectedPackage *InfoRecord
 	settingsChanged bool
-	infoCache       *cache.Cache
-	searchCache     *cache.Cache
-	repos           []string
+	cacheInfo       *cache.Cache
+	cacheSearch     *cache.Cache
+	filterRepos     []string
 	asciiMode       bool
 	shell           string
-	lastTerm        string
+	lastSearchTerm  string
 	shownPackages   []Package
-	sortAsc         bool
+	sortAscending   bool
 }
 
 // New creates a UI object and makes sure everything is initialized
@@ -66,15 +66,15 @@ func New(conf *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, 
 		messageLocker:   &sync.RWMutex{},
 		quitSpin:        make(chan bool),
 		settingsChanged: false,
-		infoCache:       cache.New(time.Duration(conf.CacheExpiry)*time.Minute, 1*time.Minute),
-		searchCache:     cache.New(time.Duration(conf.CacheExpiry)*time.Minute, 1*time.Minute),
-		repos:           repos,
+		cacheInfo:       cache.New(time.Duration(conf.CacheExpiry)*time.Minute, 1*time.Minute),
+		cacheSearch:     cache.New(time.Duration(conf.CacheExpiry)*time.Minute, 1*time.Minute),
+		filterRepos:     repos,
 		asciiMode:       asciiMode,
-		sortAsc:         true,
+		sortAscending:   true,
 	}
 
 	// get users default shell
-	ui.shell = getShell()
+	ui.shell = util.Shell()
 
 	// get a handle to the pacman DB's
 	var err error
@@ -84,14 +84,14 @@ func New(conf *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, 
 	}
 
 	// setup UI
-	ui.setupComponents()
+	ui.createComponents()
 	if monoMode {
 		ui.conf.SetColorScheme("Monochrome")
 	}
 	if asciiMode {
-		ui.setASCIIMode()
+		ui.applyASCIIMode()
 	}
-	ui.setupColors()
+	ui.applyColors()
 	ui.setupKeyBindings()
 	ui.setupSettingsForm()
 
@@ -101,21 +101,13 @@ func New(conf *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, 
 // Start runs application / event-loop
 func (ps *UI) Start(term string) error {
 	if term != "" {
-		ps.search.SetText(term)
-		ps.showPackages(term)
+		ps.inputSearch.SetText(term)
+		ps.displayPackages(term)
 	}
-	return ps.app.SetRoot(ps.root, true).EnableMouse(true).Run()
+	return ps.app.SetRoot(ps.flexRoot, true).EnableMouse(true).Run()
 }
 
-// get users shell
-func getShell() string {
-	shell := os.Getenv("SHELL")
-	if shell == "" {
-		shell = "/bin/sh" // fallback
-	}
-	return shell
-}
-
+// ArchRepos returns a list of Arch Linux repositories
 func ArchRepos() []string {
 	return []string{"core", "community", "community-testing", "extra", "kde-unstable", "multilib", "multilib-testing", "testing"}
 }

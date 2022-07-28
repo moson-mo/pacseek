@@ -10,79 +10,79 @@ import (
 )
 
 // sets up all our ui components
-func (ps *UI) setupComponents() {
+func (ps *UI) createComponents() {
 	// flex grids
-	ps.root = tview.NewFlex().SetDirection(tview.FlexRow)
-	ps.container = tview.NewFlex()
-	ps.left = tview.NewFlex().SetDirection(tview.FlexRow)
-	ps.topleft = tview.NewFlex()
-	ps.right = tview.NewFlex().SetDirection(tview.FlexRow)
+	ps.flexRoot = tview.NewFlex().SetDirection(tview.FlexRow)
+	ps.flexContainer = tview.NewFlex()
+	ps.flexLeft = tview.NewFlex().SetDirection(tview.FlexRow)
+	ps.flexTopLeft = tview.NewFlex()
+	ps.flexRight = tview.NewFlex().SetDirection(tview.FlexRow)
 
 	// components
-	ps.search = tview.NewInputField()
-	ps.packages = tview.NewTable()
-	ps.details = tview.NewTable()
+	ps.inputSearch = tview.NewInputField()
+	ps.tablePackages = tview.NewTable()
+	ps.tableDetails = tview.NewTable()
 	ps.spinner = tview.NewTextView()
-	ps.settings = tview.NewForm()
-	ps.status = tview.NewTextView()
+	ps.formSettings = tview.NewForm()
+	ps.textMessage = tview.NewTextView()
 
 	// component config
-	ps.root.SetBorder(true).
+	ps.flexRoot.SetBorder(true).
 		SetTitle(" [::b]pacseek - v" + version + " ").
 		SetTitleAlign(tview.AlignLeft)
-	ps.search.SetLabelStyle(tcell.StyleDefault.Bold(true)).
+	ps.inputSearch.SetLabelStyle(tcell.StyleDefault.Bold(true)).
 		SetBorder(true)
-	ps.details.SetBorder(true).
+	ps.tableDetails.SetBorder(true).
 		SetTitleAlign(tview.AlignLeft).
 		SetBorderPadding(1, 1, 1, 1)
-	ps.showHelp()
-	ps.packages.SetSelectable(true, false).
+	ps.displayHelp()
+	ps.tablePackages.SetSelectable(true, false).
 		SetFixed(1, 1).
 		SetBorder(true).
 		SetTitleAlign(tview.AlignLeft)
 	ps.spinner.SetText("").
 		SetBorder(true)
-	ps.settings.
+	ps.formSettings.
 		SetItemPadding(0).
 		SetBorder(true).
 		SetTitle(" [::b]Settings ").
 		SetTitleAlign(tview.AlignLeft)
-	ps.status.SetDynamicColors(true).
+	ps.textMessage.SetDynamicColors(true).
 		SetBorder(true)
 
 	// layouting
 	ps.leftProportion = 4
-	ps.root.AddItem(ps.container, 0, 1, true).
-		AddItem(ps.status, 0, 0, false)
-	ps.container.AddItem(ps.left, 0, ps.leftProportion, true).
-		AddItem(ps.right, 0, 10-ps.leftProportion, false)
-	ps.left.AddItem(ps.topleft, 3, 1, true).
-		AddItem(ps.packages, 0, 1, false)
-	ps.topleft.AddItem(ps.search, 0, 1, true).
+	ps.flexRoot.AddItem(ps.flexContainer, 0, 1, true).
+		AddItem(ps.textMessage, 0, 0, false)
+	ps.flexContainer.AddItem(ps.flexLeft, 0, ps.leftProportion, true).
+		AddItem(ps.flexRight, 0, 10-ps.leftProportion, false)
+	ps.flexLeft.AddItem(ps.flexTopLeft, 3, 1, true).
+		AddItem(ps.tablePackages, 0, 1, false)
+	ps.flexTopLeft.AddItem(ps.inputSearch, 0, 1, true).
 		AddItem(ps.spinner, 3, 1, false)
-	ps.right.AddItem(ps.details, 0, 1, false)
+	ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
 }
 
 // apply colors from color scheme
-func (ps *UI) setupColors() {
+func (ps *UI) applyColors() {
 	// containers
-	ps.root.SetTitleColor(ps.conf.Colors().Title)
-	ps.settings.SetTitleColor(ps.conf.Colors().Title)
-	ps.details.SetTitleColor(ps.conf.Colors().Title)
-	ps.search.SetFieldBackgroundColor(ps.conf.Colors().SearchBar)
+	ps.flexRoot.SetTitleColor(ps.conf.Colors().Title)
+	ps.formSettings.SetTitleColor(ps.conf.Colors().Title)
+	ps.tableDetails.SetTitleColor(ps.conf.Colors().Title)
+	ps.inputSearch.SetFieldBackgroundColor(ps.conf.Colors().SearchBar)
 
 	// settings form
-	ps.settings.SetFieldBackgroundColor(ps.conf.Colors().SettingsFieldBackground).
+	ps.formSettings.SetFieldBackgroundColor(ps.conf.Colors().SettingsFieldBackground).
 		SetFieldTextColor(ps.conf.Colors().SettingsFieldText).
 		SetButtonBackgroundColor(ps.conf.Colors().SettingsFieldBackground).
 		SetButtonTextColor(ps.conf.Colors().SettingsFieldText).
 		SetLabelColor(ps.conf.Colors().SettingsFieldLabel)
-	ps.setupDropDownColors()
+	ps.applyDropDownColors()
 
 	// package list
-	ps.drawPackagesHeader()
-	for i := 1; i < ps.packages.GetRowCount(); i++ {
-		c := ps.packages.GetCell(i, 1)
+	ps.drawPackageListHeader()
+	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
+		c := ps.tablePackages.GetCell(i, 1)
 		col := ps.conf.Colors().PackagelistSourceRepository
 		if c.Text == "AUR" {
 			col = ps.conf.Colors().PackagelistSourceAUR
@@ -91,17 +91,15 @@ func (ps *UI) setupColors() {
 	}
 
 	// details
-	if ps.details.GetCell(0, 0) != nil && ps.details.GetCell(0, 0).Text == "[::b]Description" {
-		for i := 0; i < ps.details.GetRowCount(); i++ {
-			ps.details.GetCell(i, 0).SetTextColor(ps.conf.Colors().Accent)
-		}
+	if ps.selectedPackage != nil {
+		ps.drawPackageInfo(*ps.selectedPackage, ps.width)
 	}
 }
 
 // apply drop-down colors
-func (ps *UI) setupDropDownColors() {
+func (ps *UI) applyDropDownColors() {
 	for _, title := range []string{"Search mode: ", "Search by: ", "Color scheme: ", "Border style: "} {
-		if dd, ok := ps.settings.GetFormItemByLabel(title).(*tview.DropDown); ok {
+		if dd, ok := ps.formSettings.GetFormItemByLabel(title).(*tview.DropDown); ok {
 			dd.SetListStyles(tcell.StyleDefault.Background(ps.conf.Colors().SettingsDropdownNotSelected).Foreground(ps.conf.Colors().SettingsFieldText),
 				tcell.StyleDefault.Background(ps.conf.Colors().SettingsFieldText).Foreground(ps.conf.Colors().SettingsDropdownNotSelected))
 		}
@@ -109,7 +107,7 @@ func (ps *UI) setupDropDownColors() {
 }
 
 // replace border characters for ASCII mode
-func (ps *UI) setASCIIMode() {
+func (ps *UI) applyASCIIMode() {
 	tview.Borders.Horizontal = '-'
 	tview.Borders.HorizontalFocus = '-'
 	tview.Borders.Vertical = '|'
@@ -131,8 +129,8 @@ func (ps *UI) setASCIIMode() {
 func (ps *UI) setupKeyBindings() {
 	// resize function is called when resize keys are used
 	resize := func() {
-		ps.container.ResizeItem(ps.left, 0, ps.leftProportion)
-		ps.container.ResizeItem(ps.right, 0, 10-ps.leftProportion)
+		ps.flexContainer.ResizeItem(ps.flexLeft, 0, ps.leftProportion)
+		ps.flexContainer.ResizeItem(ps.flexRight, 0, 10-ps.leftProportion)
 		if ps.selectedPackage != nil {
 			ps.drawPackageInfo(*ps.selectedPackage, ps.width)
 		}
@@ -140,7 +138,7 @@ func (ps *UI) setupKeyBindings() {
 
 	// app / global
 	ps.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		settingsVisible := ps.right.GetItem(0) == ps.settings
+		settingsVisible := ps.flexRight.GetItem(0) == ps.formSettings
 		// CTRL+Q - Quit
 		if event.Key() == tcell.KeyCtrlQ ||
 			(event.Key() == tcell.KeyEscape && !settingsVisible) {
@@ -164,12 +162,12 @@ func (ps *UI) setupKeyBindings() {
 		if event.Key() == tcell.KeyCtrlS ||
 			(event.Key() == tcell.KeyEscape && settingsVisible) {
 			if !settingsVisible {
-				ps.right.Clear()
-				ps.right.AddItem(ps.settings, 0, 1, false)
+				ps.flexRight.Clear()
+				ps.flexRight.AddItem(ps.formSettings, 0, 1, false)
 			} else {
-				ps.right.Clear()
-				ps.right.AddItem(ps.details, 0, 1, false)
-				ps.app.SetFocus(ps.search)
+				ps.flexRight.Clear()
+				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
+				ps.app.SetFocus(ps.inputSearch)
 				if event.Key() == tcell.KeyEscape {
 					ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands)
 					ps.settingsChanged = false
@@ -179,10 +177,10 @@ func (ps *UI) setupKeyBindings() {
 		}
 		// CTRL+N - Show help/instructions
 		if event.Key() == tcell.KeyCtrlN {
-			ps.showHelp()
-			if ps.right.GetItem(0) == ps.settings {
-				ps.right.Clear()
-				ps.right.AddItem(ps.details, 0, 1, false)
+			ps.displayHelp()
+			if ps.flexRight.GetItem(0) == ps.formSettings {
+				ps.flexRight.Clear()
+				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
 			}
 			return nil
 		}
@@ -198,14 +196,14 @@ func (ps *UI) setupKeyBindings() {
 		}
 		// CTRL+B - Show about
 		if event.Key() == tcell.KeyCtrlB {
-			ps.showAbout()
+			ps.displayAbout()
 			return nil
 		}
 
 		// CTRL+W - Wipe cache
 		if event.Key() == tcell.KeyCtrlW {
-			ps.searchCache.Flush()
-			ps.infoCache.Flush()
+			ps.cacheSearch.Flush()
+			ps.cacheInfo.Flush()
 			return nil
 		}
 		// Shift+Left - decrease size of left container
@@ -238,51 +236,51 @@ func (ps *UI) setupKeyBindings() {
 	})
 
 	// search
-	ps.search.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	ps.inputSearch.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// TAB / Down
 		if event.Key() == tcell.KeyTAB || event.Key() == tcell.KeyDown {
-			ps.app.SetFocus(ps.packages)
+			ps.app.SetFocus(ps.tablePackages)
 			return nil
 		}
 		// ENTER
 		if event.Key() == tcell.KeyEnter {
-			ps.lastTerm = ps.search.GetText()
-			if len(ps.lastTerm) < 2 {
-				ps.showMessage("Minimum number of characters is 2", true)
+			ps.lastSearchTerm = ps.inputSearch.GetText()
+			if len(ps.lastSearchTerm) < 2 {
+				ps.displayMessage("Minimum number of characters is 2", true)
 				return nil
 			}
-			ps.showPackages(ps.lastTerm)
+			ps.displayPackages(ps.lastSearchTerm)
 			return nil
 		}
 		// CTRL+Right
 		if event.Key() == tcell.KeyRight &&
 			event.Modifiers() == tcell.ModCtrl &&
-			ps.right.GetItem(0) == ps.settings {
-			ps.app.SetFocus(ps.settings.GetFormItem(0))
-			ps.prevControl = ps.search
+			ps.flexRight.GetItem(0) == ps.formSettings {
+			ps.app.SetFocus(ps.formSettings.GetFormItem(0))
+			ps.prevComponent = ps.inputSearch
 			return nil
 		}
 		return event
 	})
 
 	// packages
-	ps.packages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	ps.tablePackages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// TAB / Up
-		row, _ := ps.packages.GetSelection()
+		row, _ := ps.tablePackages.GetSelection()
 		if event.Key() == tcell.KeyTAB ||
 			(event.Key() == tcell.KeyUp && row <= 1) ||
 			(event.Key() == tcell.KeyUp && event.Modifiers() == tcell.ModCtrl) {
-			if ps.right.GetItem(0) == ps.settings && event.Key() == tcell.KeyTAB {
-				ps.app.SetFocus(ps.settings.GetFormItem(0))
+			if ps.flexRight.GetItem(0) == ps.formSettings && event.Key() == tcell.KeyTAB {
+				ps.app.SetFocus(ps.formSettings.GetFormItem(0))
 			} else {
-				ps.app.SetFocus(ps.search)
+				ps.app.SetFocus(ps.inputSearch)
 			}
 			return nil
 		}
 		// Right
-		if event.Key() == tcell.KeyRight && ps.right.GetItem(0) == ps.settings {
-			ps.app.SetFocus(ps.settings.GetFormItem(0))
-			ps.prevControl = ps.packages
+		if event.Key() == tcell.KeyRight && ps.flexRight.GetItem(0) == ps.formSettings {
+			ps.app.SetFocus(ps.formSettings.GetFormItem(0))
+			ps.prevComponent = ps.tablePackages
 			return nil
 		}
 		// ENTER
@@ -293,25 +291,25 @@ func (ps *UI) setupKeyBindings() {
 
 		// sorting keys
 		if util.SliceContains([]rune{'N', 'S', 'I', 'M', 'P'}, event.Rune()) {
-			ps.sortAndRedrawPkgList(event.Rune())
+			ps.sortAndRedrawPackageList(event.Rune())
 			return nil
 		}
 
 		return event
 	})
-	ps.packages.SetSelectionChangedFunc(ps.showPackageInfo)
+	ps.tablePackages.SetSelectionChangedFunc(ps.displayPackageInfo)
 }
 
 // sets up settings form
 func (ps *UI) setupSettingsForm() {
 	// Save button clicked
-	ps.settings.AddButton("Apply & Save", func() {
+	ps.formSettings.AddButton("Apply & Save", func() {
 		ps.saveSettings(false)
 		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands)
 	})
 
 	// Defaults button clicked
-	ps.settings.AddButton("Defaults", func() {
+	ps.formSettings.AddButton("Defaults", func() {
 		ps.conf = config.Defaults()
 		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands)
 		ps.saveSettings(true)
@@ -324,8 +322,8 @@ func (ps *UI) setupSettingsForm() {
 // read settings from from and saves to config file
 func (ps *UI) saveSettings(defaults bool) {
 	var err error
-	for i := 0; i < ps.settings.GetFormItemCount(); i++ {
-		item := ps.settings.GetFormItem(i)
+	for i := 0; i < ps.formSettings.GetFormItemCount(); i++ {
+		item := ps.formSettings.GetFormItem(i)
 		if input, ok := item.(*tview.InputField); ok {
 			txt := input.GetText()
 			switch input.GetLabel() {
@@ -334,13 +332,13 @@ func (ps *UI) saveSettings(defaults bool) {
 			case "AUR timeout (ms): ":
 				ps.conf.AurTimeout, err = strconv.Atoi(txt)
 				if err != nil {
-					ps.showMessage("Can't convert timeout value to int", true)
+					ps.displayMessage("Can't convert timeout value to int", true)
 					return
 				}
 			case "AUR search delay (ms): ":
 				ps.conf.AurSearchDelay, err = strconv.Atoi(txt)
 				if err != nil {
-					ps.showMessage("Can't convert delay value to int", true)
+					ps.displayMessage("Can't convert delay value to int", true)
 					return
 				}
 			case "Pacman DB path: ":
@@ -360,13 +358,13 @@ func (ps *UI) saveSettings(defaults bool) {
 			case "Max search results: ":
 				ps.conf.MaxResults, err = strconv.Atoi(txt)
 				if err != nil {
-					ps.showMessage("Can't convert max results value to int", true)
+					ps.displayMessage("Can't convert max results value to int", true)
 					return
 				}
 			case "Cache expiry (m): ":
 				ps.conf.CacheExpiry, err = strconv.Atoi(txt)
 				if err != nil {
-					ps.showMessage("Can't convert cache expiry value to int", true)
+					ps.displayMessage("Can't convert cache expiry value to int", true)
 					return
 				}
 			}
@@ -395,17 +393,17 @@ func (ps *UI) saveSettings(defaults bool) {
 	}
 	err = ps.conf.Save()
 	if err != nil {
-		ps.showMessage(err.Error(), true)
+		ps.displayMessage(err.Error(), true)
 		return
 	}
 	msg := "Settings have been applied / saved"
 	if defaults {
 		msg = "Default settings have been restored"
 	}
-	ps.showMessage(msg, false)
+	ps.displayMessage(msg, false)
 	ps.settingsChanged = false
-	ps.searchCache.Flush()
+	ps.cacheSearch.Flush()
 	if ps.conf.DisableCache {
-		ps.infoCache.Flush()
+		ps.cacheInfo.Flush()
 	}
 }

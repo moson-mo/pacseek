@@ -85,7 +85,7 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 }
 
 // checks the local db if a package is installed
-func isInstalled(h *alpm.Handle, pkg string) bool {
+func isPackageInstalled(h *alpm.Handle, pkg string) bool {
 	local, err := h.LocalDB()
 	if err != nil {
 		return false

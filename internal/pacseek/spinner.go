@@ -3,7 +3,7 @@ package pacseek
 import "time"
 
 // starts the spinner
-func (ps *UI) startSpin() {
+func (ps *UI) startSpinner() {
 	chars := "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
 	if ps.asciiMode {
 		chars = "|/-\\"
@@ -27,6 +27,6 @@ func (ps *UI) startSpin() {
 }
 
 // stops the spinner
-func (ps *UI) stopSpin() {
+func (ps *UI) stopSpinner() {
 	ps.quitSpin <- true
 }
