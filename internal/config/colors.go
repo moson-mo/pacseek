@@ -46,7 +46,7 @@ var (
 			SettingsFieldBackground:     tcell.NewHexColor(0x0564A0),
 			SettingsFieldText:           tcell.ColorWhite,
 			SettingsFieldLabel:          tcell.ColorYellow,
-			SettingsDropdownNotSelected: tcell.ColorDarkBlue,
+			SettingsDropdownNotSelected: tcell.NewHexColor(0x0564A0),
 		},
 		"Endeavour OS": {
 			Accent:                      tcell.NewHexColor(0x7f7fff),
@@ -58,7 +58,55 @@ var (
 			SettingsFieldBackground:     tcell.NewHexColor(0x7f3fbf),
 			SettingsFieldText:           tcell.ColorWhite,
 			SettingsFieldLabel:          tcell.ColorYellow,
-			SettingsDropdownNotSelected: tcell.ColorDarkBlue,
+			SettingsDropdownNotSelected: tcell.NewHexColor(0x7f3fbf),
+		},
+		"Red": {
+			Accent:                      tcell.NewHexColor(0xcc3300),
+			Title:                       tcell.NewHexColor(0xff3300),
+			SearchBar:                   tcell.NewHexColor(0xcc3300),
+			PackagelistSourceRepository: tcell.NewHexColor(0xff9900),
+			PackagelistSourceAUR:        tcell.NewHexColor(0xcc3300),
+			PackagelistHeader:           tcell.ColorYellow,
+			SettingsFieldBackground:     tcell.NewHexColor(0xcc3300),
+			SettingsFieldText:           tcell.ColorWhite,
+			SettingsFieldLabel:          tcell.ColorYellow,
+			SettingsDropdownNotSelected: tcell.NewHexColor(0xcc3300),
+		},
+		"Green": {
+			Accent:                      tcell.NewHexColor(0x33cc33),
+			Title:                       tcell.NewHexColor(0x00ff00),
+			SearchBar:                   tcell.NewHexColor(0x009933),
+			PackagelistSourceRepository: tcell.NewHexColor(0xffff00),
+			PackagelistSourceAUR:        tcell.NewHexColor(0x009933),
+			PackagelistHeader:           tcell.ColorYellow,
+			SettingsFieldBackground:     tcell.NewHexColor(0x009933),
+			SettingsFieldText:           tcell.ColorWhite,
+			SettingsFieldLabel:          tcell.ColorYellow,
+			SettingsDropdownNotSelected: tcell.NewHexColor(0x009933),
+		},
+		"Blue": {
+			Accent:                      tcell.NewHexColor(0x0066ff),
+			Title:                       tcell.NewHexColor(0x0099ff),
+			SearchBar:                   tcell.NewHexColor(0x0066ff),
+			PackagelistSourceRepository: tcell.NewHexColor(0x00ccff),
+			PackagelistSourceAUR:        tcell.NewHexColor(0x0066ff),
+			PackagelistHeader:           tcell.ColorYellow,
+			SettingsFieldBackground:     tcell.NewHexColor(0x0066ff),
+			SettingsFieldText:           tcell.ColorWhite,
+			SettingsFieldLabel:          tcell.ColorYellow,
+			SettingsDropdownNotSelected: tcell.NewHexColor(0x0066ff),
+		},
+		"Orange": {
+			Accent:                      tcell.NewHexColor(0xcc7a00),
+			Title:                       tcell.NewHexColor(0xffcc00),
+			SearchBar:                   tcell.NewHexColor(0xcc7a00),
+			PackagelistSourceRepository: tcell.NewHexColor(0xff6600),
+			PackagelistSourceAUR:        tcell.NewHexColor(0xcc7a00),
+			PackagelistHeader:           tcell.ColorYellow,
+			SettingsFieldBackground:     tcell.NewHexColor(0xcc7a00),
+			SettingsFieldText:           tcell.ColorWhite,
+			SettingsFieldLabel:          tcell.ColorYellow,
+			SettingsDropdownNotSelected: tcell.NewHexColor(0xcc7a00),
 		},
 		"Monochrome": {
 			Accent:                      tcell.ColorWhite,
@@ -214,5 +262,5 @@ func (s *Settings) Colors() Colors {
 
 // Returns all available color schemes
 func ColorSchemes() []string {
-	return []string{"Arch Linux", "Endeavour OS", "Monochrome", "Custom"}
+	return []string{"Arch Linux", "Endeavour OS", "Red", "Green", "Blue", "Orange", "Monochrome", "Custom"}
 }

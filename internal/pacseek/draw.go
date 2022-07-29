@@ -163,8 +163,8 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 
 // draw package information on screen
 func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
-	ps.tableDetails.Clear()
-	ps.tableDetails.SetTitle(" [::b]"+i.Name+" ").SetBorderPadding(1, 1, 1, 1)
+	ps.tableDetails.Clear().
+		SetTitle(" [::b]" + i.Name + " ")
 	r := 0
 	ln := 0
 
