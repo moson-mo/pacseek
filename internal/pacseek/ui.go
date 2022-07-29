@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	aurPackageUrl = "https://aur.archlinux.org/packages/"
-	packageUrl    = "https://archlinux.org/packages/"
+	UrlAurPackage   = "https://aur.archlinux.org/packages/%s"
+	UrlAurPkgbuild  = "https://raw.githubusercontent.com/archlinux/aur/%s/PKGBUILD"
+	UrlPackage      = "https://archlinux.org/packages/%s/%s/%s"
+	UrlRepoPkgbuild = "https://raw.githubusercontent.com/archlinux/svntogit-%s/packages/%s/trunk/PKGBUILD"
 
 	version = "1.4.5"
 )

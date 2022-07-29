@@ -32,7 +32,10 @@ func (ps *UI) createComponents() {
 		SetTitleAlign(tview.AlignLeft)
 	ps.inputSearch.SetLabelStyle(tcell.StyleDefault.Bold(true)).
 		SetBorder(true)
-	ps.tableDetails.SetBorder(true).
+	ps.tableDetails.SetFocusFunc(func() { // hack when clicking: you shall not focus!!!
+		ps.app.SetFocus(ps.tablePackages)
+	}).
+		SetBorder(true).
 		SetTitleAlign(tview.AlignLeft).
 		SetBorderPadding(1, 1, 1, 1)
 	ps.displayHelp()

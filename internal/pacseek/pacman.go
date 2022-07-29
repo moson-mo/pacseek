@@ -156,6 +156,7 @@ func infoPacman(h *alpm.Handle, pkgs []string) RpcResult {
 				Source:       db.Name(),
 				Architecture: p.Architecture(),
 				RequiredBy:   p.ComputeRequiredBy(),
+				PackageBase:  p.Base(),
 			}
 			if db.Name() == "local" {
 				i.Description = p.Description() + "\n[red]* Package not found in repositories/AUR *"

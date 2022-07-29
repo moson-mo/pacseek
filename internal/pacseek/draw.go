@@ -178,11 +178,27 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 			w := width - (int(float64(width)*(float64(ps.leftProportion)/10)) + 21) // left box = 40% size, then we use 13 characters for column 0, 2 for padding and 6 for borders
 			lines := tview.WordWrap(v, w)
 			mr := r
-			ps.tableDetails.SetCell(r, 0, &tview.TableCell{
+			cell := &tview.TableCell{
 				Text:            "[::b]" + k,
 				Color:           ps.conf.Colors().Accent,
 				BackgroundColor: tcell.ColorBlack,
-			})
+			}
+
+			if k == " Show PKGBUILD" {
+				ps.tableDetails.SetCellSimple(r, 0, "")
+				r++
+				cell.SetBackgroundColor(ps.conf.Colors().Accent).
+					SetTextColor(ps.conf.Colors().SettingsFieldText).
+					SetAlign(tview.AlignCenter).
+					SetClickedFunc(func() bool {
+						ps.runCommand(util.Shell(), []string{"-c", "curl -s \"" + v + "\"|less"})
+						return true
+					})
+				ps.tableDetails.SetCell(r, 0, cell)
+				break
+			}
+			ps.tableDetails.SetCell(r, 0, cell)
+
 			for _, l := range lines {
 				if mr != r {
 					ps.tableDetails.SetCellSimple(r, 0, "") // we need to add some blank content otherwise it looks weird with some terminal configs
@@ -361,6 +377,7 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 		"Last modified",
 		"Flagged out of date",
 		"Package URL",
+		" Show PKGBUILD", //the space in front is an ugly alignment hack ;)
 	}
 
 	fields := map[string]string{}
@@ -376,9 +393,15 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	if i.Source == "AUR" {
 		fields[order[9]] = fmt.Sprintf("%d", i.NumVotes)
 		fields[order[10]] = fmt.Sprintf("%f", i.Popularity)
-		fields[order[13]] = aurPackageUrl + i.Name
+		fields[order[13]] = fmt.Sprintf(UrlAurPackage, i.Name)
+		fields[order[14]] = fmt.Sprintf(UrlAurPkgbuild, i.PackageBase)
 	} else if util.SliceContains(ArchRepos(), i.Source) {
-		fields[order[13]] = packageUrl + i.Source + "/" + i.Architecture + "/" + i.Name
+		fields[order[13]] = fmt.Sprintf(UrlPackage, i.Source, i.Architecture, i.Name)
+		repo := "packages"
+		if strings.Contains(i.Source, "community") {
+			repo = "community"
+		}
+		fields[order[14]] = fmt.Sprintf(UrlRepoPkgbuild, repo, i.PackageBase)
 	}
 	if i.LastModified != 0 {
 		fields[order[11]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
