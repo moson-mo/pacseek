@@ -117,7 +117,7 @@ func getArchRepos() []string {
 }
 
 // returns command to download and display PKGBUILD
-func getPkgbuildCommand(source, base string) string {
+func (ps *UI) getPkgbuildCommand(source, base string) string {
 	url := fmt.Sprintf(UrlAurPkgbuild, base)
 	repo := "packages"
 	if strings.Contains(source, "community") {
@@ -127,5 +127,5 @@ func getPkgbuildCommand(source, base string) string {
 		url = fmt.Sprintf(UrlRepoPkgbuild, repo, base)
 	}
 
-	return "curl -s \"" + url + "\"|less"
+	return strings.Replace(ps.conf.ShowPkgbuildCommand, "{url}", url, -1)
 }

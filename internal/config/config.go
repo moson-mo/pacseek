@@ -28,29 +28,31 @@ type Settings struct {
 	DisableCache            bool
 	ColorScheme             string
 	BorderStyle             string
+	ShowPkgbuildCommand     string
 	colors                  Colors
 }
 
 // Defaults returns the default settings
 func Defaults() *Settings {
 	s := Settings{
-		AurRpcUrl:         "https://server.moson.rocks/rpc",
-		AurTimeout:        5000,
-		AurSearchDelay:    500,
-		DisableAur:        false,
-		MaxResults:        500,
-		PacmanDbPath:      "/var/lib/pacman/",
-		PacmanConfigPath:  "/etc/pacman.conf",
-		InstallCommand:    "yay -S",
-		UninstallCommand:  "yay -Rs",
-		SearchMode:        "Contains",
-		SysUpgradeCommand: "yay",
-		SearchBy:          "Name",
-		CacheExpiry:       10,
-		DisableCache:      false,
-		ColorScheme:       defaultColorScheme,
-		BorderStyle:       "Double",
-		colors:            colorSchemes[defaultColorScheme],
+		AurRpcUrl:           "https://server.moson.rocks/rpc",
+		AurTimeout:          5000,
+		AurSearchDelay:      500,
+		DisableAur:          false,
+		MaxResults:          500,
+		PacmanDbPath:        "/var/lib/pacman/",
+		PacmanConfigPath:    "/etc/pacman.conf",
+		InstallCommand:      "yay -S",
+		UninstallCommand:    "yay -Rs",
+		SearchMode:          "Contains",
+		SysUpgradeCommand:   "yay",
+		SearchBy:            "Name",
+		CacheExpiry:         10,
+		DisableCache:        false,
+		ColorScheme:         defaultColorScheme,
+		BorderStyle:         "Double",
+		colors:              colorSchemes[defaultColorScheme],
+		ShowPkgbuildCommand: "curl -s \"{url}\"|less",
 	}
 
 	return &s
@@ -133,13 +135,19 @@ func (s *Settings) applyUpgradeFixes() {
 
 	// color scheme: added with 1.4.2
 	if s.ColorScheme == "" {
-		s.ColorScheme = "Arch Linux"
+		s.ColorScheme = def.ColorScheme
 		fixApplied = true
 	}
 
 	// border style: added with 1.4.2
 	if s.BorderStyle == "" {
-		s.BorderStyle = "Double"
+		s.BorderStyle = def.BorderStyle
+		fixApplied = true
+	}
+
+	// show PKGBUILD command: added with 1.4.7
+	if s.ShowPkgbuildCommand == "" {
+		s.ShowPkgbuildCommand = def.ShowPkgbuildCommand
 		fixApplied = true
 	}
 

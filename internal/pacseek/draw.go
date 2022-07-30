@@ -107,7 +107,8 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 	}
 	ps.formSettings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, sc).
 		AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, sc).
-		AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc)
+		AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc).
+		AddInputField("Show PKGBUILD command: ", ps.conf.ShowPkgbuildCommand, 40, nil, sc)
 
 	ps.applyDropDownColors()
 
@@ -168,7 +169,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 	r := 0
 	ln := 0
 
-	fields, order := getDetailFields(i)
+	fields, order := ps.getDetailFields(i)
 	for _, k := range order {
 		if v, ok := fields[k]; ok && v != "" {
 			if ln == 1 || k == "Last modified" {
@@ -361,7 +362,7 @@ func (ps *UI) sortAndRedrawPackageList(runeKey rune) {
 }
 
 // composes a map with fields and values (package information) for our details box
-func getDetailFields(i InfoRecord) (map[string]string, []string) {
+func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 	order := []string{
 		"Description",
 		"Version",
@@ -403,7 +404,7 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	if i.OutOfDate != 0 {
 		fields[order[12]] = time.Unix(int64(i.OutOfDate), 0).UTC().Format("[red]2006-01-02 - 15:04:05 (UTC)")
 	}
-	fields[order[14]] = getPkgbuildCommand(i.Source, i.PackageBase)
+	fields[order[14]] = ps.getPkgbuildCommand(i.Source, i.PackageBase)
 
 	return fields, order
 }

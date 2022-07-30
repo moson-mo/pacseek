@@ -213,7 +213,7 @@ func (ps *UI) setupKeyBindings() {
 		// CTRL+P
 		if event.Key() == tcell.KeyCtrlP {
 			if ps.selectedPackage != nil {
-				ps.runCommand(util.Shell(), []string{"-c", getPkgbuildCommand(ps.selectedPackage.Source, ps.selectedPackage.PackageBase)})
+				ps.runCommand(util.Shell(), []string{"-c", ps.getPkgbuildCommand(ps.selectedPackage.Source, ps.selectedPackage.PackageBase)})
 			}
 		}
 
@@ -379,6 +379,8 @@ func (ps *UI) saveSettings(defaults bool) {
 					ps.displayMessage("Can't convert cache expiry value to int", true)
 					return
 				}
+			case "Show PKGBUILD command: ":
+				ps.conf.ShowPkgbuildCommand = txt
 			}
 		} else if dd, ok := item.(*tview.DropDown); ok {
 			_, opt := dd.GetCurrentOption()
