@@ -209,6 +209,14 @@ func (ps *UI) setupKeyBindings() {
 			ps.cacheInfo.Flush()
 			return nil
 		}
+
+		// CTRL+P
+		if event.Key() == tcell.KeyCtrlP {
+			if ps.selectedPackage != nil {
+				ps.runCommand(util.Shell(), []string{"-c", getPkgbuildCommand(ps.selectedPackage.Source, ps.selectedPackage.PackageBase)})
+			}
+		}
+
 		// Shift+Left - decrease size of left container
 		if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModShift {
 			if ps.leftProportion != 1 {
@@ -217,6 +225,7 @@ func (ps *UI) setupKeyBindings() {
 			}
 			return nil
 		}
+
 		// Shift+Right - increase size of left container
 		if event.Key() == tcell.KeyRight && event.Modifiers() == tcell.ModShift {
 			if ps.leftProportion != 9 {

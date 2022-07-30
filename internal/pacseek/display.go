@@ -221,7 +221,8 @@ func (ps *UI) displayHelp() {
 		SetCellSimple(6, 0, "CTRL+U: Perform sysupgrade").
 		SetCellSimple(7, 0, "CTRL+A: Perform AUR upgrade (if configured)").
 		SetCellSimple(8, 0, "CTRL+W: Wipe cache").
-		SetCellSimple(10, 0, "CTRL+Q / ESC: Quit")
+		SetCellSimple(9, 0, "CTRL+P: Show PKGBUILD for selected package").
+		SetCellSimple(11, 0, "CTRL+Q / ESC: Quit")
 }
 
 // displays about text

@@ -1,6 +1,8 @@
 package pacseek
 
 import (
+	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -109,7 +111,21 @@ func (ps *UI) Start(term string) error {
 	return ps.app.SetRoot(ps.flexRoot, true).EnableMouse(true).Run()
 }
 
-// ArchRepos returns a list of Arch Linux repositories
-func ArchRepos() []string {
+// getArchRepos returns a list of Arch Linux repositories
+func getArchRepos() []string {
 	return []string{"core", "community", "community-testing", "extra", "kde-unstable", "multilib", "multilib-testing", "testing"}
+}
+
+// returns command to download and display PKGBUILD
+func getPkgbuildCommand(source, base string) string {
+	url := fmt.Sprintf(UrlAurPkgbuild, base)
+	repo := "packages"
+	if strings.Contains(source, "community") {
+		repo = "community"
+	}
+	if source != "AUR" {
+		url = fmt.Sprintf(UrlRepoPkgbuild, repo, base)
+	}
+
+	return "curl -s \"" + url + "\"|less"
 }

@@ -191,7 +191,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 					SetTextColor(ps.conf.Colors().SettingsFieldText).
 					SetAlign(tview.AlignCenter).
 					SetClickedFunc(func() bool {
-						ps.runCommand(util.Shell(), []string{"-c", "curl -s \"" + v + "\"|less"})
+						ps.runCommand(util.Shell(), []string{"-c", v})
 						return true
 					})
 				ps.tableDetails.SetCell(r, 0, cell)
@@ -394,14 +394,8 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 		fields[order[9]] = fmt.Sprintf("%d", i.NumVotes)
 		fields[order[10]] = fmt.Sprintf("%f", i.Popularity)
 		fields[order[13]] = fmt.Sprintf(UrlAurPackage, i.Name)
-		fields[order[14]] = fmt.Sprintf(UrlAurPkgbuild, i.PackageBase)
-	} else if util.SliceContains(ArchRepos(), i.Source) {
+	} else if util.SliceContains(getArchRepos(), i.Source) {
 		fields[order[13]] = fmt.Sprintf(UrlPackage, i.Source, i.Architecture, i.Name)
-		repo := "packages"
-		if strings.Contains(i.Source, "community") {
-			repo = "community"
-		}
-		fields[order[14]] = fmt.Sprintf(UrlRepoPkgbuild, repo, i.PackageBase)
 	}
 	if i.LastModified != 0 {
 		fields[order[11]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
@@ -409,6 +403,7 @@ func getDetailFields(i InfoRecord) (map[string]string, []string) {
 	if i.OutOfDate != 0 {
 		fields[order[12]] = time.Unix(int64(i.OutOfDate), 0).UTC().Format("[red]2006-01-02 - 15:04:05 (UTC)")
 	}
+	fields[order[14]] = getPkgbuildCommand(i.Source, i.PackageBase)
 
 	return fields, order
 }
