@@ -209,6 +209,9 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 					Color:           tcell.ColorWhite,
 					BackgroundColor: tcell.ColorBlack,
 				}
+				if k == "Description" {
+					cell.Text = "[::b]" + l
+				}
 				if strings.Contains(k, "URL") {
 					cell.SetClickedFunc(func() bool {
 						exec.Command("xdg-open", v).Run()
@@ -382,7 +385,7 @@ func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 	}
 
 	fields := map[string]string{}
-	fields[order[0]] = "[::b]" + i.Description
+	fields[order[0]] = i.Description
 	fields[order[1]] = i.Version
 	fields[order[2]] = strings.Join(i.Provides, ", ")
 	fields[order[3]] = strings.Join(i.Conflicts, ", ")
