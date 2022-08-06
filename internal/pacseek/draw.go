@@ -446,7 +446,7 @@ func (ps *UI) updateInstalledState() {
 		for i := 0; i < len(scpkg); i++ {
 			scpkg[i].IsInstalled = isPackageInstalled(ps.alpmHandle, scpkg[i].Name)
 		}
-		ps.cacheSearch.Set(sterm, scpkg, exp.Sub(time.Now()))
+		ps.cacheSearch.Set(sterm, scpkg, time.Until(exp))
 	}
 
 	// update currently shown packages

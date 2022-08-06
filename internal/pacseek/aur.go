@@ -3,7 +3,7 @@ package pacseek
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -31,7 +31,7 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 	}
 
 	defer r.Body.Close()
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		return packages, err
 	}
@@ -105,7 +105,7 @@ func infoAur(aurUrl string, pkg []string, timeout int) RpcResult {
 	}
 
 	defer r.Body.Close()
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		return RpcResult{Error: err.Error()}
 	}

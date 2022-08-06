@@ -92,11 +92,7 @@ func isPackageInstalled(h *alpm.Handle, pkg string) bool {
 	}
 	local.SetUsage(alpm.UsageSearch)
 
-	p := local.Pkg(pkg)
-	if p != nil {
-		return true
-	}
-	return false
+	return local.Pkg(pkg) != nil
 }
 
 // retrieves package information from the pacman DB's and returns it in the same format as the AUR call
