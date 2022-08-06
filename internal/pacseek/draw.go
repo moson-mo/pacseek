@@ -170,13 +170,14 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 	ln := 0
 
 	fields, order := ps.getDetailFields(i)
+	maxLen := util.MaxLenMapKey(fields)
 	for _, k := range order {
 		if v, ok := fields[k]; ok && v != "" {
 			if ln == 1 || k == "Last modified" {
 				r++
 			}
 			// split lines if they do not fit on the screen
-			w := width - (int(float64(width)*(float64(ps.leftProportion)/10)) + 21) // left box = 40% size, then we use 13 characters for column 0, 2 for padding and 6 for borders
+			w := width - (int(float64(width)*(float64(ps.leftProportion)/10)) + maxLen + 7) // subtract left box, borders, padding and first column
 			lines := tview.WordWrap(v, w)
 			mr := r
 			cell := &tview.TableCell{

@@ -1,6 +1,8 @@
 package util
 
-import "os"
+import (
+	"os"
+)
 
 // SliceContains checks if a slice contains a certain element
 func SliceContains[T comparable](values []T, value T) bool {
@@ -29,4 +31,15 @@ func Shell() string {
 		shell = "/bin/sh" // fallback
 	}
 	return shell
+}
+
+// MaxLenMapKey returns the length of the longest key string in a map of strings
+func MaxLenMapKey(strMap map[string]string) int {
+	maxLen := 0
+	for k := range strMap {
+		if len(k) > maxLen {
+			maxLen = len(k)
+		}
+	}
+	return maxLen
 }
