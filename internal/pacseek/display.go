@@ -287,6 +287,7 @@ func (ps *UI) displayPkgbuild() {
 				})
 				return
 			}
+			ps.cachePkgbuild.Set(ps.selectedPackage.PackageBase, content, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 		} else {
 			content = contentCached.(string)
 		}
