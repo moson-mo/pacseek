@@ -181,6 +181,7 @@ func (ps *UI) setupKeyBindings() {
 			if !settingsVisible {
 				ps.flexRight.Clear()
 				ps.flexRight.AddItem(ps.formSettings, 0, 1, false)
+				ps.app.SetFocus(ps.formSettings)
 			} else {
 				ps.flexRight.Clear()
 				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
