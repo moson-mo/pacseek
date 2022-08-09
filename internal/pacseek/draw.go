@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alecthomas/chroma/quick"
 	"github.com/gdamore/tcell/v2"
 	"github.com/moson-mo/pacseek/internal/config"
 	"github.com/moson-mo/pacseek/internal/util"
@@ -15,7 +16,7 @@ import (
 )
 
 // draws input fields on settings form
-func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands bool) {
+func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, pkgbuildInteranl bool) {
 	ps.formSettings.Clear(false)
 	mode := 0
 	if ps.conf.SearchMode != "StartsWith" {
@@ -55,7 +56,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 	}
 	ps.formSettings.AddCheckbox("Disable AUR: ", disableAur, func(checked bool) {
 		ps.settingsChanged = true
-		ps.drawSettingsFields(checked, disableCache, separateAurCommands)
+		ps.drawSettingsFields(checked, disableCache, separateAurCommands, pkgbuildInteranl)
 		ps.app.SetFocus(ps.formSettings)
 	})
 	if !disableAur {
@@ -66,7 +67,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 	ps.formSettings.AddCheckbox("Disable Cache: ", disableCache, func(checked bool) {
 		ps.settingsChanged = true
 		i, _ := ps.formSettings.GetFocusedItemIndex()
-		ps.drawSettingsFields(disableAur, checked, separateAurCommands)
+		ps.drawSettingsFields(disableAur, checked, separateAurCommands, pkgbuildInteranl)
 		ps.formSettings.SetFocus(i)
 		ps.app.SetFocus(ps.formSettings)
 	})
@@ -89,7 +90,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 		AddCheckbox("Separate AUR commands: ", separateAurCommands, func(checked bool) {
 			ps.settingsChanged = true
 			i, _ := ps.formSettings.GetFocusedItemIndex()
-			ps.drawSettingsFields(disableAur, disableCache, checked)
+			ps.drawSettingsFields(disableAur, disableCache, checked, pkgbuildInteranl)
 			ps.formSettings.SetFocus(i)
 			ps.app.SetFocus(ps.formSettings)
 		})
@@ -108,7 +109,16 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands b
 	ps.formSettings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, sc).
 		AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, sc).
 		AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc).
-		AddInputField("Show PKGBUILD command: ", ps.conf.ShowPkgbuildCommand, 40, nil, sc)
+		AddCheckbox("Show PKGBUILD internally: ", pkgbuildInteranl, func(checked bool) {
+			ps.settingsChanged = true
+			i, _ := ps.formSettings.GetFocusedItemIndex()
+			ps.drawSettingsFields(disableAur, disableCache, separateAurCommands, checked)
+			ps.formSettings.SetFocus(i)
+			ps.app.SetFocus(ps.formSettings)
+		})
+	if !pkgbuildInteranl {
+		ps.formSettings.AddInputField("Show PKGBUILD command: ", ps.conf.ShowPkgbuildCommand, 40, nil, sc)
+	}
 
 	ps.applyDropDownColors()
 
@@ -189,11 +199,15 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 			if k == " Show PKGBUILD" {
 				ps.tableDetails.SetCellSimple(r, 0, "")
 				r++
-				cell.SetBackgroundColor(ps.conf.Colors().Accent).
+				cell.SetBackgroundColor(ps.conf.Colors().SearchBar).
 					SetTextColor(ps.conf.Colors().SettingsFieldText).
 					SetAlign(tview.AlignCenter).
 					SetClickedFunc(func() bool {
-						ps.runCommand(util.Shell(), []string{"-c", v})
+						if ps.conf.ShowPkgbuildInternally {
+							ps.displayPkgbuild()
+						} else {
+							ps.runCommand(util.Shell(), []string{"-c", v})
+						}
 						return true
 					})
 				ps.tableDetails.SetCell(r, 0, cell)
@@ -260,6 +274,16 @@ func (ps *UI) drawPackageListContent(packages []Package) {
 		})
 	}
 	ps.tablePackages.ScrollToBeginning()
+}
+
+// draw pkgbuild on screen
+func (ps *UI) drawPkgbuild(content, pkg string) {
+	ps.textPkgbuild.SetTitle(" [::b]PKGBUILD - " + pkg + " ")
+	err := quick.Highlight(ps.pkgbuildWriter, tview.Escape(content), "bash", "terminal16m", ps.conf.Colors().StylePKGBUILD)
+	if err != nil {
+		ps.textPkgbuild.SetText(err.Error())
+		return
+	}
 }
 
 // adds header row to package table

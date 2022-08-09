@@ -25,6 +25,7 @@ func (ps *UI) createComponents() {
 	ps.spinner = tview.NewTextView()
 	ps.formSettings = tview.NewForm()
 	ps.textMessage = tview.NewTextView()
+	ps.textPkgbuild = tview.NewTextView()
 
 	// component config
 	ps.flexRoot.SetBorder(true).
@@ -32,8 +33,12 @@ func (ps *UI) createComponents() {
 		SetTitleAlign(tview.AlignLeft)
 	ps.inputSearch.SetLabelStyle(tcell.StyleDefault.Bold(true)).
 		SetBorder(true)
-	ps.tableDetails.SetFocusFunc(func() { // hack when clicking: you shall not focus!!!
-		ps.app.SetFocus(ps.tablePackages)
+	ps.tableDetails.SetFocusFunc(func() {
+		if ps.flexRight.GetItem(0) == ps.textPkgbuild {
+			ps.app.SetFocus(ps.textPkgbuild)
+		} else {
+			ps.app.SetFocus(ps.tablePackages)
+		}
 	}).
 		SetBorder(true).
 		SetTitleAlign(tview.AlignLeft).
@@ -52,6 +57,12 @@ func (ps *UI) createComponents() {
 		SetTitleAlign(tview.AlignLeft)
 	ps.textMessage.SetDynamicColors(true).
 		SetBorder(true)
+	ps.textPkgbuild.SetWrap(false).
+		SetDynamicColors(true).
+		SetBorder(true).
+		SetTitleAlign(tview.AlignLeft).
+		SetBorderPadding(1, 1, 1, 1)
+	ps.pkgbuildWriter = tview.ANSIWriter(ps.textPkgbuild)
 
 	// layouting
 	ps.leftProportion = 4
@@ -73,6 +84,7 @@ func (ps *UI) applyColors() {
 	ps.formSettings.SetTitleColor(ps.conf.Colors().Title)
 	ps.tableDetails.SetTitleColor(ps.conf.Colors().Title)
 	ps.inputSearch.SetFieldBackgroundColor(ps.conf.Colors().SearchBar)
+	ps.textPkgbuild.SetTitleColor(ps.conf.Colors().Title)
 
 	// settings form
 	ps.formSettings.SetFieldBackgroundColor(ps.conf.Colors().SettingsFieldBackground).
@@ -142,9 +154,11 @@ func (ps *UI) setupKeyBindings() {
 	// app / global
 	ps.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		settingsVisible := ps.flexRight.GetItem(0) == ps.formSettings
+		pkgbuildVisible := ps.flexRight.GetItem(0) == ps.textPkgbuild
+
 		// CTRL+Q - Quit
 		if event.Key() == tcell.KeyCtrlQ ||
-			(event.Key() == tcell.KeyEscape && !settingsVisible) {
+			(event.Key() == tcell.KeyEscape && !settingsVisible && !pkgbuildVisible) {
 			ps.alpmHandle.Release()
 			if !ps.settingsChanged {
 				ps.app.Stop()
@@ -172,7 +186,7 @@ func (ps *UI) setupKeyBindings() {
 				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
 				ps.app.SetFocus(ps.inputSearch)
 				if event.Key() == tcell.KeyEscape {
-					ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands)
+					ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally)
 					ps.settingsChanged = false
 				}
 			}
@@ -211,9 +225,20 @@ func (ps *UI) setupKeyBindings() {
 		}
 
 		// CTRL+P
-		if event.Key() == tcell.KeyCtrlP {
+		if event.Key() == tcell.KeyCtrlP ||
+			event.Key() == tcell.KeyEscape && pkgbuildVisible {
 			if ps.selectedPackage != nil {
-				ps.runCommand(util.Shell(), []string{"-c", ps.getPkgbuildCommand(ps.selectedPackage.Source, ps.selectedPackage.PackageBase)})
+				if pkgbuildVisible {
+					ps.flexRight.Clear()
+					ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
+					ps.app.SetFocus(ps.tablePackages)
+				} else {
+					if ps.conf.ShowPkgbuildInternally {
+						ps.displayPkgbuild()
+					} else {
+						ps.runCommand(util.Shell(), []string{"-c", ps.getPkgbuildCommand(ps.selectedPackage.Source, ps.selectedPackage.PackageBase)})
+					}
+				}
 			}
 		}
 
@@ -284,6 +309,8 @@ func (ps *UI) setupKeyBindings() {
 			(event.Key() == tcell.KeyUp && event.Modifiers() == tcell.ModCtrl) {
 			if ps.flexRight.GetItem(0) == ps.formSettings && event.Key() == tcell.KeyTAB {
 				ps.app.SetFocus(ps.formSettings.GetFormItem(0))
+			} else if ps.flexRight.GetItem(0) == ps.textPkgbuild && event.Key() == tcell.KeyTAB {
+				ps.app.SetFocus(ps.textPkgbuild)
 			} else {
 				ps.app.SetFocus(ps.inputSearch)
 			}
@@ -292,6 +319,11 @@ func (ps *UI) setupKeyBindings() {
 		// Right
 		if event.Key() == tcell.KeyRight && ps.flexRight.GetItem(0) == ps.formSettings {
 			ps.app.SetFocus(ps.formSettings.GetFormItem(0))
+			ps.prevComponent = ps.tablePackages
+			return nil
+		}
+		if event.Key() == tcell.KeyRight && ps.flexRight.GetItem(0) == ps.textPkgbuild {
+			ps.app.SetFocus(ps.textPkgbuild)
 			ps.prevComponent = ps.tablePackages
 			return nil
 		}
@@ -309,7 +341,29 @@ func (ps *UI) setupKeyBindings() {
 
 		return event
 	})
-	ps.tablePackages.SetSelectionChangedFunc(ps.displayPackageInfo)
+	ps.tablePackages.SetSelectionChangedFunc(func(row, column int) {
+		if ps.flexRight.GetItem(0) != ps.tableDetails {
+			ps.flexRight.Clear()
+			ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
+		}
+		ps.displayPackageInfo(row, column)
+	})
+
+	// PKGBUILD
+	ps.textPkgbuild.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// CTRL+Left
+		if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModCtrl {
+			ps.app.SetFocus(ps.tablePackages)
+			return nil
+		}
+		// TAB
+		if event.Key() == tcell.KeyTAB {
+			ps.app.SetFocus(ps.inputSearch)
+			return nil
+		}
+
+		return event
+	})
 }
 
 // sets up settings form
@@ -317,18 +371,18 @@ func (ps *UI) setupSettingsForm() {
 	// Save button clicked
 	ps.formSettings.AddButton("Apply & Save", func() {
 		ps.saveSettings(false)
-		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands)
+		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally)
 	})
 
 	// Defaults button clicked
 	ps.formSettings.AddButton("Defaults", func() {
 		ps.conf = config.Defaults()
-		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands)
+		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally)
 		ps.saveSettings(true)
 	})
 
 	// add our input fields
-	ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands)
+	ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally)
 }
 
 // read settings from from and saves to config file
@@ -402,6 +456,8 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.DisableCache = cb.IsChecked()
 			case "Separate AUR commands: ":
 				ps.conf.AurUseDifferentCommands = cb.IsChecked()
+			case "Show PKGBUILD internally: ":
+				ps.conf.ShowPkgbuildInternally = cb.IsChecked()
 			}
 		}
 	}

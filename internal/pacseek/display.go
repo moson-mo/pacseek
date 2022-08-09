@@ -260,6 +260,46 @@ func (ps *UI) displayAbout() {
 	}
 }
 
+// displays PKGBUILD file
+func (ps *UI) displayPkgbuild() {
+	selpac := ps.selectedPackage
+	if selpac == nil {
+		return
+	}
+	ps.textPkgbuild.Clear()
+	ps.flexRight.Clear()
+	ps.flexRight.AddItem(ps.textPkgbuild, 0, 1, true)
+	ps.textPkgbuild.SetTitle(" [::b]Loading PKGBUILD... ")
+	ps.app.SetFocus(ps.textPkgbuild)
+
+	go func() {
+		var content string
+		contentCached, found := ps.cachePkgbuild.Get(ps.selectedPackage.PackageBase)
+		if !found {
+			ps.startSpinner()
+			defer ps.stopSpinner()
+			var err error
+			content, err = getPkgbuildContent(getPkgbuildUrl(ps.selectedPackage.Source, ps.selectedPackage.PackageBase))
+			if err != nil {
+				ps.app.QueueUpdateDraw(func() {
+					ps.textPkgbuild.SetTitle(" [::b]Error loading PKGBUILD ")
+					ps.textPkgbuild.SetText(err.Error())
+				})
+				return
+			}
+		} else {
+			content = contentCached.(string)
+		}
+
+		if selpac != ps.selectedPackage {
+			return
+		}
+		ps.app.QueueUpdateDraw(func() {
+			ps.drawPkgbuild(content, ps.selectedPackage.Name)
+		})
+	}()
+}
+
 // checks if a given package is currently selected in the package list
 func (ps *UI) isPackageSelected(pkg string, queue bool) bool {
 	var sel string

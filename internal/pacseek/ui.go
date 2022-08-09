@@ -1,8 +1,7 @@
 package pacseek
 
 import (
-	"fmt"
-	"strings"
+	"io"
 	"sync"
 	"time"
 
@@ -41,6 +40,7 @@ type UI struct {
 	spinner       *tview.TextView
 	formSettings  *tview.Form
 	textMessage   *tview.TextView
+	textPkgbuild  *tview.TextView
 	prevComponent tview.Primitive
 
 	locker        *sync.RWMutex
@@ -53,12 +53,15 @@ type UI struct {
 	settingsChanged bool
 	cacheInfo       *cache.Cache
 	cacheSearch     *cache.Cache
+	cachePkgbuild   *cache.Cache
 	filterRepos     []string
 	asciiMode       bool
 	shell           string
 	lastSearchTerm  string
 	shownPackages   []Package
 	sortAscending   bool
+
+	pkgbuildWriter io.Writer
 }
 
 // New creates a UI object and makes sure everything is initialized
@@ -72,9 +75,11 @@ func New(conf *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, 
 		settingsChanged: false,
 		cacheInfo:       cache.New(time.Duration(conf.CacheExpiry)*time.Minute, 1*time.Minute),
 		cacheSearch:     cache.New(time.Duration(conf.CacheExpiry)*time.Minute, 1*time.Minute),
-		filterRepos:     repos,
-		asciiMode:       asciiMode,
-		sortAscending:   true,
+		cachePkgbuild:   cache.New(time.Duration(conf.CacheExpiry)*time.Minute, 1*time.Minute),
+
+		filterRepos:   repos,
+		asciiMode:     asciiMode,
+		sortAscending: true,
 	}
 
 	// get users default shell
@@ -114,18 +119,4 @@ func (ps *UI) Start(term string) error {
 // getArchRepos returns a list of Arch Linux repositories
 func getArchRepos() []string {
 	return []string{"core", "community", "community-testing", "extra", "kde-unstable", "multilib", "multilib-testing", "testing"}
-}
-
-// returns command to download and display PKGBUILD
-func (ps *UI) getPkgbuildCommand(source, base string) string {
-	url := fmt.Sprintf(UrlAurPkgbuild, base)
-	repo := "packages"
-	if strings.Contains(source, "community") {
-		repo = "community"
-	}
-	if source != "AUR" {
-		url = fmt.Sprintf(UrlRepoPkgbuild, repo, base)
-	}
-
-	return strings.Replace(ps.conf.ShowPkgbuildCommand, "{url}", url, -1)
 }

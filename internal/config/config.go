@@ -29,30 +29,32 @@ type Settings struct {
 	ColorScheme             string
 	BorderStyle             string
 	ShowPkgbuildCommand     string
+	ShowPkgbuildInternally  bool
 	colors                  Colors
 }
 
 // Defaults returns the default settings
 func Defaults() *Settings {
 	s := Settings{
-		AurRpcUrl:           "https://server.moson.rocks/rpc",
-		AurTimeout:          5000,
-		AurSearchDelay:      500,
-		DisableAur:          false,
-		MaxResults:          500,
-		PacmanDbPath:        "/var/lib/pacman/",
-		PacmanConfigPath:    "/etc/pacman.conf",
-		InstallCommand:      "yay -S",
-		UninstallCommand:    "yay -Rs",
-		SearchMode:          "Contains",
-		SysUpgradeCommand:   "yay",
-		SearchBy:            "Name",
-		CacheExpiry:         10,
-		DisableCache:        false,
-		ColorScheme:         defaultColorScheme,
-		BorderStyle:         "Double",
-		colors:              colorSchemes[defaultColorScheme],
-		ShowPkgbuildCommand: "curl -s \"{url}\"|less",
+		AurRpcUrl:              "https://server.moson.rocks/rpc",
+		AurTimeout:             5000,
+		AurSearchDelay:         500,
+		DisableAur:             false,
+		MaxResults:             500,
+		PacmanDbPath:           "/var/lib/pacman/",
+		PacmanConfigPath:       "/etc/pacman.conf",
+		InstallCommand:         "yay -S",
+		UninstallCommand:       "yay -Rs",
+		SearchMode:             "Contains",
+		SysUpgradeCommand:      "yay",
+		SearchBy:               "Name",
+		CacheExpiry:            10,
+		DisableCache:           false,
+		ColorScheme:            defaultColorScheme,
+		BorderStyle:            "Double",
+		colors:                 colorSchemes[defaultColorScheme],
+		ShowPkgbuildCommand:    "curl -s \"{url}\"|less",
+		ShowPkgbuildInternally: true,
 	}
 
 	return &s

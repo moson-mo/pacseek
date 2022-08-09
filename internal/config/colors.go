@@ -25,6 +25,7 @@ type Colors struct {
 	SettingsFieldText           tcell.Color
 	SettingsFieldLabel          tcell.Color
 	SettingsDropdownNotSelected tcell.Color
+	StylePKGBUILD               string
 	colorParsingError           error
 }
 
@@ -40,13 +41,14 @@ var (
 			Accent:                      tcell.NewHexColor(0x1793d1),
 			Title:                       tcell.NewHexColor(0x00dfff),
 			SearchBar:                   tcell.NewHexColor(0x0564A0),
-			PackagelistSourceRepository: tcell.ColorGreen,
+			PackagelistSourceRepository: tcell.NewHexColor(0x00b000),
 			PackagelistSourceAUR:        tcell.NewHexColor(0x1793d1),
 			PackagelistHeader:           tcell.ColorYellow,
 			SettingsFieldBackground:     tcell.NewHexColor(0x0564A0),
 			SettingsFieldText:           tcell.ColorWhite,
 			SettingsFieldLabel:          tcell.ColorYellow,
 			SettingsDropdownNotSelected: tcell.NewHexColor(0x0564A0),
+			StylePKGBUILD:               "dracula",
 		},
 		"Endeavour OS": {
 			Accent:                      tcell.NewHexColor(0x7f7fff),
@@ -59,6 +61,7 @@ var (
 			SettingsFieldText:           tcell.ColorWhite,
 			SettingsFieldLabel:          tcell.ColorYellow,
 			SettingsDropdownNotSelected: tcell.NewHexColor(0x7f3fbf),
+			StylePKGBUILD:               "friendly",
 		},
 		"Red": {
 			Accent:                      tcell.NewHexColor(0xcc3300),
@@ -71,6 +74,7 @@ var (
 			SettingsFieldText:           tcell.ColorWhite,
 			SettingsFieldLabel:          tcell.ColorYellow,
 			SettingsDropdownNotSelected: tcell.NewHexColor(0xcc3300),
+			StylePKGBUILD:               "autumn",
 		},
 		"Green": {
 			Accent:                      tcell.NewHexColor(0x33cc33),
@@ -83,6 +87,7 @@ var (
 			SettingsFieldText:           tcell.ColorWhite,
 			SettingsFieldLabel:          tcell.ColorYellow,
 			SettingsDropdownNotSelected: tcell.NewHexColor(0x009933),
+			StylePKGBUILD:               "igor",
 		},
 		"Blue": {
 			Accent:                      tcell.NewHexColor(0x0066ff),
@@ -95,6 +100,7 @@ var (
 			SettingsFieldText:           tcell.ColorWhite,
 			SettingsFieldLabel:          tcell.ColorYellow,
 			SettingsDropdownNotSelected: tcell.NewHexColor(0x0066ff),
+			StylePKGBUILD:               "solarized-dark256",
 		},
 		"Orange": {
 			Accent:                      tcell.NewHexColor(0xcc7a00),
@@ -107,6 +113,7 @@ var (
 			SettingsFieldText:           tcell.ColorWhite,
 			SettingsFieldLabel:          tcell.ColorYellow,
 			SettingsDropdownNotSelected: tcell.NewHexColor(0xcc7a00),
+			StylePKGBUILD:               "fruity",
 		},
 		"Monochrome": {
 			Accent:                      tcell.ColorWhite,
@@ -119,6 +126,7 @@ var (
 			SettingsFieldText:           tcell.ColorWhite,
 			SettingsFieldLabel:          tcell.ColorWhite,
 			SettingsDropdownNotSelected: tcell.ColorBlack,
+			StylePKGBUILD:               "bw",
 		},
 	}
 )
@@ -199,6 +207,8 @@ func (c *Colors) marshalJSON() ([]byte, error) {
 		SettingsFieldText           string
 		SettingsFieldLabel          string
 		SettingsDropdownNotSelected string
+		StylePKGBUILD               string
+		Comments                    string
 	}{
 		Accent:                      fmt.Sprintf("%06x", c.Accent.Hex()),
 		Title:                       fmt.Sprintf("%06x", c.Title.Hex()),
@@ -210,6 +220,8 @@ func (c *Colors) marshalJSON() ([]byte, error) {
 		SettingsFieldText:           fmt.Sprintf("%06x", c.SettingsFieldText.Hex()),
 		SettingsFieldLabel:          fmt.Sprintf("%06x", c.SettingsFieldLabel.Hex()),
 		SettingsDropdownNotSelected: fmt.Sprintf("%06x", c.SettingsDropdownNotSelected.Hex()),
+		StylePKGBUILD:               c.StylePKGBUILD,
+		Comments:                    "Examples for StylePKGBUILD can be found here: https://xyproto.github.io/splash/docs/all.html",
 	}, "", "\t")
 }
 
@@ -226,6 +238,7 @@ func (c *Colors) unmarshalJSON(data []byte) error {
 		SettingsFieldText           string
 		SettingsFieldLabel          string
 		SettingsDropdownNotSelected string
+		StylePKGBUILD               string
 	}{}
 	err := json.Unmarshal(data, d)
 	if err != nil {
@@ -242,6 +255,7 @@ func (c *Colors) unmarshalJSON(data []byte) error {
 	c.SettingsFieldText = c.colorFromHexString(d.SettingsFieldText)
 	c.SettingsFieldLabel = c.colorFromHexString(d.SettingsFieldLabel)
 	c.SettingsDropdownNotSelected = c.colorFromHexString(d.SettingsDropdownNotSelected)
+	c.StylePKGBUILD = d.StylePKGBUILD
 	return nil
 }
 
