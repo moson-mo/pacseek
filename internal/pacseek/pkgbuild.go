@@ -24,7 +24,7 @@ func getPkgbuildContent(url string) (string, error) {
 }
 
 // composes the URL to a PKGBUILD file
-func getPkgbuildUrl(source, base string) string {
+func getPkgbuildUrl(source, base string, isArm bool) string {
 	url := fmt.Sprintf(UrlAurPkgbuild, base)
 	if source != "AUR" {
 		repo := "packages"
@@ -38,5 +38,5 @@ func getPkgbuildUrl(source, base string) string {
 
 // returns command to download and display PKGBUILD
 func (ps *UI) getPkgbuildCommand(source, base string) string {
-	return strings.Replace(ps.conf.ShowPkgbuildCommand, "{url}", getPkgbuildUrl(source, base), -1)
+	return strings.Replace(ps.conf.ShowPkgbuildCommand, "{url}", getPkgbuildUrl(source, base, ps.isArm), -1)
 }

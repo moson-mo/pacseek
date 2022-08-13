@@ -279,7 +279,7 @@ func (ps *UI) displayPkgbuild() {
 			ps.startSpinner()
 			defer ps.stopSpinner()
 			var err error
-			content, err = getPkgbuildContent(getPkgbuildUrl(ps.selectedPackage.Source, ps.selectedPackage.PackageBase))
+			content, err = getPkgbuildContent(getPkgbuildUrl(ps.selectedPackage.Source, ps.selectedPackage.PackageBase, ps.isArm))
 			if err != nil {
 				ps.app.QueueUpdateDraw(func() {
 					ps.textPkgbuild.SetTitle(" [::b]Error loading PKGBUILD ")

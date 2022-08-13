@@ -2,6 +2,7 @@ package pacseek
 
 import (
 	"io"
+	"runtime"
 	"sync"
 	"time"
 
@@ -16,6 +17,7 @@ const (
 	UrlAurPackage   = "https://aur.archlinux.org/packages/%s"
 	UrlAurPkgbuild  = "https://raw.githubusercontent.com/archlinux/aur/%s/PKGBUILD"
 	UrlPackage      = "https://archlinux.org/packages/%s/%s/%s"
+	UrlArmPackage   = "https://archlinuxarm.org/packages/%s/%s"
 	UrlRepoPkgbuild = "https://raw.githubusercontent.com/archlinux/svntogit-%s/packages/%s/trunk/PKGBUILD"
 
 	version = "1.5.1"
@@ -60,6 +62,7 @@ type UI struct {
 	lastSearchTerm  string
 	shownPackages   []Package
 	sortAscending   bool
+	isArm           bool
 
 	pkgbuildWriter io.Writer
 }
@@ -80,6 +83,7 @@ func New(conf *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, 
 		filterRepos:   repos,
 		asciiMode:     asciiMode,
 		sortAscending: true,
+		isArm:         runtime.GOARCH != "amd64",
 	}
 
 	// get users default shell
@@ -119,4 +123,9 @@ func (ps *UI) Start(term string) error {
 // getArchRepos returns a list of Arch Linux repositories
 func getArchRepos() []string {
 	return []string{"core", "community", "community-testing", "extra", "kde-unstable", "multilib", "multilib-testing", "testing"}
+}
+
+// getArchArmRepos returns a list of Arch Linux ARM repositories
+func getArchArmRepos() []string {
+	return []string{"core", "community", "extra", "aur", "alarm"}
 }

@@ -284,6 +284,7 @@ func (ps *UI) drawPkgbuild(content, pkg string) {
 		ps.textPkgbuild.SetText(err.Error())
 		return
 	}
+	ps.textPkgbuild.ScrollToBeginning()
 }
 
 // adds header row to package table
@@ -423,8 +424,13 @@ func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 		fields[order[9]] = fmt.Sprintf("%d", i.NumVotes)
 		fields[order[10]] = fmt.Sprintf("%f", i.Popularity)
 		fields[order[13]] = fmt.Sprintf(UrlAurPackage, i.Name)
-	} else if util.SliceContains(getArchRepos(), i.Source) {
-		fields[order[13]] = fmt.Sprintf(UrlPackage, i.Source, i.Architecture, i.Name)
+	} else if (!ps.isArm && util.SliceContains(getArchRepos(), i.Source)) ||
+		ps.isArm && util.SliceContains(getArchArmRepos(), i.Source) {
+		if ps.isArm {
+			fields[order[13]] = fmt.Sprintf(UrlArmPackage, i.Architecture, i.Name)
+		} else {
+			fields[order[13]] = fmt.Sprintf(UrlPackage, i.Source, i.Architecture, i.Name)
+		}
 	}
 	if i.LastModified != 0 {
 		fields[order[11]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
@@ -432,7 +438,9 @@ func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 	if i.OutOfDate != 0 {
 		fields[order[12]] = time.Unix(int64(i.OutOfDate), 0).UTC().Format("[red]2006-01-02 - 15:04:05 (UTC)")
 	}
-	fields[order[14]] = ps.getPkgbuildCommand(i.Source, i.PackageBase)
+	if !ps.isArm || (ps.isArm && i.Source == "AUR") {
+		fields[order[14]] = ps.getPkgbuildCommand(i.Source, i.PackageBase)
+	}
 
 	return fields, order
 }
