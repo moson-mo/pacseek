@@ -46,7 +46,7 @@ In the default configuration, [yay](https://github.com/Jguer/yay) is being used.
 
 ¹ (requires an AUR helper. With the default config this is `yay`. You can change this in the settings)  
 ² (only applicable to AUR packages)  
-³ (by default `curl` & `less` are used. Can be changed in the settings)
+³ (by default `curl` & `less` are used. Can be changed in the settings)  
 ⁴ (requires `fakeroot` to be installed)
 
 #### Libraries used
