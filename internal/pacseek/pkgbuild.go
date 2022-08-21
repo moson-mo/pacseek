@@ -28,7 +28,8 @@ func getPkgbuildUrl(source, base string, isArm bool) string {
 	url := fmt.Sprintf(UrlAurPkgbuild, base)
 	if source != "AUR" {
 		repo := "packages"
-		if strings.Contains(source, "community") {
+		if strings.Contains(source, "community") ||
+			source == "multilib" {
 			repo = "community"
 		}
 		url = fmt.Sprintf(UrlRepoPkgbuild, repo, base)
