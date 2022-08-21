@@ -48,3 +48,11 @@ type Package struct {
 	LastModified int
 	Popularity   float64
 }
+
+// Upgrade is data structure with package version information
+type Upgrade struct {
+	Name         string
+	Source       string
+	Version      string
+	LocalVersion string
+}

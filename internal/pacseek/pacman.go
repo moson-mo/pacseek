@@ -2,7 +2,12 @@ package pacseek
 
 import (
 	"errors"
+	"io/fs"
 	"math"
+	"os"
+	"os/exec"
+	"path"
+	"strconv"
 	"strings"
 
 	"github.com/Jguer/go-alpm/v2"
@@ -82,6 +87,97 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 		}
 	}
 	return packages, nil
+}
+
+// create/update temporary sync DB
+func syncToTempDB(confPath string, repos []string) (*alpm.Handle, error) {
+	// check if fakeroot is installed
+	if _, err := os.Stat("/usr/bin/fakeroot"); errors.Is(err, fs.ErrNotExist) {
+		return nil, errors.New("fakeroot not installed")
+	}
+	conf, _, err := pconf.ParseFile(confPath)
+	if err != nil {
+		return nil, err
+	}
+	/*
+		We use the same naming as "checkupdates" to have less data to transfer
+		in case the user already makes use of checkupdates...
+	*/
+	tmpdb := os.TempDir() + "/checkup-db-" + strconv.Itoa(os.Getuid())
+	local := tmpdb + "/local"
+
+	// create directory and symlink if needed
+	if _, err := os.Stat(tmpdb); errors.Is(err, fs.ErrNotExist) {
+		err := os.MkdirAll(tmpdb, 0755)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if _, err := os.Stat(local); errors.Is(err, fs.ErrNotExist) {
+		err := os.Symlink(path.Join(conf.DBPath, "local"), local)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// execute pacman and sync to temporary db
+	cmd := exec.Command("fakeroot", "--", "pacman", "-Sy", "--dbpath="+tmpdb)
+	err = cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	h, err := initPacmanDbs(tmpdb, confPath, repos)
+	if err != nil {
+		return nil, err
+	}
+	return h, nil
+}
+
+// returns packages that can be upgraded & packages that only exist locally
+func getUpgradable(h *alpm.Handle) ([]Upgrade, []string) {
+	upgradable := []Upgrade{}
+	notFound := []string{}
+
+	if h == nil {
+		return upgradable, notFound
+	}
+	dbs, err := h.SyncDBs()
+	if err != nil {
+		return upgradable, notFound
+	}
+	local, err := h.LocalDB()
+	if err != nil {
+		return upgradable, notFound
+	}
+
+	for _, lpkg := range local.PkgCache().Slice() {
+		found := false
+		for _, db := range dbs.Slice() {
+			pkg := db.Pkg(lpkg.Name())
+			if pkg != nil {
+				found = true
+				if alpm.VerCmp(pkg.Version(), lpkg.Version()) > 0 {
+					upgradable = append(upgradable, Upgrade{
+						Name:         pkg.Name(),
+						Version:      pkg.Version(),
+						LocalVersion: lpkg.Version(),
+						Source:       db.Name(),
+					})
+				}
+				break
+			}
+		}
+		if !found {
+			upgradable = append(upgradable, Upgrade{
+				Name:         lpkg.Name(),
+				LocalVersion: lpkg.Version(),
+				Source:       "local",
+			})
+			notFound = append(notFound, lpkg.Name())
+		}
+	}
+	return upgradable, notFound
 }
 
 // checks the local db if a package is installed

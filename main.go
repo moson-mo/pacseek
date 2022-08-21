@@ -18,6 +18,7 @@ Usage: pacseek [OPTION]
 	-s	Search term
 	-i	ASCII mode
 	-m	Monochrome mode
+	-u  show upgrades after startup
 
 Examples:
 
@@ -54,11 +55,13 @@ func main() {
 	repos := []string{}
 	asciiMode := false
 	monoMode := false
+	showUpgrades := false
 
 	r := flag.String("r", "", "Comma separated list of repositories")
 	flag.StringVar(&term, "s", "", "Search term")
 	flag.BoolVar(&asciiMode, "i", false, "ASCII mode")
 	flag.BoolVar(&monoMode, "m", false, "Monochrome mode")
+	flag.BoolVar(&showUpgrades, "u", false, "Show upgrades")
 	flag.Usage = printHelp
 	flag.Parse()
 
@@ -85,7 +88,7 @@ func main() {
 	if err != nil {
 		printErrorExit("Error during pacseek initialization", err)
 	}
-	if err = ps.Start(term); err != nil {
+	if err = ps.Start(term, showUpgrades); err != nil {
 		printErrorExit("Error starting pacseek", err)
 	}
 }

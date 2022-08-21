@@ -242,6 +242,51 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 	ps.tableDetails.ScrollToBeginning()
 }
 
+// draw list of upgradable packages
+func (ps *UI) drawUpgradable(up []Upgrade) {
+	ps.tableDetails.SetTitle(" [::b]Upgradable packages ")
+	ps.tableDetails.Clear()
+
+	columns := []string{"Package  ", "Source  ", "New version  ", "Installed version"}
+	for i, col := range columns {
+		hcell := &tview.TableCell{
+			Text:            col,
+			Color:           ps.conf.Colors().PackagelistHeader,
+			BackgroundColor: tcell.ColorBlack,
+		}
+		ps.tableDetails.SetCell(0, i, hcell)
+	}
+
+	for i := 0; i < len(up); i++ {
+		n := i + 2
+		cellDesc := &tview.TableCell{
+			Text:            "[::b]" + up[i].Name,
+			Color:           ps.conf.Colors().Accent,
+			BackgroundColor: tcell.ColorBlack,
+		}
+		cellSource := &tview.TableCell{
+			Text:            up[i].Source,
+			Color:           ps.conf.Colors().Accent,
+			BackgroundColor: tcell.ColorBlack,
+		}
+		cellVnew := &tview.TableCell{
+			Text:            "[::b]" + up[i].Version,
+			Color:           ps.conf.Colors().PackagelistSourceRepository,
+			BackgroundColor: tcell.ColorBlack,
+		}
+		cellVold := &tview.TableCell{
+			Text:            up[i].LocalVersion,
+			Color:           ps.conf.Colors().PackagelistSourceAUR,
+			BackgroundColor: tcell.ColorBlack,
+		}
+
+		ps.tableDetails.SetCell(n, 0, cellDesc).
+			SetCell(n, 1, cellSource).
+			SetCell(n, 2, cellVnew).
+			SetCell(n, 3, cellVold)
+	}
+}
+
 // draw packages on screen
 func (ps *UI) drawPackageListContent(packages []Package) {
 	ps.tablePackages.Clear()

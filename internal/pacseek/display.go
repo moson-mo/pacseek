@@ -4,6 +4,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/Jguer/go-alpm/v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/rivo/tview"
@@ -222,7 +223,8 @@ func (ps *UI) displayHelp() {
 		SetCellSimple(7, 0, "CTRL+A: Perform AUR upgrade (if configured)").
 		SetCellSimple(8, 0, "CTRL+W: Wipe cache").
 		SetCellSimple(9, 0, "CTRL+P: Show PKGBUILD for selected package").
-		SetCellSimple(11, 0, "CTRL+Q / ESC: Quit")
+		SetCellSimple(10, 0, "CTRL+G: Show list of upgradeable packages").
+		SetCellSimple(12, 0, "CTRL+Q / ESC: Quit")
 }
 
 // displays about text
@@ -316,6 +318,52 @@ func (ps *UI) isPackageSelected(pkg string, queue bool) bool {
 	}
 
 	return sel == pkg
+}
+
+// displays a list of updatable packages
+func (ps *UI) displayUpgradable() {
+	ps.tableDetails.SetTitle(" [::b]Searching for updates... ")
+	ps.tableDetails.Clear()
+	go func() {
+		ps.startSpinner()
+		defer ps.stopSpinner()
+
+		h, err := syncToTempDB(ps.conf.PacmanConfigPath, ps.filterRepos)
+		if err != nil {
+			ps.app.QueueUpdateDraw(func() {
+				ps.displayMessage(err.Error(), true)
+				ps.tableDetails.SetTitle(" [::b]Error ")
+				ps.tableDetails.SetCell(1, 0, &tview.TableCell{
+					Text:            err.Error(),
+					Color:           tcell.ColorRed,
+					BackgroundColor: tcell.ColorBlack,
+				})
+			})
+			return
+		}
+
+		up, nf := getUpgradable(h)
+		aurPkgs := infoAur(ps.conf.AurRpcUrl, nf, ps.conf.AurTimeout)
+		for _, aurPkg := range aurPkgs.Results {
+			for i := 0; i < len(up); i++ {
+				if up[i].Source == "local" && up[i].Name == aurPkg.Name {
+					if alpm.VerCmp(aurPkg.Version, up[i].LocalVersion) > 0 {
+						up[i].Version = aurPkg.Version
+						up[i].Source = "AUR"
+					}
+				}
+			}
+		}
+		foundUp := []Upgrade{}
+		for _, pkg := range up {
+			if pkg.Version != "" {
+				foundUp = append(foundUp, pkg)
+			}
+		}
+		ps.app.QueueUpdateDraw(func() {
+			ps.drawUpgradable(foundUp)
+		})
+	}()
 }
 
 // returns index of best matching package name

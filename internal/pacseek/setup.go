@@ -243,6 +243,16 @@ func (ps *UI) setupKeyBindings() {
 			}
 		}
 
+		// CTRL+G - Upgradable packages
+		if event.Key() == tcell.KeyCtrlG {
+			if pkgbuildVisible {
+				ps.flexRight.Clear()
+				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
+			}
+			ps.displayUpgradable()
+			return nil
+		}
+
 		// Shift+Left - decrease size of left container
 		if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModShift {
 			if ps.leftProportion != 1 {
