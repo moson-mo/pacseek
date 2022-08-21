@@ -348,15 +348,16 @@ func (ps *UI) displayUpgradable() {
 			for i := 0; i < len(up); i++ {
 				if up[i].Source == "local" && up[i].Name == aurPkg.Name {
 					if alpm.VerCmp(aurPkg.Version, up[i].LocalVersion) > 0 {
+						up[i].Description = aurPkg.Description
 						up[i].Version = aurPkg.Version
 						up[i].Source = "AUR"
 					}
 				}
 			}
 		}
-		foundUp := []Upgrade{}
+		foundUp := []InfoRecord{}
 		for _, pkg := range up {
-			if pkg.Version != "" {
+			if pkg.Version != pkg.LocalVersion {
 				foundUp = append(foundUp, pkg)
 			}
 		}

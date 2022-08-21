@@ -36,8 +36,9 @@ type InfoRecord struct {
 	URL            string   `json:"URL"`
 	URLPath        string   `json:"URLPath"`
 	Version        string   `json:"Version"`
-	Source         string   `json:"Source"`
-	Architecture   string   `json:"Architecture"`
+	LocalVersion   string
+	Source         string `json:"Source"`
+	Architecture   string `json:"Architecture"`
 }
 
 // Package is a data structure for the package tview table
@@ -47,12 +48,4 @@ type Package struct {
 	IsInstalled  bool
 	LastModified int
 	Popularity   float64
-}
-
-// Upgrade is data structure with package version information
-type Upgrade struct {
-	Name         string
-	Source       string
-	Version      string
-	LocalVersion string
 }

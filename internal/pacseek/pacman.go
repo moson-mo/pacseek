@@ -135,20 +135,20 @@ func syncToTempDB(confPath string, repos []string) (*alpm.Handle, error) {
 }
 
 // returns packages that can be upgraded & packages that only exist locally
-func getUpgradable(h *alpm.Handle) ([]Upgrade, []string) {
-	upgradable := []Upgrade{}
+func getUpgradable(h *alpm.Handle) ([]InfoRecord, []string) {
+	upgradable := []string{}
 	notFound := []string{}
 
 	if h == nil {
-		return upgradable, notFound
+		return []InfoRecord{}, notFound
 	}
 	dbs, err := h.SyncDBs()
 	if err != nil {
-		return upgradable, notFound
+		return []InfoRecord{}, notFound
 	}
 	local, err := h.LocalDB()
 	if err != nil {
-		return upgradable, notFound
+		return []InfoRecord{}, notFound
 	}
 
 	for _, lpkg := range local.PkgCache().Slice() {
@@ -158,26 +158,18 @@ func getUpgradable(h *alpm.Handle) ([]Upgrade, []string) {
 			if pkg != nil {
 				found = true
 				if alpm.VerCmp(pkg.Version(), lpkg.Version()) > 0 {
-					upgradable = append(upgradable, Upgrade{
-						Name:         pkg.Name(),
-						Version:      pkg.Version(),
-						LocalVersion: lpkg.Version(),
-						Source:       db.Name(),
-					})
+					upgradable = append(upgradable, pkg.Name())
 				}
 				break
 			}
 		}
 		if !found {
-			upgradable = append(upgradable, Upgrade{
-				Name:         lpkg.Name(),
-				LocalVersion: lpkg.Version(),
-				Source:       "local",
-			})
+			upgradable = append(upgradable, lpkg.Name())
 			notFound = append(notFound, lpkg.Name())
 		}
 	}
-	return upgradable, notFound
+
+	return infoPacman(h, upgradable).Results, notFound
 }
 
 // checks the local db if a package is installed
@@ -186,7 +178,6 @@ func isPackageInstalled(h *alpm.Handle, pkg string) bool {
 	if err != nil {
 		return false
 	}
-	local.SetUsage(alpm.UsageSearch)
 
 	return local.Pkg(pkg) != nil
 }
@@ -249,6 +240,9 @@ func infoPacman(h *alpm.Handle, pkgs []string) RpcResult {
 				Architecture: p.Architecture(),
 				RequiredBy:   p.ComputeRequiredBy(),
 				PackageBase:  p.Base(),
+			}
+			if lpkg := local.Pkg(p.Name()); lpkg != nil {
+				i.LocalVersion = lpkg.Version()
 			}
 			if db.Name() == "local" {
 				i.Description = p.Description() + "\n[red]* Package not found in repositories/AUR *"

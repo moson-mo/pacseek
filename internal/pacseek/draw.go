@@ -243,11 +243,11 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 }
 
 // draw list of upgradable packages
-func (ps *UI) drawUpgradable(up []Upgrade) {
+func (ps *UI) drawUpgradable(up []InfoRecord) {
 	ps.tableDetails.SetTitle(" [::b]Upgradable packages ")
 	ps.tableDetails.Clear()
 
-	columns := []string{"Package  ", "Source  ", "New version  ", "Installed version"}
+	columns := []string{"Package  ", "Source  ", "New version  ", "Installed version", "PKGBUILD"}
 	for i, col := range columns {
 		hcell := &tview.TableCell{
 			Text:            col,
@@ -258,11 +258,17 @@ func (ps *UI) drawUpgradable(up []Upgrade) {
 	}
 
 	for i := 0; i < len(up); i++ {
+		i := i
 		n := i + 2
 		cellDesc := &tview.TableCell{
 			Text:            "[::b]" + up[i].Name,
 			Color:           ps.conf.Colors().Accent,
 			BackgroundColor: tcell.ColorBlack,
+			Clicked: func() bool {
+				ps.selectedPackage = &up[i]
+				ps.drawPackageInfo(up[i], ps.width)
+				return true
+			},
 		}
 		cellSource := &tview.TableCell{
 			Text:            up[i].Source,
@@ -273,6 +279,15 @@ func (ps *UI) drawUpgradable(up []Upgrade) {
 			Text:            "[::b]" + up[i].Version,
 			Color:           ps.conf.Colors().PackagelistSourceRepository,
 			BackgroundColor: tcell.ColorBlack,
+			Clicked: func() bool {
+				if ps.conf.ShowPkgbuildInternally {
+					ps.selectedPackage = &up[i]
+					ps.displayPkgbuild()
+				} else {
+					ps.runCommand(util.Shell(), []string{"-c", ps.getPkgbuildCommand(up[i].Source, up[i].PackageBase)})
+				}
+				return true
+			},
 		}
 		cellVold := &tview.TableCell{
 			Text:            up[i].LocalVersion,
