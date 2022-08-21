@@ -247,7 +247,7 @@ func (ps *UI) drawUpgradable(up []InfoRecord) {
 	ps.tableDetails.SetTitle(" [::b]Upgradable packages ")
 	ps.tableDetails.Clear()
 
-	columns := []string{"Package  ", "Source  ", "New version  ", "Installed version", "PKGBUILD"}
+	columns := []string{"Package  ", "Source  ", "New version  ", "Installed version"}
 	for i, col := range columns {
 		hcell := &tview.TableCell{
 			Text:            col,
