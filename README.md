@@ -1,5 +1,5 @@
-[![pacseek](https://img.shields.io/static/v1?label=pacseek&message=v1.6.3&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek/)
-[![pacseek-bin](https://img.shields.io/static/v1?label=pacseek-bin&message=v1.6.3&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek-bin/)
+[![pacseek](https://img.shields.io/static/v1?label=pacseek&message=v1.6.4&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek/)
+[![pacseek-bin](https://img.shields.io/static/v1?label=pacseek-bin&message=v1.6.4&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek-bin/)
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/moson-mo/pacseek/Build)](https://github.com/moson-mo/pacseek/actions) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/moson-mo/pacseek)](https://goreportcard.com/report/github.com/moson-mo/pacseek)
@@ -43,6 +43,7 @@ In the default configuration, [yay](https://github.com/Jguer/yay) is being used.
 * Configurable AUR /rpc endpoint URL
 * Display PKGBUILD file
 * Search for upgrades / show list of upgradable packages⁴
+* Show a list of all installed packages
 
 ¹ (requires an AUR helper. With the default config this is `yay`. You can change this in the settings)  
 ² (only applicable to AUR packages)  
