@@ -9,15 +9,10 @@ import (
 )
 
 // installs or removes a package
-func (ps *UI) installPackage() {
-	row, _ := ps.tablePackages.GetSelection()
-	pkg := ps.tablePackages.GetCell(row, 0).Text
-	source := ps.tablePackages.GetCell(row, 1).Text
-	installed := ps.tablePackages.GetCell(row, 2).Text
-
+func (ps *UI) installPackage(pkg, source string, installed bool) {
 	// set command based on source and install status
 	command := ps.conf.InstallCommand
-	if installed == "Y" {
+	if installed {
 		command = ps.conf.UninstallCommand
 	} else if source == "AUR" && ps.conf.AurUseDifferentCommands && ps.conf.AurInstallCommand != "" {
 		command = ps.conf.AurInstallCommand
@@ -38,6 +33,16 @@ func (ps *UI) installPackage() {
 
 	// update package install status
 	ps.updateInstalledState()
+}
+
+// installs or removes a package
+func (ps *UI) installSelectedPackage() {
+	row, _ := ps.tablePackages.GetSelection()
+	pkg := ps.tablePackages.GetCell(row, 0).Text
+	source := ps.tablePackages.GetCell(row, 1).Text
+	installed := ps.tablePackages.GetCell(row, 2).Text == "Y"
+
+	ps.installPackage(pkg, source, installed)
 }
 
 // issues "Update command"

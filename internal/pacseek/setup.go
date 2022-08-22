@@ -340,7 +340,7 @@ func (ps *UI) setupKeyBindings() {
 		}
 		// ENTER
 		if event.Key() == tcell.KeyEnter {
-			ps.installPackage()
+			ps.installSelectedPackage()
 			return nil
 		}
 

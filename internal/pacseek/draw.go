@@ -247,7 +247,7 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 	ps.tableDetails.SetTitle(" [::b]Upgradable packages ")
 	ps.tableDetails.Clear()
 
-	columns := []string{"Package  ", "Source  ", "New version  ", "Installed version"}
+	columns := []string{"Package  ", "Source  ", "New version  ", "Installed version", ""}
 	for i, col := range columns {
 		hcell := &tview.TableCell{
 			Text:            col,
@@ -295,11 +295,25 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 			Color:           ps.conf.Colors().PackagelistSourceAUR,
 			BackgroundColor: tcell.ColorBlack,
 		}
-
 		ps.tableDetails.SetCell(n, 0, cellDesc).
 			SetCell(n, 1, cellSource).
 			SetCell(n, 2, cellVnew).
 			SetCell(n, 3, cellVold)
+
+		if up[i].Source == "AUR" {
+			cellRebuild := &tview.TableCell{
+				Text:            " [::b]Rebuild / Update",
+				Color:           ps.conf.Colors().SettingsFieldText,
+				BackgroundColor: ps.conf.Colors().SearchBar,
+				Clicked: func() bool {
+					ps.installPackage(up[i].Name, up[i].Source, false)
+					ps.cacheInfo.Delete("#upgrades#")
+					ps.displayUpgradable()
+					return true
+				},
+			}
+			ps.tableDetails.SetCell(n, 4, cellRebuild)
+		}
 	}
 	if len(up) == 0 {
 		n += 2
@@ -311,7 +325,7 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 	}
 	if cached {
 		ps.tableDetails.SetCell(n+2, 0, &tview.TableCell{
-			Text:            "Refresh",
+			Text:            "[::b]Refresh",
 			Color:           ps.conf.Colors().SettingsFieldText,
 			BackgroundColor: ps.conf.Colors().SearchBar,
 			Align:           tview.AlignCenter,
