@@ -10,16 +10,14 @@ import (
 	"github.com/moson-mo/pacseek/internal/pacseek"
 )
 
-var helpArgs = []string{"-h", "--h", "-help", "--help", "-?", "--?"}
-
 const helpText = `
 Usage: pacseek [OPTION]
 	-r 	Limit searching to a comma separated list of repositories
 	-s	Search term
 	-a	ASCII mode
 	-m	Monochrome mode
-	-u  show upgrades after startup
-	-i  show installed packages after startup
+	-u	show upgrades after startup
+	-i	show installed packages after startup
 
 Examples:
 
