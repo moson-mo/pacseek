@@ -16,9 +16,10 @@ const helpText = `
 Usage: pacseek [OPTION]
 	-r 	Limit searching to a comma separated list of repositories
 	-s	Search term
-	-i	ASCII mode
+	-a	ASCII mode
 	-m	Monochrome mode
 	-u  show upgrades after startup
+	-i  show installed packages after startup
 
 Examples:
 
@@ -56,12 +57,14 @@ func main() {
 	asciiMode := false
 	monoMode := false
 	showUpgrades := false
+	showInstalled := false
 
 	r := flag.String("r", "", "Comma separated list of repositories")
 	flag.StringVar(&term, "s", "", "Search term")
-	flag.BoolVar(&asciiMode, "i", false, "ASCII mode")
+	flag.BoolVar(&asciiMode, "a", false, "ASCII mode")
 	flag.BoolVar(&monoMode, "m", false, "Monochrome mode")
 	flag.BoolVar(&showUpgrades, "u", false, "Show upgrades")
+	flag.BoolVar(&showInstalled, "i", false, "Show installed")
 	flag.Usage = printHelp
 	flag.Parse()
 
@@ -88,7 +91,7 @@ func main() {
 	if err != nil {
 		printErrorExit("Error during pacseek initialization", err)
 	}
-	if err = ps.Start(term, showUpgrades); err != nil {
+	if err = ps.Start(term, showUpgrades, showInstalled); err != nil {
 		printErrorExit("Error starting pacseek", err)
 	}
 }

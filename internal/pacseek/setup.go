@@ -253,6 +253,16 @@ func (ps *UI) setupKeyBindings() {
 			return nil
 		}
 
+		// CTRL+L - Locally installed packages
+		if event.Key() == tcell.KeyCtrlL {
+			if pkgbuildVisible {
+				ps.flexRight.Clear()
+				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
+			}
+			ps.displayInstalled()
+			return nil
+		}
+
 		// Shift+Left - decrease size of left container
 		if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModShift {
 			if ps.leftProportion != 1 {
@@ -293,7 +303,10 @@ func (ps *UI) setupKeyBindings() {
 		// ENTER
 		if event.Key() == tcell.KeyEnter {
 			ps.lastSearchTerm = ps.inputSearch.GetText()
-			if len(ps.lastSearchTerm) < 2 {
+			if len(ps.lastSearchTerm) == 0 {
+				ps.displayInstalled()
+				return nil
+			} else if len(ps.lastSearchTerm) < 2 {
 				ps.displayMessage("Minimum number of characters is 2", true)
 				return nil
 			}
@@ -469,6 +482,8 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.AurUseDifferentCommands = cb.IsChecked()
 			case "Show PKGBUILD internally: ":
 				ps.conf.ShowPkgbuildInternally = cb.IsChecked()
+			case "Compute \"Required by\": ":
+				ps.conf.ComputeRequiredBy = cb.IsChecked()
 			}
 		}
 	}

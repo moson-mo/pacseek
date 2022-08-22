@@ -112,13 +112,19 @@ func New(conf *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, 
 }
 
 // Start runs application / event-loop
-func (ps *UI) Start(term string, showUpgrades bool) error {
+func (ps *UI) Start(term string, showUpgrades, showInstalled bool) error {
 	if term != "" {
 		ps.inputSearch.SetText(term)
 		ps.displayPackages(term)
-	} else if showUpgrades {
-		ps.displayUpgradable()
+	} else {
+		if showInstalled {
+			ps.displayInstalled()
+		}
+		if showUpgrades {
+			ps.displayUpgradable()
+		}
 	}
+
 	return ps.app.SetRoot(ps.flexRoot, true).EnableMouse(true).Run()
 }
 

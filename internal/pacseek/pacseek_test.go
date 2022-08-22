@@ -71,13 +71,13 @@ func (suite *pacseekTestSuite) TestInfoPacmanDbs() {
 	suite.Nil(err, err)
 
 	// ok
-	p := infoPacman(h, []string{"glibc"})
+	p := infoPacman(h, []string{"glibc"}, false)
 	suite.Equal("", p.Error, "error not empty")
 	suite.Equal(1, len(p.Results), "Results not 1")
 	suite.Equal("glibc", p.Results[0].Name, "Name not glibc")
 
 	// nok
-	p = infoPacman(h, []string{"nonsense_nonsense"})
+	p = infoPacman(h, []string{"nonsense_nonsense"}, false)
 	suite.Equal("", p.Error, "error not empty")
 	suite.Equal(0, len(p.Results), "Results not 0")
 }

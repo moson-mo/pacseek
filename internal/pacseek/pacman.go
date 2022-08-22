@@ -136,7 +136,7 @@ func syncToTempDB(confPath string, repos []string) (*alpm.Handle, error) {
 }
 
 // returns packages that can be upgraded & packages that only exist locally
-func getUpgradable(h *alpm.Handle) ([]InfoRecord, []string) {
+func getUpgradable(h *alpm.Handle, computeRequiredBy bool) ([]InfoRecord, []string) {
 	upgradable := []string{}
 	notFound := []string{}
 
@@ -170,7 +170,42 @@ func getUpgradable(h *alpm.Handle) ([]InfoRecord, []string) {
 		}
 	}
 
-	return infoPacman(h, upgradable).Results, notFound
+	return infoPacman(h, upgradable, computeRequiredBy).Results, notFound
+}
+
+// returns packages that can be upgraded & packages that only exist locally
+func getInstalled(h *alpm.Handle, computeRequiredBy bool) ([]InfoRecord, []string) {
+	installed := []string{}
+	notFound := []string{}
+
+	if h == nil {
+		return []InfoRecord{}, notFound
+	}
+	dbs, err := h.SyncDBs()
+	if err != nil {
+		return []InfoRecord{}, notFound
+	}
+	local, err := h.LocalDB()
+	if err != nil {
+		return []InfoRecord{}, notFound
+	}
+
+	for _, lpkg := range local.PkgCache().Slice() {
+		found := false
+		for _, db := range dbs.Slice() {
+			if pkg := db.Pkg(lpkg.Name()); pkg != nil {
+				found = true
+				installed = append(installed, pkg.Name())
+				break
+			}
+		}
+		if !found {
+			installed = append(installed, lpkg.Name())
+			notFound = append(notFound, lpkg.Name())
+		}
+	}
+
+	return infoPacman(h, installed, computeRequiredBy).Results, notFound
 }
 
 // checks the local db if a package is installed
@@ -184,7 +219,7 @@ func isPackageInstalled(h *alpm.Handle, pkg string) bool {
 }
 
 // retrieves package information from the pacman DB's and returns it in the same format as the AUR call
-func infoPacman(h *alpm.Handle, pkgs []string) RpcResult {
+func infoPacman(h *alpm.Handle, pkgs []string, computeRequiredBy bool) RpcResult {
 	r := RpcResult{
 		Results: []InfoRecord{},
 	}
@@ -239,8 +274,11 @@ func infoPacman(h *alpm.Handle, pkgs []string) RpcResult {
 				LastModified: int(p.BuildDate().UTC().Unix()),
 				Source:       db.Name(),
 				Architecture: p.Architecture(),
-				RequiredBy:   p.ComputeRequiredBy(),
 				PackageBase:  p.Base(),
+			}
+
+			if computeRequiredBy {
+				i.RequiredBy = p.ComputeRequiredBy()
 			}
 			if lpkg := local.Pkg(p.Name()); lpkg != nil {
 				i.LocalVersion = lpkg.Version()
@@ -248,9 +286,12 @@ func infoPacman(h *alpm.Handle, pkgs []string) RpcResult {
 			if db.Name() == "local" {
 				i.Description = p.Description() + "\n[red]* Package not found in repositories/AUR *"
 			}
+
 			r.Results = append(r.Results, i)
+
 			break
 		}
 	}
+
 	return r
 }

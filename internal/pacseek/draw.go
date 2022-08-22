@@ -85,6 +85,9 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 				ps.settingsChanged = true
 			}
 		}).
+		AddCheckbox("Compute \"Required by\": ", ps.conf.ComputeRequiredBy, func(checked bool) {
+			ps.settingsChanged = true
+		}).
 		AddInputField("Pacman DB path: ", ps.conf.PacmanDbPath, 40, nil, sc).
 		AddInputField("Pacman config path: ", ps.conf.PacmanConfigPath, 40, nil, sc).
 		AddCheckbox("Separate AUR commands: ", separateAurCommands, func(checked bool) {
@@ -336,6 +339,7 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 			},
 		})
 	}
+	ps.selectedPackage = nil
 }
 
 // draw packages on screen

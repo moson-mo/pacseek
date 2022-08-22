@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path"
 )
@@ -30,6 +29,7 @@ type Settings struct {
 	BorderStyle             string
 	ShowPkgbuildCommand     string
 	ShowPkgbuildInternally  bool
+	ComputeRequiredBy       bool
 	colors                  Colors
 }
 
@@ -55,6 +55,7 @@ func Defaults() *Settings {
 		colors:                 colorSchemes[defaultColorScheme],
 		ShowPkgbuildCommand:    "curl -s \"{url}\"|less",
 		ShowPkgbuildInternally: true,
+		ComputeRequiredBy:      false,
 	}
 
 	return &s
@@ -78,7 +79,7 @@ func (s *Settings) Save() error {
 		return err
 	}
 
-	if err = ioutil.WriteFile(path.Join(confPath, "config.json"), b, 0644); err != nil {
+	if err = os.WriteFile(path.Join(confPath, "config.json"), b, 0644); err != nil {
 		return err
 	}
 	return nil
@@ -92,7 +93,7 @@ func Load() (*Settings, error) {
 	}
 	confFile = path.Join(confFile, "/pacseek/config.json")
 
-	b, err := ioutil.ReadFile(confFile)
+	b, err := os.ReadFile(confFile)
 	if err != nil {
 		return Defaults(), err
 	}

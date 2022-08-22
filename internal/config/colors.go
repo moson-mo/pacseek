@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
@@ -162,7 +161,7 @@ func loadCustomColors() (Colors, error) {
 		}
 	}
 
-	b, err := ioutil.ReadFile(colorFile)
+	b, err := os.ReadFile(colorFile)
 	if err != nil {
 		return colorSchemes[defaultColorScheme], err
 	}
@@ -187,7 +186,7 @@ func createCustomColorsFile(colorFile string) error {
 		return err
 	}
 
-	if err = ioutil.WriteFile(colorFile, b, 0644); err != nil {
+	if err = os.WriteFile(colorFile, b, 0644); err != nil {
 		fmt.Println(err)
 		return err
 	}

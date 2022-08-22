@@ -96,7 +96,7 @@ func (ps *UI) displayPackages(text string) {
 				for _, pkg := range aurInfos.Results {
 					ps.cacheInfo.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 				}
-				repoInfos := infoPacman(ps.alpmHandle, repoPkgs)
+				repoInfos := infoPacman(ps.alpmHandle, repoPkgs, ps.conf.ComputeRequiredBy)
 				for _, pkg := range repoInfos.Results {
 					ps.cacheInfo.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 				}
@@ -160,7 +160,7 @@ func (ps *UI) displayPackageInfo(row, column int) {
 			if source == "AUR" {
 				info = infoAur(ps.conf.AurRpcUrl, []string{pkg}, ps.conf.AurTimeout)
 			} else {
-				info = infoPacman(ps.alpmHandle, []string{pkg})
+				info = infoPacman(ps.alpmHandle, []string{pkg}, ps.conf.ComputeRequiredBy)
 			}
 			if !ps.conf.DisableCache {
 				ps.cacheInfo.Set(pkg, info, time.Duration(ps.conf.CacheExpiry)*time.Minute)
@@ -225,7 +225,8 @@ func (ps *UI) displayHelp() {
 		SetCellSimple(8, 0, "CTRL+W: Wipe cache").
 		SetCellSimple(9, 0, "CTRL+P: Show PKGBUILD for selected package").
 		SetCellSimple(10, 0, "CTRL+G: Show list of upgradeable packages").
-		SetCellSimple(12, 0, "CTRL+Q / ESC: Quit")
+		SetCellSimple(11, 0, "CTRL+L: Show list of all installed packages").
+		SetCellSimple(13, 0, "CTRL+Q / ESC: Quit")
 }
 
 // displays about text
@@ -354,7 +355,7 @@ func (ps *UI) displayUpgradable() {
 			return
 		}
 
-		up, nf := getUpgradable(h)
+		up, nf := getUpgradable(h, ps.conf.ComputeRequiredBy)
 		aurPkgs := infoAur(ps.conf.AurRpcUrl, nf, ps.conf.AurTimeout)
 		for _, aurPkg := range aurPkgs.Results {
 			for i := 0; i < len(up); i++ {
@@ -376,6 +377,46 @@ func (ps *UI) displayUpgradable() {
 		ps.cacheInfo.Set("#upgrades#", foundUp, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 		ps.app.QueueUpdateDraw(func() {
 			ps.drawUpgradable(foundUp, false)
+		})
+	}()
+}
+
+// displays list of installed packages
+func (ps *UI) displayInstalled() {
+	ps.tablePackages.Clear().SetCellSimple(0, 0, "Generating list, please wait...")
+
+	go func() {
+		ps.startSpinner()
+		defer ps.stopSpinner()
+		in, nf := getInstalled(ps.alpmHandle, ps.conf.ComputeRequiredBy)
+		aurPkgs := infoAur(ps.conf.AurRpcUrl, nf, ps.conf.AurTimeout)
+		for _, aurPkg := range aurPkgs.Results {
+			for i := 0; i < len(in); i++ {
+				if in[i].Source == "local" && in[i].Name == aurPkg.Name {
+					in[i].Description = aurPkg.Description
+					in[i].Version = aurPkg.Version
+					in[i].Source = "AUR"
+					in[i].Popularity = aurPkg.Popularity
+				}
+			}
+		}
+
+		packages := []Package{}
+		for _, pkg := range in {
+			packages = append(packages, Package{
+				Name:         pkg.Name,
+				Source:       pkg.Source,
+				IsInstalled:  true,
+				LastModified: pkg.LastModified,
+				Popularity:   pkg.Popularity,
+			})
+			if !ps.conf.DisableCache {
+				ps.cacheInfo.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+			}
+		}
+		ps.app.QueueUpdateDraw(func() {
+			ps.drawPackageListContent(packages)
+			ps.tablePackages.Select(1, 0)
 		})
 	}()
 }
