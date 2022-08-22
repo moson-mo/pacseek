@@ -243,7 +243,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 }
 
 // draw list of upgradable packages
-func (ps *UI) drawUpgradable(up []InfoRecord) {
+func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 	ps.tableDetails.SetTitle(" [::b]Upgradable packages ")
 	ps.tableDetails.Clear()
 
@@ -257,9 +257,10 @@ func (ps *UI) drawUpgradable(up []InfoRecord) {
 		ps.tableDetails.SetCell(0, i, hcell)
 	}
 
+	n := 0
 	for i := 0; i < len(up); i++ {
 		i := i
-		n := i + 2
+		n = i + 2
 		cellDesc := &tview.TableCell{
 			Text:            "[::b]" + up[i].Name,
 			Color:           ps.conf.Colors().Accent,
@@ -301,10 +302,24 @@ func (ps *UI) drawUpgradable(up []InfoRecord) {
 			SetCell(n, 3, cellVold)
 	}
 	if len(up) == 0 {
-		ps.tableDetails.SetCell(2, 0, &tview.TableCell{
+		n += 2
+		ps.tableDetails.SetCell(n, 0, &tview.TableCell{
 			Text:            "No upgrades found",
 			Color:           ps.conf.Colors().PackagelistHeader,
 			BackgroundColor: tcell.ColorBlack,
+		})
+	}
+	if cached {
+		ps.tableDetails.SetCell(n+2, 0, &tview.TableCell{
+			Text:            "Refresh",
+			Color:           ps.conf.Colors().SettingsFieldText,
+			BackgroundColor: ps.conf.Colors().SearchBar,
+			Align:           tview.AlignCenter,
+			Clicked: func() bool {
+				ps.cacheInfo.Delete("#upgrades#")
+				ps.displayUpgradable()
+				return true
+			},
 		})
 	}
 }

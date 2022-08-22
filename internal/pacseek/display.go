@@ -325,6 +325,13 @@ func (ps *UI) isPackageSelected(pkg string, queue bool) bool {
 func (ps *UI) displayUpgradable() {
 	ps.tableDetails.SetTitle(" [::b]Searching for updates... ")
 	ps.tableDetails.Clear()
+
+	if cached, found := ps.cacheInfo.Get("#upgrades#"); found {
+		foundUp := cached.([]InfoRecord)
+		ps.drawUpgradable(foundUp, true)
+		return
+	}
+
 	go func() {
 		ps.startSpinner()
 		defer ps.stopSpinner()
@@ -366,8 +373,9 @@ func (ps *UI) displayUpgradable() {
 				foundUp = append(foundUp, pkg)
 			}
 		}
+		ps.cacheInfo.Set("#upgrades#", foundUp, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 		ps.app.QueueUpdateDraw(func() {
-			ps.drawUpgradable(foundUp)
+			ps.drawUpgradable(foundUp, false)
 		})
 	}()
 }
