@@ -300,6 +300,13 @@ func (ps *UI) drawUpgradable(up []InfoRecord) {
 			SetCell(n, 2, cellVnew).
 			SetCell(n, 3, cellVold)
 	}
+	if len(up) == 0 {
+		ps.tableDetails.SetCell(2, 0, &tview.TableCell{
+			Text:            "No upgrades found",
+			Color:           ps.conf.Colors().PackagelistHeader,
+			BackgroundColor: tcell.ColorBlack,
+		})
+	}
 }
 
 // draw packages on screen

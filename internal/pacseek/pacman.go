@@ -122,9 +122,10 @@ func syncToTempDB(confPath string, repos []string) (*alpm.Handle, error) {
 
 	// execute pacman and sync to temporary db
 	cmd := exec.Command("fakeroot", "--", "pacman", "-Sy", "--dbpath="+tmpdb)
-	err = cmd.Run()
+
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, err
+		return nil, errors.New(string(out))
 	}
 
 	h, err := initPacmanDbs(tmpdb, confPath, repos)

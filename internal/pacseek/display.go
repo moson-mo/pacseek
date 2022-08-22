@@ -2,6 +2,7 @@ package pacseek
 
 import (
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/Jguer/go-alpm/v2"
@@ -331,13 +332,17 @@ func (ps *UI) displayUpgradable() {
 		h, err := syncToTempDB(ps.conf.PacmanConfigPath, ps.filterRepos)
 		if err != nil {
 			ps.app.QueueUpdateDraw(func() {
-				ps.displayMessage(err.Error(), true)
 				ps.tableDetails.SetTitle(" [::b]Error ")
-				ps.tableDetails.SetCell(1, 0, &tview.TableCell{
-					Text:            err.Error(),
-					Color:           tcell.ColorRed,
-					BackgroundColor: tcell.ColorBlack,
-				})
+
+				lines := strings.Split(err.Error(), "\n")
+				for i, line := range lines {
+					ps.tableDetails.SetCell(i+1, 0, &tview.TableCell{
+						Text:            line,
+						Color:           tcell.ColorRed,
+						BackgroundColor: tcell.ColorBlack,
+					})
+				}
+				ps.displayMessage("Failed to sync temporary DB's", true)
 			})
 			return
 		}
