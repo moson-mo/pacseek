@@ -250,6 +250,7 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 	ps.tableDetails.SetTitle(" [::b]Upgradable packages ")
 	ps.tableDetails.Clear()
 
+	// header
 	columns := []string{"Package  ", "Source  ", "New version  ", "Installed version", ""}
 	for i, col := range columns {
 		hcell := &tview.TableCell{
@@ -260,6 +261,7 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 		ps.tableDetails.SetCell(0, i, hcell)
 	}
 
+	// lines
 	n := 0
 	for i := 0; i < len(up); i++ {
 		i := i
@@ -303,6 +305,7 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 			SetCell(n, 2, cellVnew).
 			SetCell(n, 3, cellVold)
 
+		// rebuild button for AUR packages
 		if up[i].Source == "AUR" {
 			cellRebuild := &tview.TableCell{
 				Text:            " [::b]Rebuild / Update",
@@ -318,14 +321,31 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 			ps.tableDetails.SetCell(n, 4, cellRebuild)
 		}
 	}
+
+	// no updates found message else sysupgrade button
+	n += 2
 	if len(up) == 0 {
-		n += 2
 		ps.tableDetails.SetCell(n, 0, &tview.TableCell{
 			Text:            "No upgrades found",
 			Color:           ps.conf.Colors().PackagelistHeader,
 			BackgroundColor: tcell.ColorBlack,
 		})
+	} else {
+		ps.tableDetails.SetCell(n, 0, &tview.TableCell{
+			Text:            " Sysupgrade",
+			Align:           tview.AlignCenter,
+			Color:           ps.conf.Colors().SettingsFieldText,
+			BackgroundColor: ps.conf.Colors().SearchBar,
+			Clicked: func() bool {
+				ps.performUpgrade(false)
+				ps.cacheInfo.Delete("#upgrades#")
+				ps.displayUpgradable()
+				return true
+			},
+		})
 	}
+
+	// refresh button
 	if cached {
 		ps.tableDetails.SetCell(n+2, 0, &tview.TableCell{
 			Text:            "[::b]Refresh",
@@ -339,6 +359,8 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 			},
 		})
 	}
+	// set nil to avoid printing package details when resizing
+	// somewhat hacky, needs refactoring (well, everything needs refactoring here)
 	ps.selectedPackage = nil
 }
 

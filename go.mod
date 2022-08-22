@@ -6,10 +6,10 @@ require (
 	github.com/Jguer/go-alpm/v2 v2.1.2
 	github.com/Morganamilo/go-pacmanconf v0.0.0-20210502114700-cff030e927a5
 	github.com/alecthomas/chroma v0.10.0
-	github.com/gdamore/tcell/v2 v2.5.2
+	github.com/gdamore/tcell/v2 v2.5.3
 	github.com/lithammer/fuzzysearch v1.1.5
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/rivo/tview v0.0.0-20220805210617-37ad0bb93703
+	github.com/rivo/tview v0.0.0-20220812085834-0e6b21a48e96
 )
 
 require (
@@ -25,7 +25,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
 	github.com/stretchr/testify v1.7.1
-	golang.org/x/sys v0.0.0-20220808155132-1c4a2a72c664 // indirect
+	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
