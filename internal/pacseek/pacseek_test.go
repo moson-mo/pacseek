@@ -9,13 +9,10 @@ import (
 
 type pacseekTestSuite struct {
 	suite.Suite
-	ExpectedPackages []Package
 }
 
 func (suite *pacseekTestSuite) SetupSuite() {
 	fmt.Println(">>> Setting up test suite")
-
-	suite.ExpectedPackages = []Package{{Name: "glibc", Source: "core", IsInstalled: true}}
 }
 
 func (suite *pacseekTestSuite) TearDownSuite() {
@@ -48,19 +45,19 @@ func (suite *pacseekTestSuite) TestSearchPacmanDbs() {
 	suite.Nil(err, err)
 
 	// ok
-	p, err := searchRepos(h, "glibc", "StartsWith", "Name", 1, false)
+	p, _, err := searchRepos(h, "glibc", "StartsWith", "Name", 1)
 	suite.Nil(err, err)
-	suite.Equal(suite.ExpectedPackages, p, "Package not found")
-	p, err = searchRepos(h, "glibc", "StartsWith", "Name & Description", 1, false)
+	suite.Len(p, 1, "Number of packages != 1")
+	p, _, err = searchRepos(h, "glibc", "StartsWith", "Name & Description", 1)
 	suite.Nil(err, err)
-	suite.Equal(suite.ExpectedPackages, p, "Package not found")
+	suite.Len(p, 1, "Number of packages != 1")
 
 	// nok
-	p, err = searchRepos(h, "nonsense_nonsense", "StartsWith", "Name", 1, false)
+	p, _, err = searchRepos(h, "nonsense_nonsense", "StartsWith", "Name", 1)
 	suite.Nil(err, err)
 	suite.Equal([]Package{}, p, "[]Packages not empty")
 
-	p, err = searchRepos(nil, "nonsense_nonsense", "StartsWith", "Name", 1, false)
+	p, _, err = searchRepos(nil, "nonsense_nonsense", "StartsWith", "Name", 1)
 	suite.NotNil(err, err)
 	suite.Equal([]Package{}, p, "[]Packages not empty")
 }

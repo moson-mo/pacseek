@@ -42,18 +42,16 @@ func (ps *UI) displayPackages(text string) {
 		}()
 
 		var err error
-		packages, err = searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults, false)
+		var localPackages []Package
+
+		// search repositories
+		packages, localPackages, err = searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
 		if err != nil {
 			ps.app.QueueUpdateDraw(func() {
 				ps.displayMessage(err.Error(), true)
 			})
 		}
-		localPackages, err := searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults, true)
-		if err != nil {
-			ps.app.QueueUpdateDraw(func() {
-				ps.displayMessage(err.Error(), true)
-			})
-		}
+		// search AUR
 		if !ps.conf.DisableAur {
 			aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
 			if err != nil {
@@ -66,8 +64,11 @@ func (ps *UI) displayPackages(text string) {
 				aurPackages[i].IsInstalled = isPackageInstalled(ps.alpmHandle, aurPackages[i].Name)
 			}
 
+			// add AUR results to our list
 			packages = append(packages, aurPackages...)
 		}
+
+		// add local-only (not found in repo not AUR)
 		for _, lpkg := range localPackages {
 			found := false
 			for _, pkg := range packages {
@@ -81,44 +82,26 @@ func (ps *UI) displayPackages(text string) {
 			}
 		}
 
-		sort.Slice(packages, func(i, j int) bool {
-			return packages[i].Name < packages[j].Name
-		})
-
+		// show message if we couldn't find anything
 		if len(packages) == 0 {
 			ps.app.QueueUpdateDraw(func() {
 				ps.displayMessage("No packages found for search-term: "+text, false)
 			})
+			return
 		}
+
+		// sort list by name
+		sort.Slice(packages, func(i, j int) bool {
+			return packages[i].Name < packages[j].Name
+		})
+
+		// strip down list to our configured maximum
 		if len(packages) > ps.conf.MaxResults {
 			packages = packages[:ps.conf.MaxResults]
 		}
 
-		aurPkgs := []string{}
-		for _, pkg := range packages {
-			if pkg.Source == "AUR" {
-				aurPkgs = append(aurPkgs, pkg.Name)
-			}
-		}
-		repoPkgs := []string{}
-		for _, pkg := range packages {
-			if pkg.Source != "AUR" {
-				repoPkgs = append(repoPkgs, pkg.Name)
-			}
-		}
-
-		if !ps.conf.DisableCache {
-			aurInfos := infoAur(ps.conf.AurRpcUrl, ps.conf.AurTimeout, aurPkgs...)
-			for _, pkg := range aurInfos.Results {
-				ps.cacheInfo.Set(pkg.Name, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
-			}
-			repoInfos := infoPacman(ps.alpmHandle, ps.conf.ComputeRequiredBy, repoPkgs...)
-			for _, pkg := range repoInfos.Results {
-				ps.cacheInfo.Set(pkg.Name, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
-			}
-
-			ps.cacheSearch.Set(text, packages, time.Duration(ps.conf.CacheExpiry)*time.Minute)
-		}
+		// get info records and store in cache
+		ps.cacheSearchAndPackageInfo(packages, text)
 
 		// draw packages
 		ps.app.QueueUpdateDraw(func() {
@@ -127,13 +110,44 @@ func (ps *UI) displayPackages(text string) {
 	}()
 }
 
+// retrieves package info records and stores search results and infos in cache
+func (ps *UI) cacheSearchAndPackageInfo(packages []Package, searchTerm string) {
+	// get string slices for AUR and repo packages
+	aurPkgs := []string{}
+	for _, pkg := range packages {
+		if pkg.Source == "AUR" {
+			aurPkgs = append(aurPkgs, pkg.Name)
+		}
+	}
+	repoPkgs := []string{}
+	for _, pkg := range packages {
+		if pkg.Source != "AUR" {
+			repoPkgs = append(repoPkgs, pkg.Name)
+		}
+	}
+
+	// get detailed package information for all packages and add to cache
+	if !ps.conf.DisableCache {
+		aurInfos := infoAur(ps.conf.AurRpcUrl, ps.conf.AurTimeout, aurPkgs...)
+		for _, pkg := range aurInfos.Results {
+			ps.cacheInfo.Set(pkg.Name, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+		}
+		repoInfos := infoPacman(ps.alpmHandle, ps.conf.ComputeRequiredBy, repoPkgs...)
+		for _, pkg := range repoInfos.Results {
+			ps.cacheInfo.Set(pkg.Name, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+		}
+
+		ps.cacheSearch.Set(searchTerm, packages, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+	}
+}
+
 // retrieves package information from repo/AUR and displays them
 func (ps *UI) displayPackageInfo(row, column int) {
 	if row == -1 || row+1 > ps.tablePackages.GetRowCount() {
 		return
 	}
-	ps.tableDetails.SetTitle("")
-	ps.tableDetails.Clear()
+	ps.tableDetails.Clear().
+		SetTitle("")
 	pkg := ps.tablePackages.GetCell(row, 0).Text
 	source := ps.tablePackages.GetCell(row, 1).Text
 

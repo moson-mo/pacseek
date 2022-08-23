@@ -237,7 +237,7 @@ func (ps *UI) setupKeyBindings() {
 					if ps.conf.ShowPkgbuildInternally {
 						ps.displayPkgbuild()
 					} else {
-						ps.runCommand(util.Shell(), []string{"-c", ps.getPkgbuildCommand(ps.selectedPackage.Source, ps.selectedPackage.PackageBase)})
+						ps.runCommand(util.Shell(), "-c", ps.getPkgbuildCommand(ps.selectedPackage.Source, ps.selectedPackage.PackageBase))
 					}
 				}
 			}

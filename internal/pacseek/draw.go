@@ -209,7 +209,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 						if ps.conf.ShowPkgbuildInternally {
 							ps.displayPkgbuild()
 						} else {
-							ps.runCommand(util.Shell(), []string{"-c", v})
+							ps.runCommand(util.Shell(), "-c", v)
 						}
 						return true
 					})
@@ -220,7 +220,8 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 
 			for _, l := range lines {
 				if mr != r {
-					ps.tableDetails.SetCellSimple(r, 0, "") // we need to add some blank content otherwise it looks weird with some terminal configs
+					// we need to add some blank content otherwise it looks weird with some terminal configs
+					ps.tableDetails.SetCellSimple(r, 0, "")
 				}
 				cell := &tview.TableCell{
 					Text:            l,
@@ -290,7 +291,7 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 					ps.selectedPackage = &up[i]
 					ps.displayPkgbuild()
 				} else {
-					ps.runCommand(util.Shell(), []string{"-c", ps.getPkgbuildCommand(up[i].Source, up[i].PackageBase)})
+					ps.runCommand(util.Shell(), "-c", ps.getPkgbuildCommand(up[i].Source, up[i].PackageBase))
 				}
 				return true
 			},

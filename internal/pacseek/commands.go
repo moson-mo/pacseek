@@ -29,7 +29,7 @@ func (ps *UI) installPackage(pkg, source string, installed bool) {
 	// This might not be valid for all of em though.
 	args := []string{"-c", command}
 
-	ps.runCommand(ps.shell, args)
+	ps.runCommand(ps.shell, args...)
 
 	// update package install status
 	ps.updateInstalledState()
@@ -54,11 +54,11 @@ func (ps *UI) performUpgrade(aur bool) {
 
 	args := []string{"-c", command}
 
-	ps.runCommand(ps.shell, args)
+	ps.runCommand(ps.shell, args...)
 }
 
 // suspends UI and runs a command in the terminal
-func (ps *UI) runCommand(command string, args []string) {
+func (ps *UI) runCommand(command string, args ...string) {
 	// suspend gui and run command in terminal
 	ps.app.Suspend(func() {
 

@@ -39,24 +39,23 @@ func initPacmanDbs(dbPath, confPath string, repos []string) (*alpm.Handle, error
 }
 
 // searches the pacman databases and returns packages that could be found (starting with "term")
-func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults int, localOnly bool) ([]Package, error) {
+func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults int) ([]Package, []Package, error) {
 	packages := []Package{}
+	installed := []Package{}
+
 	if h == nil {
-		return packages, errors.New("alpm handle is nil")
+		return packages, installed, errors.New("alpm handle is nil")
 	}
 	dbs, err := h.SyncDBs()
 	if err != nil {
-		return packages, err
+		return packages, installed, err
 	}
 	local, err := h.LocalDB()
 	if err != nil {
-		return packages, err
+		return packages, installed, err
 	}
 
-	searchDbs := dbs.Slice()
-	if localOnly {
-		searchDbs = []alpm.IDB{local}
-	}
+	searchDbs := append(dbs.Slice(), local)
 
 	counter := 0
 	for _, db := range searchDbs {
@@ -71,22 +70,24 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 
 			if compFunc(pkg.Name(), term) ||
 				(by == "Name & Description" && compFunc(pkg.Description(), term)) {
-				installed := false
-				if local.Pkg(pkg.Name()) != nil {
-					installed = true
-				}
-				packages = append(packages, Package{
+				pkg := Package{
 					Name:         pkg.Name(),
 					Source:       db.Name(),
-					IsInstalled:  installed,
+					IsInstalled:  local.Pkg(pkg.Name()) != nil,
 					LastModified: int(pkg.BuildDate().Unix()),
 					Popularity:   math.MaxFloat64,
-				})
+				}
+				if db != local {
+					packages = append(packages, pkg)
+				} else {
+					installed = append(installed, pkg)
+				}
+
 				counter++
 			}
 		}
 	}
-	return packages, nil
+	return packages, installed, nil
 }
 
 // create/update temporary sync DB
