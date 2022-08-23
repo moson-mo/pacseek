@@ -170,7 +170,7 @@ func getUpgradable(h *alpm.Handle, computeRequiredBy bool) ([]InfoRecord, []stri
 		}
 	}
 
-	return infoPacman(h, upgradable, computeRequiredBy).Results, notFound
+	return infoPacman(h, computeRequiredBy, upgradable...).Results, notFound
 }
 
 // returns packages that can be upgraded & packages that only exist locally
@@ -205,7 +205,7 @@ func getInstalled(h *alpm.Handle, computeRequiredBy bool) ([]InfoRecord, []strin
 		}
 	}
 
-	return infoPacman(h, installed, computeRequiredBy).Results, notFound
+	return infoPacman(h, computeRequiredBy, installed...).Results, notFound
 }
 
 // checks the local db if a package is installed
@@ -219,7 +219,7 @@ func isPackageInstalled(h *alpm.Handle, pkg string) bool {
 }
 
 // retrieves package information from the pacman DB's and returns it in the same format as the AUR call
-func infoPacman(h *alpm.Handle, pkgs []string, computeRequiredBy bool) RpcResult {
+func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) RpcResult {
 	r := RpcResult{
 		Results: []InfoRecord{},
 	}

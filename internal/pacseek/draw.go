@@ -247,8 +247,8 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 
 // draw list of upgradable packages
 func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
-	ps.tableDetails.SetTitle(" [::b]Upgradable packages ")
-	ps.tableDetails.Clear()
+	ps.tableDetails.Clear().
+		SetTitle(" [::b]Upgradable packages ")
 
 	// header
 	columns := []string{"Package  ", "Source  ", "New version  ", "Installed version", ""}
@@ -382,18 +382,18 @@ func (ps *UI) drawPackageListContent(packages []Package) {
 			color = ps.conf.Colors().PackagelistSourceAUR
 		}
 
-		ps.tablePackages.SetCellSimple(i+1, 0, pkg.Name)
-		ps.tablePackages.SetCell(i+1, 1, &tview.TableCell{
-			Text:            pkg.Source,
-			Color:           color,
-			BackgroundColor: tcell.ColorBlack,
-		})
-		ps.tablePackages.SetCell(i+1, 2, &tview.TableCell{
-			Text:            installed,
-			Expansion:       1000,
-			Color:           tcell.ColorWhite,
-			BackgroundColor: tcell.ColorBlack,
-		})
+		ps.tablePackages.SetCellSimple(i+1, 0, pkg.Name).
+			SetCell(i+1, 1, &tview.TableCell{
+				Text:            pkg.Source,
+				Color:           color,
+				BackgroundColor: tcell.ColorBlack,
+			}).
+			SetCell(i+1, 2, &tview.TableCell{
+				Text:            installed,
+				Expansion:       1000,
+				Color:           tcell.ColorWhite,
+				BackgroundColor: tcell.ColorBlack,
+			})
 	}
 	ps.tablePackages.ScrollToBeginning()
 }

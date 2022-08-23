@@ -85,7 +85,7 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 }
 
 // calls the AUR rpc API (info type) and returns package information
-func infoAur(aurUrl string, pkg []string, timeout int) RpcResult {
+func infoAur(aurUrl string, timeout int, pkg ...string) RpcResult {
 	client := http.Client{
 		Timeout: time.Millisecond * time.Duration(timeout),
 	}

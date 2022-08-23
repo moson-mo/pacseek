@@ -13,114 +13,116 @@ import (
 
 // gets packages from repos/AUR and displays them
 func (ps *UI) displayPackages(text string) {
+	var packages []Package
+
+	showFunc := func() {
+		ps.shownPackages = packages
+		best := bestMatch(text, packages) + 1
+		ps.drawPackageListContent(packages)
+		if ps.flexRight.GetItem(0) == ps.formSettings {
+			ps.flexRight.Clear()
+			ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
+		}
+		ps.tablePackages.Select(best, 0) // select the best match
+	}
+
+	// check cache first
+	if packagesCache, found := ps.cacheSearch.Get(text); found {
+		packages = packagesCache.([]Package)
+		showFunc()
+		return
+	}
+
 	go func() {
 		ps.locker.Lock()
-		defer ps.locker.Unlock()
-		defer ps.app.QueueUpdate(func() { ps.displayPackageInfo(1, 0) })
+		ps.startSpinner()
+		defer func() {
+			ps.locker.Unlock()
+			ps.stopSpinner()
+		}()
 
-		var packages []Package
-		packagesCache, foundCache := ps.cacheSearch.Get(text)
-
-		if !foundCache {
-			ps.startSpinner()
-			defer ps.stopSpinner()
-
-			var err error
-			packages, err = searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults, false)
-			if err != nil {
-				ps.app.QueueUpdateDraw(func() {
-					ps.displayMessage(err.Error(), true)
-				})
-			}
-			localPackages, err := searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults, true)
-			if err != nil {
-				ps.app.QueueUpdateDraw(func() {
-					ps.displayMessage(err.Error(), true)
-				})
-			}
-			if !ps.conf.DisableAur {
-				aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
-				if err != nil {
-					ps.app.QueueUpdateDraw(func() {
-						ps.displayMessage(err.Error(), true)
-					})
-				}
-
-				for i := 0; i < len(aurPackages); i++ {
-					aurPackages[i].IsInstalled = isPackageInstalled(ps.alpmHandle, aurPackages[i].Name)
-				}
-
-				packages = append(packages, aurPackages...)
-			}
-			for _, lpkg := range localPackages {
-				found := false
-				for _, pkg := range packages {
-					if pkg.Name == lpkg.Name {
-						found = true
-						break
-					}
-				}
-				if !found {
-					packages = append(packages, lpkg)
-				}
-			}
-
-			sort.Slice(packages, func(i, j int) bool {
-				return packages[i].Name < packages[j].Name
+		var err error
+		packages, err = searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults, false)
+		if err != nil {
+			ps.app.QueueUpdateDraw(func() {
+				ps.displayMessage(err.Error(), true)
 			})
-
-			if len(packages) == 0 {
+		}
+		localPackages, err := searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults, true)
+		if err != nil {
+			ps.app.QueueUpdateDraw(func() {
+				ps.displayMessage(err.Error(), true)
+			})
+		}
+		if !ps.conf.DisableAur {
+			aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
+			if err != nil {
 				ps.app.QueueUpdateDraw(func() {
-					ps.displayMessage("No packages found for search-term: "+text, false)
+					ps.displayMessage(err.Error(), true)
 				})
 			}
-			if len(packages) > ps.conf.MaxResults {
-				packages = packages[:ps.conf.MaxResults]
+
+			for i := 0; i < len(aurPackages); i++ {
+				aurPackages[i].IsInstalled = isPackageInstalled(ps.alpmHandle, aurPackages[i].Name)
 			}
 
-			aurPkgs := []string{}
-			for _, pkg := range packages {
-				if pkg.Source == "AUR" {
-					aurPkgs = append(aurPkgs, pkg.Name)
-				}
-			}
-			repoPkgs := []string{}
-			for _, pkg := range packages {
-				if pkg.Source != "AUR" {
-					repoPkgs = append(repoPkgs, pkg.Name)
-				}
-			}
-
-			if !ps.conf.DisableCache {
-				aurInfos := infoAur(ps.conf.AurRpcUrl, aurPkgs, ps.conf.AurTimeout)
-				for _, pkg := range aurInfos.Results {
-					ps.cacheInfo.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
-				}
-				repoInfos := infoPacman(ps.alpmHandle, repoPkgs, ps.conf.ComputeRequiredBy)
-				for _, pkg := range repoInfos.Results {
-					ps.cacheInfo.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
-				}
-
-				ps.cacheSearch.Set(text, packages, time.Duration(ps.conf.CacheExpiry)*time.Minute)
-			}
-		} else {
-			packages = packagesCache.([]Package)
+			packages = append(packages, aurPackages...)
 		}
-		ps.shownPackages = packages
+		for _, lpkg := range localPackages {
+			found := false
+			for _, pkg := range packages {
+				if pkg.Name == lpkg.Name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				packages = append(packages, lpkg)
+			}
+		}
 
-		best := bestMatch(text, packages) + 1
+		sort.Slice(packages, func(i, j int) bool {
+			return packages[i].Name < packages[j].Name
+		})
+
+		if len(packages) == 0 {
+			ps.app.QueueUpdateDraw(func() {
+				ps.displayMessage("No packages found for search-term: "+text, false)
+			})
+		}
+		if len(packages) > ps.conf.MaxResults {
+			packages = packages[:ps.conf.MaxResults]
+		}
+
+		aurPkgs := []string{}
+		for _, pkg := range packages {
+			if pkg.Source == "AUR" {
+				aurPkgs = append(aurPkgs, pkg.Name)
+			}
+		}
+		repoPkgs := []string{}
+		for _, pkg := range packages {
+			if pkg.Source != "AUR" {
+				repoPkgs = append(repoPkgs, pkg.Name)
+			}
+		}
+
+		if !ps.conf.DisableCache {
+			aurInfos := infoAur(ps.conf.AurRpcUrl, ps.conf.AurTimeout, aurPkgs...)
+			for _, pkg := range aurInfos.Results {
+				ps.cacheInfo.Set(pkg.Name, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+			}
+			repoInfos := infoPacman(ps.alpmHandle, ps.conf.ComputeRequiredBy, repoPkgs...)
+			for _, pkg := range repoInfos.Results {
+				ps.cacheInfo.Set(pkg.Name, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+			}
+
+			ps.cacheSearch.Set(text, packages, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+		}
 
 		// draw packages
 		ps.app.QueueUpdateDraw(func() {
-			if text != ps.inputSearch.GetText() {
-				return
-			}
-			ps.drawPackageListContent(packages)
-			if ps.flexRight.GetItem(0) == ps.formSettings {
-				ps.flexRight.Clear()
-				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
-			}
-			ps.tablePackages.Select(best, 0) // select the best match
+			showFunc()
 		})
 	}()
 }
@@ -135,57 +137,63 @@ func (ps *UI) displayPackageInfo(row, column int) {
 	pkg := ps.tablePackages.GetCell(row, 0).Text
 	source := ps.tablePackages.GetCell(row, 1).Text
 
+	info := RpcResult{}
+
+	showFunc := func() {
+		if !ps.isPackageSelected(pkg, false) {
+			return
+		}
+		if len(info.Results) != 1 {
+			errorMsg := "Package not found"
+			if info.Error != "" {
+				errorMsg = info.Error
+			}
+			ps.tableDetails.SetTitle(" [red]Error ")
+			ps.tableDetails.SetCellSimple(0, 0, "[red]"+errorMsg)
+			return
+		}
+		ps.selectedPackage = &info.Results[0]
+		ps.drawPackageInfo(info.Results[0], ps.width)
+	}
+
+	if infoCached, found := ps.cacheInfo.Get(pkg); found {
+		info.Results = []InfoRecord{infoCached.(InfoRecord)}
+		showFunc()
+		return
+	}
+
 	go func() {
-		infoCached, foundCached := ps.cacheInfo.Get(pkg)
-		if source == "AUR" && !foundCached {
+		if source == "AUR" {
 			time.Sleep(time.Duration(ps.conf.AurSearchDelay) * time.Millisecond)
 		}
 
 		if !ps.isPackageSelected(pkg, true) {
 			return
 		}
+
 		ps.app.QueueUpdateDraw(func() {
 			ps.tableDetails.SetTitle(" [::b]" + pkg + " - Retrieving data... ")
 		})
 
 		ps.locker.Lock()
-		if !foundCached {
-			ps.startSpinner()
-			defer ps.stopSpinner()
-		}
-		defer ps.locker.Unlock()
+		ps.startSpinner()
+		defer func() {
+			ps.locker.Unlock()
+			ps.stopSpinner()
+		}()
 
-		var info RpcResult
-		if !foundCached {
-			if source == "AUR" {
-				info = infoAur(ps.conf.AurRpcUrl, []string{pkg}, ps.conf.AurTimeout)
-			} else {
-				info = infoPacman(ps.alpmHandle, []string{pkg}, ps.conf.ComputeRequiredBy)
-			}
-			if !ps.conf.DisableCache {
-				ps.cacheInfo.Set(pkg, info, time.Duration(ps.conf.CacheExpiry)*time.Minute)
-			}
+		if source == "AUR" {
+			info = infoAur(ps.conf.AurRpcUrl, ps.conf.AurTimeout, pkg)
 		} else {
-			info = infoCached.(RpcResult)
+			info = infoPacman(ps.alpmHandle, ps.conf.ComputeRequiredBy, pkg)
+		}
+		if !ps.conf.DisableCache && len(info.Results) == 1 {
+			ps.cacheInfo.Set(pkg, info.Results[0], time.Duration(ps.conf.CacheExpiry)*time.Minute)
 		}
 
 		// draw results
 		ps.app.QueueUpdateDraw(func() {
-			if !ps.isPackageSelected(pkg, false) {
-				return
-			}
-			if len(info.Results) != 1 {
-				errorMsg := "Package not found"
-				if info.Error != "" {
-					errorMsg = info.Error
-				}
-				ps.tableDetails.SetTitle(" [red]Error ")
-				ps.tableDetails.SetCellSimple(0, 0, "[red]"+errorMsg)
-				return
-			}
-			ps.selectedPackage = &info.Results[0]
-			_, _, w, _ := ps.flexRoot.GetRect()
-			ps.drawPackageInfo(info.Results[0], w)
+			showFunc()
 		})
 	}()
 }
@@ -203,7 +211,7 @@ func (ps *UI) displayMessage(message string, isError bool) {
 	go func() {
 		ps.messageLocker.Lock()
 		defer ps.messageLocker.Unlock()
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 		ps.app.QueueUpdateDraw(func() {
 			ps.flexRoot.ResizeItem(ps.textMessage, 0, 0)
 		})
@@ -266,41 +274,45 @@ func (ps *UI) displayAbout() {
 
 // displays PKGBUILD file
 func (ps *UI) displayPkgbuild() {
-	selpac := ps.selectedPackage
-	if selpac == nil {
+	if ps.selectedPackage == nil {
 		return
 	}
-	ps.textPkgbuild.Clear()
-	ps.flexRight.Clear()
-	ps.flexRight.AddItem(ps.textPkgbuild, 0, 1, true)
-	ps.textPkgbuild.SetTitle(" [::b]Loading PKGBUILD... ")
+	pkg := *ps.selectedPackage
+
+	ps.textPkgbuild.Clear().
+		SetTitle(" [::b]Loading PKGBUILD... ")
+	ps.flexRight.Clear().
+		AddItem(ps.textPkgbuild, 0, 1, true)
 	ps.app.SetFocus(ps.textPkgbuild)
 
-	go func() {
-		var content string
-		contentCached, found := ps.cachePkgbuild.Get(ps.selectedPackage.PackageBase)
-		if !found {
-			ps.startSpinner()
-			defer ps.stopSpinner()
-			var err error
-			content, err = getPkgbuildContent(getPkgbuildUrl(ps.selectedPackage.Source, ps.selectedPackage.PackageBase, ps.isArm))
-			if err != nil {
-				ps.app.QueueUpdateDraw(func() {
-					ps.textPkgbuild.SetTitle(" [::b]Error loading PKGBUILD ")
-					ps.textPkgbuild.SetText(err.Error())
-				})
-				return
-			}
-			ps.cachePkgbuild.Set(ps.selectedPackage.PackageBase, content, time.Duration(ps.conf.CacheExpiry)*time.Minute)
-		} else {
-			content = contentCached.(string)
-		}
+	// check cache first
+	if contentCached, found := ps.cachePkgbuild.Get(pkg.PackageBase); found {
+		content := contentCached.(string)
+		ps.drawPkgbuild(content, pkg.Name)
+		return
+	}
 
-		if selpac != ps.selectedPackage {
+	go func() {
+		ps.locker.Lock()
+		ps.startSpinner()
+		defer func() {
+			ps.locker.Unlock()
+			ps.stopSpinner()
+		}()
+
+		content, err := getPkgbuildContent(getPkgbuildUrl(pkg.Source, pkg.PackageBase, ps.isArm))
+		if err != nil {
+			ps.app.QueueUpdateDraw(func() {
+				ps.textPkgbuild.SetTitle(" [::b]Error loading PKGBUILD ")
+				ps.textPkgbuild.SetText(err.Error())
+			})
 			return
 		}
+		if !ps.conf.DisableCache {
+			ps.cachePkgbuild.Set(pkg.PackageBase, content, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+		}
 		ps.app.QueueUpdateDraw(func() {
-			ps.drawPkgbuild(content, ps.selectedPackage.Name)
+			ps.drawPkgbuild(content, pkg.Name)
 		})
 	}()
 }
@@ -324,9 +336,10 @@ func (ps *UI) isPackageSelected(pkg string, queue bool) bool {
 
 // displays a list of updatable packages
 func (ps *UI) displayUpgradable() {
-	ps.tableDetails.SetTitle(" [::b]Searching for updates... ")
-	ps.tableDetails.Clear()
+	ps.tableDetails.Clear().
+		SetTitle(" [::b]Searching for updates... ")
 
+	// check cache first
 	if cached, found := ps.cacheInfo.Get("#upgrades#"); found {
 		foundUp := cached.([]InfoRecord)
 		ps.drawUpgradable(foundUp, true)
@@ -334,8 +347,10 @@ func (ps *UI) displayUpgradable() {
 	}
 
 	go func() {
+		ps.locker.Lock()
 		ps.startSpinner()
 		defer ps.stopSpinner()
+		defer ps.locker.Unlock()
 
 		h, err := syncToTempDB(ps.conf.PacmanConfigPath, ps.filterRepos)
 		if err != nil {
@@ -356,7 +371,7 @@ func (ps *UI) displayUpgradable() {
 		}
 
 		up, nf := getUpgradable(h, ps.conf.ComputeRequiredBy)
-		aurPkgs := infoAur(ps.conf.AurRpcUrl, nf, ps.conf.AurTimeout)
+		aurPkgs := infoAur(ps.conf.AurRpcUrl, ps.conf.AurTimeout, nf...)
 		for _, aurPkg := range aurPkgs.Results {
 			for i := 0; i < len(up); i++ {
 				if up[i].Source == "local" && up[i].Name == aurPkg.Name {
@@ -374,7 +389,9 @@ func (ps *UI) displayUpgradable() {
 				foundUp = append(foundUp, pkg)
 			}
 		}
-		ps.cacheInfo.Set("#upgrades#", foundUp, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+		if !ps.conf.DisableCache {
+			ps.cacheInfo.Set("#upgrades#", foundUp, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+		}
 		ps.app.QueueUpdateDraw(func() {
 			ps.drawUpgradable(foundUp, false)
 		})
@@ -383,14 +400,29 @@ func (ps *UI) displayUpgradable() {
 
 // displays list of installed packages
 func (ps *UI) displayInstalled() {
-	ps.tablePackages.Clear().SetCellSimple(0, 0, "Generating list, please wait...")
+	ps.tablePackages.Clear().
+		SetCellSimple(0, 0, "Generating list, please wait...")
+
+	// search cache
+	if installedCached, found := ps.cacheSearch.Get("#installed#"); found {
+		packages := installedCached.([]Package)
+		ps.shownPackages = packages
+		ps.drawPackageListContent(packages)
+		ps.tablePackages.Select(1, 0)
+		return
+	}
 
 	go func() {
+		ps.locker.Lock()
 		ps.startSpinner()
-		defer ps.stopSpinner()
+		defer func() {
+			ps.locker.Unlock()
+			ps.stopSpinner()
+		}()
+
 		in, nf := getInstalled(ps.alpmHandle, ps.conf.ComputeRequiredBy)
-		aurPkgs := infoAur(ps.conf.AurRpcUrl, nf, ps.conf.AurTimeout)
-		for _, aurPkg := range aurPkgs.Results {
+		aurPkgs := infoAur(ps.conf.AurRpcUrl, ps.conf.AurTimeout, nf...).Results
+		for _, aurPkg := range aurPkgs {
 			for i := 0; i < len(in); i++ {
 				if in[i].Source == "local" && in[i].Name == aurPkg.Name {
 					in[i].Description = aurPkg.Description
@@ -411,9 +443,13 @@ func (ps *UI) displayInstalled() {
 				Popularity:   pkg.Popularity,
 			})
 			if !ps.conf.DisableCache {
-				ps.cacheInfo.Set(pkg.Name, RpcResult{Results: []InfoRecord{pkg}}, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+				ps.cacheInfo.Set(pkg.Name, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 			}
 		}
+		if !ps.conf.DisableCache {
+			ps.cacheSearch.Set("#installed#", packages, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+		}
+		ps.shownPackages = packages
 		ps.app.QueueUpdateDraw(func() {
 			ps.drawPackageListContent(packages)
 			ps.tablePackages.Select(1, 0)

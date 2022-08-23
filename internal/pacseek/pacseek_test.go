@@ -71,13 +71,13 @@ func (suite *pacseekTestSuite) TestInfoPacmanDbs() {
 	suite.Nil(err, err)
 
 	// ok
-	p := infoPacman(h, []string{"glibc"}, false)
+	p := infoPacman(h, false, "glibc")
 	suite.Equal("", p.Error, "error not empty")
 	suite.Equal(1, len(p.Results), "Results not 1")
 	suite.Equal("glibc", p.Results[0].Name, "Name not glibc")
 
 	// nok
-	p = infoPacman(h, []string{"nonsense_nonsense"}, false)
+	p = infoPacman(h, false, "nonsense_nonsense")
 	suite.Equal("", p.Error, "error not empty")
 	suite.Equal(0, len(p.Results), "Results not 0")
 }
@@ -123,16 +123,16 @@ func (suite *pacseekTestSuite) TestSearchAur() {
 
 func (suite *pacseekTestSuite) TestInfoAur() {
 	// ok
-	p := infoAur("http://server.moson.rocks:10666/rpc", []string{"yay"}, 5000)
+	p := infoAur("http://server.moson.rocks:10666/rpc", 5000, "yay")
 	suite.Equal("", p.Error, "error not empty")
 	suite.Greater(len(p.Results), 0, "no results for yay")
 
 	// nok
-	p = infoAur("http://server.moson.rocks:10666/rpcnonsense", []string{"yay"}, 5000)
+	p = infoAur("http://server.moson.rocks:10666/rpcnonsense", 5000, "yay")
 	suite.NotEqual("", p.Error, "error empty")
 	suite.Equal(0, len(p.Results), "Results not empty")
 
-	p = infoAur("nonsense", []string{"yay"}, 5000)
+	p = infoAur("nonsense", 5000, "yay")
 	suite.NotEqual("", p.Error, "error empty")
 	suite.Equal(0, len(p.Results), "Results not empty")
 }
