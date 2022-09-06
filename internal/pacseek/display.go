@@ -130,11 +130,11 @@ func (ps *UI) cacheSearchAndPackageInfo(packages []Package, searchTerm string) {
 	if !ps.conf.DisableCache {
 		aurInfos := infoAur(ps.conf.AurRpcUrl, ps.conf.AurTimeout, aurPkgs...)
 		for _, pkg := range aurInfos.Results {
-			ps.cacheInfo.Set(pkg.Name, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+			ps.cacheInfo.Set(pkg.Name+"-"+pkg.Source, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 		}
 		repoInfos := infoPacman(ps.alpmHandle, ps.conf.ComputeRequiredBy, repoPkgs...)
 		for _, pkg := range repoInfos.Results {
-			ps.cacheInfo.Set(pkg.Name, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+			ps.cacheInfo.Set(pkg.Name+"-"+pkg.Source, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 		}
 
 		ps.cacheSearch.Set(searchTerm, packages, time.Duration(ps.conf.CacheExpiry)*time.Minute)
@@ -170,7 +170,7 @@ func (ps *UI) displayPackageInfo(row, column int) {
 		ps.drawPackageInfo(info.Results[0], ps.width)
 	}
 
-	if infoCached, found := ps.cacheInfo.Get(pkg); found {
+	if infoCached, found := ps.cacheInfo.Get(pkg + "-" + source); found {
 		info.Results = []InfoRecord{infoCached.(InfoRecord)}
 		showFunc()
 		return
@@ -314,7 +314,7 @@ func (ps *UI) displayPkgbuild() {
 			ps.stopSpinner()
 		}()
 
-		content, err := getPkgbuildContent(getPkgbuildUrl(pkg.Source, pkg.PackageBase, ps.isArm))
+		content, err := getPkgbuildContent(getPkgbuildUrl(pkg.Source, pkg.PackageBase))
 		if err != nil {
 			ps.app.QueueUpdateDraw(func() {
 				ps.textPkgbuild.SetTitle(" [::b]Error loading PKGBUILD ")

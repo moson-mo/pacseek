@@ -213,8 +213,12 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 						}
 						return true
 					})
-				ps.tableDetails.SetCell(r, 0, cell)
-				break
+				mr = r
+				if i.Source != "AUR" && !util.SliceContains(getArchRepos(), i.Source) {
+					lines = tview.WordWrap("-Unofficial repo. PKGBUILD not found. Falling back to the AUR version-", w)
+				} else {
+					lines = []string{}
+				}
 			}
 			ps.tableDetails.SetCell(r, 0, cell)
 
@@ -229,7 +233,11 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 					BackgroundColor: tcell.ColorBlack,
 				}
 				if k == "Description" {
-					cell.Text = "[::b]" + l
+					cell.SetText("[::b]" + l)
+				}
+				if k == " Show PKGBUILD" {
+					cell.SetText(" " + l).
+						SetTextColor(ps.conf.Colors().PackagelistHeader)
 				}
 				if strings.Contains(k, "URL") {
 					cell.SetClickedFunc(func() bool {

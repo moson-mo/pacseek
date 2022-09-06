@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/moson-mo/pacseek/internal/util"
 )
 
 // download the PKGBUILD file
@@ -24,20 +26,19 @@ func getPkgbuildContent(url string) (string, error) {
 }
 
 // composes the URL to a PKGBUILD file
-func getPkgbuildUrl(source, base string, isArm bool) string {
-	url := fmt.Sprintf(UrlAurPkgbuild, base)
-	if source != "AUR" {
+func getPkgbuildUrl(source, base string) string {
+	if util.SliceContains(getArchRepos(), source) {
 		repo := "packages"
 		if strings.Contains(source, "community") ||
 			source == "multilib" {
 			repo = "community"
 		}
-		url = fmt.Sprintf(UrlRepoPkgbuild, repo, base)
+		return fmt.Sprintf(UrlRepoPkgbuild, repo, base)
 	}
-	return url
+	return fmt.Sprintf(UrlAurPkgbuild, base)
 }
 
 // returns command to download and display PKGBUILD
 func (ps *UI) getPkgbuildCommand(source, base string) string {
-	return strings.Replace(ps.conf.ShowPkgbuildCommand, "{url}", getPkgbuildUrl(source, base, ps.isArm), -1)
+	return strings.Replace(ps.conf.ShowPkgbuildCommand, "{url}", getPkgbuildUrl(source, base), -1)
 }
