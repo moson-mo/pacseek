@@ -1,0 +1,176 @@
+.TH PACSEEK 1 "2022 September" "pacseek 1.6.6"
+
+.SH NAME
+
+pacseek \- A TUI for searching and installing Arch Linux packages
+
+.SH SYNOPSIS
+
+.SY pacseek
+.RI [ options ]
+.RI [ search\-term ]
+.YS
+
+.SY pacseek
+.OP \-r repo
+.OP \-s search\-term
+.YS
+
+.SH DESCRIPTION
+
+.PP
+.B pacseek
+is terminal user interface which allows you to browse and search through
+the Arch Linux package databases as well as the Arch User Repository.
+
+.PP
+Package installation/removal is done with an AUR helper.
+Make sure you have one installed.
+In the default configuration,
+.B yay
+is being used. You can change this in the settings.
+
+.SH OPTIONS
+
+.TP
+.BI \-r " repo1,repo2 " \fR...
+Limit searching to a comma separated list of repositories
+
+.TP
+.BI \-s " search\-term"
+Search term when used with the
+.B \-r
+option
+
+.TP
+.B \-a
+ASCII mode
+
+.TP
+.B \-m
+Monochrome mode
+
+.TP
+.B \-u
+Show upgrades after startup
+
+.TP
+.B \-i
+Show installed packages after startup
+
+.TP
+.BR \-h ", " \-\-help
+Display help and exit
+
+.SH KEY BINDINGS
+
+.TP
+.B Enter
+Search;
+.br
+Install or remove a selected package
+
+.TP
+.BR Tab ", " Ctrl+Up / Down / Left / Right
+Navigate between boxes
+
+.TP
+.BR Up / Down ", " j / k
+Scroll through the package list
+
+.TP
+.BR Shift+Left / Right
+Change size of package list
+
+.TP
+.B Ctrl+s
+Open/Close settings
+
+.TP
+.B Ctrl+n
+Show help/key bindings
+
+.TP
+.B Ctrl+u
+Perform sysupgrade
+
+.TP
+.B Ctrl+a
+Perform AUR upgrade (if configured)
+
+.TP
+.B Ctrl+w
+Wipe cache
+
+.TP
+.B Ctrl+p
+Show PKGBUILD for selected package
+
+.TP
+.B Ctrl+g
+Show list of upgradable packages
+
+.TP
+.B Ctrl+l
+Show list of all installed packages
+
+.TP
+.B Ctrl+b
+Show about/version information
+
+.TP
+.BR Esc ", " Ctrl+q
+Quit
+
+.TP
+.B Shift+n
+Sort by package name
+
+.TP
+.B Shift+s
+Sort by source/repository
+
+.TP
+.B Shift+i
+Sort by installed state
+
+.TP
+.B Shift+m
+Sort by last modified date
+
+.TP
+.B Shift+p
+Sort by popularity (AUR packages)
+
+.SH FILES
+
+.TP
+.I ~/.config/pacseek/config.json
+The default configuration file
+
+.TP
+.I ~/.config/pacseek/colors.json
+Custom color scheme settings
+
+.SH REPORTING BUGS
+
+Report bugs to
+.UR https://github.com/moson\-mo/pacseek/issues
+GitHub Issues
+.UE .
+
+.SH AUTHORS
+
+.MT mo\-son@mailbox.org
+Mario Oenning
+.ME
+
+.SH SEE ALSO
+
+See the
+.UR https://github.com/moson\-mo/pacseek/wiki
+pacseek wiki
+.UE
+for more information
+
+.BR pacman "(8), " pacman.conf (5)
