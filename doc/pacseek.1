@@ -17,6 +17,8 @@ pacseek \- A TUI for searching and installing Arch Linux packages
 .YS
 
 .SH DESCRIPTION
+.nh
+.ad l
 
 .PP
 .B pacseek
@@ -141,6 +143,238 @@ Sort by last modified date
 .TP
 .B Shift+p
 Sort by popularity (AUR packages)
+
+.SH CONFIGURATION
+
+.PP
+When pacseek is started the first time, it will generate a configuration file
+.IR ~/.config/pacseek/config.json .
+You can either manually edit this file or use the settings screen make changes.
+
+.PP
+Save any changes that you've made with the
+.B Apply & Save
+button.
+
+.TP
+.BI "\(dqAurRpcUrl\(dq\fR: " \(dqstring\(dq
+The URL to the aurweb/RPC endpoint.
+This endpoint provides REST APIs that are used for searching.
+
+The default is
+.I https://server.moson.rocks/rpc
+(not the official AUR one).
+
+.TP
+.BI "\(dqAurTimeout\(dq\fR: " number
+How long to wait for a response from the AUR/RPC endpoint (in milliseconds).
+If the timeout is exceeded only the list of repository packages are returned.
+
+The default is
+.IR 5000 .
+
+.TP
+.BI "\(dqAurSearchDelay\(dq\fR: " number
+The delay (in milliseconds) that is applied before we start querying for
+package details (mostly obsolete in the latest versions of pacseek).
+It will only be applied when the cache is disabled or the entries in the cache
+have expired and you are navigating through the result list.
+In that case, it will query package information again from the AUR
+but wait for a certain amount of time before doing so.
+That's being done to not run unnecessary queries
+(e.g. if you quickly navigate through the result list).
+
+The default is
+.IR 500 .
+
+.TP
+.BI "\(dqAurUseDifferentCommands\(dq\fR: " bool
+Use separate commands repository and AUR packages installing/upgrading.
+Once enabled, the new commands should be configured in the
+.BR AurInstallCommand " and " AurUpgradeCommand
+options.
+
+The default is
+.IR false .
+
+.TP
+.BI "\(dqAurInstallCommand\(dq\fR: " string
+Install command for AUR packages when
+.B AurUseDifferentCommands
+is enabled.
+
+.TP
+.BI "\(dqAurUpgradeCommand\(dq\fR: " string
+Upgrade command for AUR packages when
+.B AurUseDifferentCommands
+is enabled.
+
+.TP
+.BI "\(dqDisableAur\(dq\fR: " bool
+When enabled, The AUR will not be queried when searching.
+Only the repositories defined in
+.I pacman.conf
+will be searched.
+
+The default is
+.IR false .
+
+.TP
+.BI "\(dqMaxResults\(dq\fR: " number
+The maximum number of results that are displayed in the result list.
+Note that when
+.B SearchMode
+is set to
+.IR StartsWith ,
+it is limited to 100 results from the AUR.
+This is a limitation of an API call that is being used
+(using the official endpoint has an even lower maximum of 20 results).
+
+The default is
+.IR 500 .
+
+.TP
+.BI "\(dqPacmanDbPath\(dq\fR: " \(dqstring\(dq
+The path to the pacman database files.
+
+The default is
+.IR /var/lib/pacman/ .
+
+.TP
+.BI "\(dqPacmanConfigPath\(dq\fR: " \(dqstring\(dq
+The path to the pacman configuration file
+
+The default is
+.IR /etc/pacman.conf .
+
+.TP
+.BI "\(dqInstallCommand\(dq\fR: " \(dqstring\(dq
+The command that is being run when installing a package.
+The package name is appended to this command.
+You can also use the placeholder
+.I {pkg}
+in your command which will be replaced by the package name
+(in this case the package name will not being appended).
+
+The default is
+.IR "yay \-S" .
+
+.TP
+.BI "\(dqUninstallCommand\(dq\fR: " \(dqstring\(dq
+The command that is being run when uninstalling a package.
+
+The default is
+.IR "yay \-Rs" .
+
+.TP
+.BI "\(dqSysUpgradeCommand\(dq\fR: " \(dqstring\(dq
+The command that is being run when upgrading packages with
+.B Ctrl+u
+
+The default is
+.IR yay .
+
+.TP
+.BI "\(dqSearchMode\(dq\fR: " \(dqstring\(dq
+There are two search modes available.
+With the
+.IR Contains
+(default) option, it will show results where the name/description contains the
+search\-term at any position.
+When using the
+.I StartsWith
+option, only those packages are shown where the very beginning of a package
+name/description matched the search\-term.
+
+.TP
+.BI "\(dqSearchBy\(dq\fR: " \(dqstring\(dq
+When set to
+.I Name
+(default), only the package name will be matched against the search\-term.
+Setting this to
+.I Name & Description
+will match the the search\-term with the description as well.
+
+.TP
+.BI "\(dqCacheExpiry\(dq\fR: " number
+The time (in minutes) until the cached search and package info data expires.
+
+The default is
+.IR 10 .
+
+.TP
+.BI "\(dqDisableCache\(dq\fR: " bool
+Search results will be cached so that we do not query the AUR for
+package details each time you navigate to another package in the result list.
+Enabling this option will completely disable caching and
+force pacseek to run a request every time you search or select another package.
+
+Disabling the cache is not recommended since it wasting server resources
+(this option may be removed in the future).
+
+The default is
+.IR false .
+
+.TP
+.BI "\(dqColorScheme\(dq\fR: " \(dqstring\(dq
+The color schemes available are
+.IR "Arch Linux " (default),
+.IR "Endeavour OS" ,
+.IR Red ,
+.IR Green ,
+.IR Blue ,
+.IR Orange ,
+.IR Monochrome .
+
+If you want to define your own color scheme, set it to
+.IR Custom .
+This will generate a file
+.I ~/.config/pacseek/colors.json
+in which you can change the color for various UI elements.
+
+.TP
+.BI "\(dqBorderStyle\(dq\fR: " \(dqstring\(dq
+Choose how the borders are being drawn.
+The styles available are
+.IR Double " (default),"
+.IR Thick ,
+.IR Single ,
+.IR Round .
+
+.TP
+.BI "\(dqShowPkgbuildCommand\(dq\fR: " \(dqstring\(dq
+The command that is being executed when clicking on
+.B Show PKGBUILD
+in the details or by pressing
+.BR Ctrl+p .
+The term
+.I {url}
+will be replaced by the PKGBUILD url
+(it should be included in your custom command).
+
+This option is only applicable when
+.B ShowPkgbuildInternally
+is disabled
+
+The default is
+.IR "curl \-s \(dq{url}\(dq | less" .
+
+.TP
+.BI "\(dqShowPkgbuildInternally\(dq\fR: " bool
+When enabled, the PKGBUILD file will be displayed within pacseek.
+
+The default is
+.IR true.
+
+.TP
+.BI "\(dqComputeRequiredBy\(dq\fR: " bool
+When enabled, it will compute the list of
+.B Required by
+packages and display it in the details.
+This is resource intensive and should be enabled only if you really need it.
+
+The default is
+.IR false .
 
 .SH FILES
 
