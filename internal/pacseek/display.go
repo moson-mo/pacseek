@@ -202,7 +202,7 @@ func (ps *UI) displayPackageInfo(row, column int) {
 			info = infoPacman(ps.alpmHandle, ps.conf.ComputeRequiredBy, pkg)
 		}
 		if !ps.conf.DisableCache && len(info.Results) == 1 {
-			ps.cacheInfo.Set(pkg, info.Results[0], time.Duration(ps.conf.CacheExpiry)*time.Minute)
+			ps.cacheInfo.Set(pkg+"-"+info.Results[0].Source, info.Results[0], time.Duration(ps.conf.CacheExpiry)*time.Minute)
 		}
 
 		// draw results
@@ -457,7 +457,7 @@ func (ps *UI) displayInstalled(displayUpdatesAfter bool) {
 				Popularity:   pkg.Popularity,
 			})
 			if !ps.conf.DisableCache {
-				ps.cacheInfo.Set(pkg.Name, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
+				ps.cacheInfo.Set(pkg.Name+"-"+pkg.Source, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 			}
 		}
 		if !ps.conf.DisableCache {
