@@ -259,7 +259,7 @@ func (ps *UI) setupKeyBindings() {
 				ps.flexRight.Clear()
 				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
 			}
-			ps.displayInstalled()
+			ps.displayInstalled(false)
 			return nil
 		}
 
@@ -304,7 +304,7 @@ func (ps *UI) setupKeyBindings() {
 		if event.Key() == tcell.KeyEnter {
 			ps.lastSearchTerm = ps.inputSearch.GetText()
 			if len(ps.lastSearchTerm) == 0 {
-				ps.displayInstalled()
+				ps.displayInstalled(false)
 				return nil
 			} else if len(ps.lastSearchTerm) < 2 {
 				ps.displayMessage("Minimum number of characters is 2", true)

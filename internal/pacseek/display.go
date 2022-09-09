@@ -413,7 +413,7 @@ func (ps *UI) displayUpgradable() {
 }
 
 // displays list of installed packages
-func (ps *UI) displayInstalled() {
+func (ps *UI) displayInstalled(displayUpdatesAfter bool) {
 	ps.tablePackages.Clear().
 		SetCellSimple(0, 0, "Generating list, please wait...")
 
@@ -466,7 +466,11 @@ func (ps *UI) displayInstalled() {
 		ps.shownPackages = packages
 		ps.app.QueueUpdateDraw(func() {
 			ps.drawPackageListContent(packages)
-			ps.tablePackages.Select(1, 0)
+			if displayUpdatesAfter {
+				ps.displayUpgradable()
+			} else {
+				ps.tablePackages.Select(1, 0)
+			}
 		})
 	}()
 }

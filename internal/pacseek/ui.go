@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Jguer/go-alpm/v2"
+	"github.com/moson-mo/pacseek/internal/args"
 	"github.com/moson-mo/pacseek/internal/config"
 	"github.com/moson-mo/pacseek/internal/util"
 	"github.com/patrickmn/go-cache"
@@ -63,12 +64,13 @@ type UI struct {
 	shownPackages   []Package
 	sortAscending   bool
 	isArm           bool
+	flags           args.Flags
 
 	pkgbuildWriter io.Writer
 }
 
 // New creates a UI object and makes sure everything is initialized
-func New(conf *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, error) {
+func New(conf *config.Settings, flags args.Flags) (*UI, error) {
 	ui := UI{
 		conf:            conf,
 		app:             tview.NewApplication(),
@@ -80,8 +82,7 @@ func New(conf *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, 
 		cacheSearch:     cache.New(time.Duration(conf.CacheExpiry)*time.Minute, 1*time.Minute),
 		cachePkgbuild:   cache.New(time.Duration(conf.CacheExpiry)*time.Minute, 1*time.Minute),
 
-		filterRepos:   repos,
-		asciiMode:     asciiMode,
+		flags:         flags,
 		sortAscending: true,
 		isArm:         runtime.GOARCH != "amd64",
 	}
@@ -91,17 +92,17 @@ func New(conf *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, 
 
 	// get a handle to the pacman DB's
 	var err error
-	ui.alpmHandle, err = initPacmanDbs(conf.PacmanDbPath, conf.PacmanConfigPath, repos)
+	ui.alpmHandle, err = initPacmanDbs(conf.PacmanDbPath, conf.PacmanConfigPath, flags.Repositories)
 	if err != nil {
 		return nil, err
 	}
 
 	// setup UI
 	ui.createComponents()
-	if monoMode {
+	if flags.MonochromeMode {
 		ui.conf.SetColorScheme("Monochrome")
 	}
-	if asciiMode {
+	if flags.AsciiMode {
 		ui.applyASCIIMode()
 	}
 	ui.applyColors()
@@ -112,15 +113,15 @@ func New(conf *config.Settings, repos []string, asciiMode, monoMode bool) (*UI, 
 }
 
 // Start runs application / event-loop
-func (ps *UI) Start(term string, showUpgrades, showInstalled bool) error {
-	if term != "" {
-		ps.inputSearch.SetText(term)
-		ps.displayPackages(term)
+func (ps *UI) Start() error {
+	if ps.flags.SearchTerm != "" {
+		ps.inputSearch.SetText(ps.flags.SearchTerm)
+		ps.displayPackages(ps.flags.SearchTerm)
 	} else {
-		if showInstalled {
-			ps.displayInstalled()
+		if ps.flags.ShowInstalled {
+			ps.displayInstalled(ps.flags.ShowUpdates)
 		}
-		if showUpgrades {
+		if ps.flags.ShowUpdates && !ps.flags.ShowInstalled {
 			ps.displayUpgradable()
 		}
 	}
