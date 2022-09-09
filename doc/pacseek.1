@@ -147,6 +147,11 @@ Sort by popularity (AUR packages)
 .SH CONFIGURATION
 
 .PP
+All configurations files are formatted in JSON.
+
+.SS General settings
+
+.PP
 When pacseek is started the first time, it will generate a configuration file
 .IR ~/.config/pacseek/config.json .
 You can either manually edit this file or use the settings screen make changes.
@@ -375,6 +380,101 @@ This is resource intensive and should be enabled only if you really need it.
 
 The default is
 .IR false .
+
+.SS Color scheme settings
+
+.PP
+These settings are used after setting the
+.B ColorScheme
+option to
+.IR Custom .
+This will generate a file at
+.I ~/.config/pacseek/colors.json
+which should be edited with the following options
+
+.TP
+.B Color options
+These options should be set with hexadecimal color codes (e.g.
+.IR ffff00
+for yellow).
+
+.RS
+.IP \(bu 2
+.BI "\(dqAccent\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqTitle\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSearchBar\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqPackagelistSourceRepository\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqPackagelistSourceAUR\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqPackagelistHeader\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSettingsFieldBackground\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSettingsFieldText\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSettingsFieldLabel\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSettingsDropdownNotSelected\(dq\fR: " \(dqstring\(dq
+.RE
+
+.TP
+.B Syntax highlighting
+
+.RS
+.TP
+.BI "\(dqStylePKGBUILD\(dq\fR: " \(dqstring\(dq
+Syntax highlighting for the PKGBUILD when
+.B ShowPkgbuildInternally
+is enabled.
+
+The available styles for this option are
+.IR abap ,
+.IR algol ,
+.IR algol_nu ,
+.IR api ,
+.IR arduino ,
+.IR autumn ,
+.IR borland ,
+.IR bw ,
+.IR colorful ,
+.IR dracula ,
+.IR emacs ,
+.IR friendly ,
+.IR fruity ,
+.IR github ,
+.IR igor ,
+.IR lovelace ,
+.IR manni ,
+.IR monokai ,
+.IR monokailight ,
+.IR murphy ,
+.IR native ,
+.IR paraiso\-dark ,
+.IR paraiso\-light ,
+.IR pastie ,
+.IR perldoc ,
+.IR pygments ,
+.IR rainbow_dash ,
+.IR rrt ,
+.IR solarized\-dark ,
+.IR solarized\-dark256 ,
+.IR solarized\-light ,
+.IR swapoff ,
+.IR tango ,
+.IR trac ,
+.IR vim ,
+.IR vs ,
+.IR xcode .
+
+These styles can previewed
+.UR https://xyproto.github.io/splash/docs/all.html
+here
+.UE .
+.RE
 
 .SH FILES
 
