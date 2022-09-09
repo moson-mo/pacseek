@@ -9,7 +9,7 @@ require (
 	github.com/gdamore/tcell/v2 v2.5.3
 	github.com/lithammer/fuzzysearch v1.1.5
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/rivo/tview v0.0.0-20220812085834-0e6b21a48e96
+	github.com/rivo/tview v0.0.0-20220906194528-4664d8bf22d9
 )
 
 require (
@@ -26,7 +26,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
 	github.com/stretchr/testify v1.7.1
-	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 // indirect
+	golang.org/x/sys v0.0.0-20220909162455-aba9fc2a8ff2 // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
