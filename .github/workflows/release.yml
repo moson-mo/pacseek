@@ -23,7 +23,7 @@ jobs:
         run: go build -ldflags="-s -w" .
 
       - name: Package
-        run: tar -cvzf pacseek-linux-x64-${{ github.ref_name }}.tar.gz assets pacseek LICENSE
+        run: tar -cvzf pacseek-linux-x64-${{ github.ref_name }}.tar.gz assets pacseek LICENSE doc
 
       - name: Upload assets
         uses: softprops/action-gh-release@v1
