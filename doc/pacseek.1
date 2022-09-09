@@ -1,0 +1,510 @@
+.TH PACSEEK 1 "2022 September" "pacseek 1.6.6"
+
+.SH NAME
+
+pacseek \- A TUI for searching and installing Arch Linux packages
+
+.SH SYNOPSIS
+
+.SY pacseek
+.RI [ options ]
+.RI [ search\-term ]
+.YS
+
+.SY pacseek
+.OP \-r repo
+.OP \-s search\-term
+.YS
+
+.SH DESCRIPTION
+.nh
+.ad l
+
+.PP
+.B pacseek
+is terminal user interface which allows you to browse and search through
+the Arch Linux package databases as well as the Arch User Repository.
+
+.PP
+Package installation/removal is done with an AUR helper.
+Make sure you have one installed.
+In the default configuration,
+.B yay
+is being used. You can change this in the settings.
+
+.SH OPTIONS
+
+.TP
+.BI \-r " repo1,repo2 " \fR...
+Limit searching to a comma separated list of repositories
+
+.TP
+.BI \-s " search\-term"
+Search term when used with the
+.B \-r
+option
+
+.TP
+.B \-a
+ASCII mode
+
+.TP
+.B \-m
+Monochrome mode
+
+.TP
+.B \-u
+Show upgrades after startup
+
+.TP
+.B \-i
+Show installed packages after startup
+
+.TP
+.BR \-h ", " \-\-help
+Display help and exit
+
+.SH KEY BINDINGS
+
+.TP
+.B Enter
+Search;
+.br
+Install or remove a selected package
+
+.TP
+.BR Tab ", " Ctrl+Up / Down / Left / Right
+Navigate between boxes
+
+.TP
+.BR Up / Down ", " j / k
+Scroll through the package list
+
+.TP
+.BR Shift+Left / Right
+Change size of package list
+
+.TP
+.B Ctrl+s
+Open/Close settings
+
+.TP
+.B Ctrl+n
+Show help/key bindings
+
+.TP
+.B Ctrl+u
+Perform sysupgrade
+
+.TP
+.B Ctrl+a
+Perform AUR upgrade (if configured)
+
+.TP
+.B Ctrl+w
+Wipe cache
+
+.TP
+.B Ctrl+p
+Show PKGBUILD for selected package
+
+.TP
+.B Ctrl+g
+Show list of upgradable packages
+
+.TP
+.B Ctrl+l
+Show list of all installed packages
+
+.TP
+.B Ctrl+b
+Show about/version information
+
+.TP
+.BR Esc ", " Ctrl+q
+Quit
+
+.TP
+.B Shift+n
+Sort by package name
+
+.TP
+.B Shift+s
+Sort by source/repository
+
+.TP
+.B Shift+i
+Sort by installed state
+
+.TP
+.B Shift+m
+Sort by last modified date
+
+.TP
+.B Shift+p
+Sort by popularity (AUR packages)
+
+.SH CONFIGURATION
+
+.PP
+All configurations files are formatted in JSON.
+
+.SS General settings
+
+.PP
+When pacseek is started the first time, it will generate a configuration file
+.IR ~/.config/pacseek/config.json .
+You can either manually edit this file or use the settings screen make changes.
+
+.PP
+Save any changes that you've made with the
+.B Apply & Save
+button.
+
+.TP
+.BI "\(dqAurRpcUrl\(dq\fR: " \(dqstring\(dq
+The URL to the aurweb/RPC endpoint.
+This endpoint provides REST APIs that are used for searching.
+
+The default is
+.I https://server.moson.rocks/rpc
+(not the official AUR one).
+
+.TP
+.BI "\(dqAurTimeout\(dq\fR: " number
+How long to wait for a response from the AUR/RPC endpoint (in milliseconds).
+If the timeout is exceeded only the list of repository packages are returned.
+
+The default is
+.IR 5000 .
+
+.TP
+.BI "\(dqAurSearchDelay\(dq\fR: " number
+The delay (in milliseconds) that is applied before we start querying for
+package details (mostly obsolete in the latest versions of pacseek).
+It will only be applied when the cache is disabled or the entries in the cache
+have expired and you are navigating through the result list.
+In that case, it will query package information again from the AUR
+but wait for a certain amount of time before doing so.
+That's being done to not run unnecessary queries
+(e.g. if you quickly navigate through the result list).
+
+The default is
+.IR 500 .
+
+.TP
+.BI "\(dqAurUseDifferentCommands\(dq\fR: " bool
+Use separate commands repository and AUR packages installing/upgrading.
+Once enabled, the new commands should be configured in the
+.BR AurInstallCommand " and " AurUpgradeCommand
+options.
+
+The default is
+.IR false .
+
+.TP
+.BI "\(dqAurInstallCommand\(dq\fR: " string
+Install command for AUR packages when
+.B AurUseDifferentCommands
+is enabled.
+
+.TP
+.BI "\(dqAurUpgradeCommand\(dq\fR: " string
+Upgrade command for AUR packages when
+.B AurUseDifferentCommands
+is enabled.
+
+.TP
+.BI "\(dqDisableAur\(dq\fR: " bool
+When enabled, The AUR will not be queried when searching.
+Only the repositories defined in
+.I pacman.conf
+will be searched.
+
+The default is
+.IR false .
+
+.TP
+.BI "\(dqMaxResults\(dq\fR: " number
+The maximum number of results that are displayed in the result list.
+Note that when
+.B SearchMode
+is set to
+.IR StartsWith ,
+it is limited to 100 results from the AUR.
+This is a limitation of an API call that is being used
+(using the official endpoint has an even lower maximum of 20 results).
+
+The default is
+.IR 500 .
+
+.TP
+.BI "\(dqPacmanDbPath\(dq\fR: " \(dqstring\(dq
+The path to the pacman database files.
+
+The default is
+.IR /var/lib/pacman/ .
+
+.TP
+.BI "\(dqPacmanConfigPath\(dq\fR: " \(dqstring\(dq
+The path to the pacman configuration file
+
+The default is
+.IR /etc/pacman.conf .
+
+.TP
+.BI "\(dqInstallCommand\(dq\fR: " \(dqstring\(dq
+The command that is being run when installing a package.
+The package name is appended to this command.
+You can also use the placeholder
+.I {pkg}
+in your command which will be replaced by the package name
+(in this case the package name will not being appended).
+
+The default is
+.IR "yay \-S" .
+
+.TP
+.BI "\(dqUninstallCommand\(dq\fR: " \(dqstring\(dq
+The command that is being run when uninstalling a package.
+
+The default is
+.IR "yay \-Rs" .
+
+.TP
+.BI "\(dqSysUpgradeCommand\(dq\fR: " \(dqstring\(dq
+The command that is being run when upgrading packages with
+.B Ctrl+u
+
+The default is
+.IR yay .
+
+.TP
+.BI "\(dqSearchMode\(dq\fR: " \(dqstring\(dq
+There are two search modes available.
+With the
+.IR Contains
+(default) option, it will show results where the name/description contains the
+search\-term at any position.
+When using the
+.I StartsWith
+option, only those packages are shown where the very beginning of a package
+name/description matched the search\-term.
+
+.TP
+.BI "\(dqSearchBy\(dq\fR: " \(dqstring\(dq
+When set to
+.I Name
+(default), only the package name will be matched against the search\-term.
+Setting this to
+.I Name & Description
+will match the the search\-term with the description as well.
+
+.TP
+.BI "\(dqCacheExpiry\(dq\fR: " number
+The time (in minutes) until the cached search and package info data expires.
+
+The default is
+.IR 10 .
+
+.TP
+.BI "\(dqDisableCache\(dq\fR: " bool
+Search results will be cached so that we do not query the AUR for
+package details each time you navigate to another package in the result list.
+Enabling this option will completely disable caching and
+force pacseek to run a request every time you search or select another package.
+
+Disabling the cache is not recommended since it wasting server resources
+(this option may be removed in the future).
+
+The default is
+.IR false .
+
+.TP
+.BI "\(dqColorScheme\(dq\fR: " \(dqstring\(dq
+The color schemes available are
+.IR "Arch Linux " (default),
+.IR "Endeavour OS" ,
+.IR Red ,
+.IR Green ,
+.IR Blue ,
+.IR Orange ,
+.IR Monochrome .
+
+If you want to define your own color scheme, set it to
+.IR Custom .
+This will generate a file
+.I ~/.config/pacseek/colors.json
+in which you can change the color for various UI elements.
+
+.TP
+.BI "\(dqBorderStyle\(dq\fR: " \(dqstring\(dq
+Choose how the borders are being drawn.
+The styles available are
+.IR Double " (default),"
+.IR Thick ,
+.IR Single ,
+.IR Round .
+
+.TP
+.BI "\(dqShowPkgbuildCommand\(dq\fR: " \(dqstring\(dq
+The command that is being executed when clicking on
+.B Show PKGBUILD
+in the details or by pressing
+.BR Ctrl+p .
+The term
+.I {url}
+will be replaced by the PKGBUILD url
+(it should be included in your custom command).
+
+This option is only applicable when
+.B ShowPkgbuildInternally
+is disabled
+
+The default is
+.IR "curl \-s \(dq{url}\(dq | less" .
+
+.TP
+.BI "\(dqShowPkgbuildInternally\(dq\fR: " bool
+When enabled, the PKGBUILD file will be displayed within pacseek.
+
+The default is
+.IR true.
+
+.TP
+.BI "\(dqComputeRequiredBy\(dq\fR: " bool
+When enabled, it will compute the list of
+.B Required by
+packages and display it in the details.
+This is resource intensive and should be enabled only if you really need it.
+
+The default is
+.IR false .
+
+.SS Color scheme settings
+
+.PP
+These settings are used after setting the
+.B ColorScheme
+option to
+.IR Custom .
+This will generate a file at
+.I ~/.config/pacseek/colors.json
+which should be edited with the following options
+
+.TP
+.B Color options
+These options should be set with hexadecimal color codes (e.g.
+.IR ffff00
+for yellow).
+
+.RS
+.IP \(bu 2
+.BI "\(dqAccent\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqTitle\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSearchBar\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqPackagelistSourceRepository\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqPackagelistSourceAUR\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqPackagelistHeader\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSettingsFieldBackground\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSettingsFieldText\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSettingsFieldLabel\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSettingsDropdownNotSelected\(dq\fR: " \(dqstring\(dq
+.RE
+
+.TP
+.B Syntax highlighting
+
+.RS
+.TP
+.BI "\(dqStylePKGBUILD\(dq\fR: " \(dqstring\(dq
+Syntax highlighting for the PKGBUILD when
+.B ShowPkgbuildInternally
+is enabled.
+
+The available styles for this option are
+.IR abap ,
+.IR algol ,
+.IR algol_nu ,
+.IR api ,
+.IR arduino ,
+.IR autumn ,
+.IR borland ,
+.IR bw ,
+.IR colorful ,
+.IR dracula ,
+.IR emacs ,
+.IR friendly ,
+.IR fruity ,
+.IR github ,
+.IR igor ,
+.IR lovelace ,
+.IR manni ,
+.IR monokai ,
+.IR monokailight ,
+.IR murphy ,
+.IR native ,
+.IR paraiso\-dark ,
+.IR paraiso\-light ,
+.IR pastie ,
+.IR perldoc ,
+.IR pygments ,
+.IR rainbow_dash ,
+.IR rrt ,
+.IR solarized\-dark ,
+.IR solarized\-dark256 ,
+.IR solarized\-light ,
+.IR swapoff ,
+.IR tango ,
+.IR trac ,
+.IR vim ,
+.IR vs ,
+.IR xcode .
+
+These styles can previewed
+.UR https://xyproto.github.io/splash/docs/all.html
+here
+.UE .
+.RE
+
+.SH FILES
+
+.TP
+.I ~/.config/pacseek/config.json
+The default configuration file
+
+.TP
+.I ~/.config/pacseek/colors.json
+Custom color scheme settings
+
+.SH REPORTING BUGS
+
+Report bugs to
+.UR https://github.com/moson\-mo/pacseek/issues
+GitHub Issues
+.UE .
+
+.SH AUTHORS
+
+.MT mo\-son@mailbox.org
+Mario Oenning
+.ME
+
+.SH SEE ALSO
+
+See the
+.UR https://github.com/moson\-mo/pacseek/wiki
+pacseek wiki
+.UE
+for more information
+
+.BR pacman "(8), " pacman.conf (5)
