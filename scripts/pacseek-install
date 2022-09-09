@@ -1,0 +1,47 @@
+#!/bin/sh
+set -e
+
+if [ "$#" != "3" ]; then
+    echo -e "Not enough arguments. Need pkgbase, pkgname, giturl"
+    exit 1
+fi
+
+buildDir="$HOME/.cache/pacseek/"
+
+# make sure our build dir exists
+[ ! -d "$buildDir" ] && mkdir -p "$buildDir"
+
+# ask for cleanbuild
+read -p "Wipe all source files before building? (y/N) " clean
+echo
+if [ "$clean" == "Y" ] || [ "$clean" == "y" ]; then
+    rm -rf "$buildDir/$1"
+fi
+
+# clone or pull git repo from AUR
+cd $buildDir
+if [ ! -d "$1" ]; then
+    git clone "$3"
+    cd "$1"
+else
+    cd "$1"
+    git pull
+fi
+
+# get list of package names that are being built
+echo
+echo "Getting list of packages to be built..."
+packages=($(makepkg --packagelist))
+
+# build packages
+makepkg -rsf
+
+# install matching package
+for i in "${packages[@]}"
+do
+    if [[ "$i" == *"$2"* ]]; then
+        sudo pacman -U "$i" || true
+    else
+        rm "$i"
+    fi
+done

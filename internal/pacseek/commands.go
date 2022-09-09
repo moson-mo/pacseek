@@ -9,20 +9,26 @@ import (
 )
 
 // installs or removes a package
-func (ps *UI) installPackage(pkg, source string, installed bool) {
+func (ps *UI) installPackage(pkg InfoRecord, installed bool) {
 	// set command based on source and install status
 	command := ps.conf.InstallCommand
 	if installed {
 		command = ps.conf.UninstallCommand
-	} else if source == "AUR" && ps.conf.AurUseDifferentCommands && ps.conf.AurInstallCommand != "" {
+	} else if pkg.Source == "AUR" && ps.conf.AurUseDifferentCommands && ps.conf.AurInstallCommand != "" {
 		command = ps.conf.AurInstallCommand
 	}
 
 	// if our command contains {pkg}, replace it with the package name, otherwise concat it
 	if strings.Contains(command, "{pkg}") {
-		command = strings.Replace(command, "{pkg}", pkg, -1)
+		command = strings.Replace(command, "{pkg}", pkg.Name, -1)
 	} else {
-		command += " " + pkg
+		command += " " + pkg.Name
+	}
+
+	// replace {giturl} with AUR url if defined
+	if pkg.Source == "AUR" {
+		command = strings.Replace(command, "{giturl}", "https://aur.archlinux.org/"+pkg.PackageBase+".git", -1)
+		command = strings.Replace(command, "{pkgbase}", pkg.PackageBase, -1)
 	}
 
 	// Here I'm assuming -c is the argument for passing a command to the shell
@@ -37,12 +43,13 @@ func (ps *UI) installPackage(pkg, source string, installed bool) {
 
 // installs or removes a package
 func (ps *UI) installSelectedPackage() {
+	if ps.selectedPackage == nil {
+		return
+	}
 	row, _ := ps.tablePackages.GetSelection()
-	pkg := ps.tablePackages.GetCell(row, 0).Text
-	source := ps.tablePackages.GetCell(row, 1).Text
 	installed := ps.tablePackages.GetCell(row, 2).Text == "Y"
 
-	ps.installPackage(pkg, source, installed)
+	ps.installPackage(*ps.selectedPackage, installed)
 }
 
 // issues "Update command"

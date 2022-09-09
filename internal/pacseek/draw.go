@@ -321,7 +321,7 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 				Color:           ps.conf.Colors().SettingsFieldText,
 				BackgroundColor: ps.conf.Colors().SearchBar,
 				Clicked: func() bool {
-					ps.installPackage(up[i].Name, up[i].Source, false)
+					ps.installPackage(up[i], false)
 					ps.cacheInfo.Delete("#upgrades#")
 					ps.displayUpgradable()
 					return true
