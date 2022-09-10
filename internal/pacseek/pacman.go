@@ -35,6 +35,9 @@ func initPacmanDbs(dbPath, confPath string, repos []string) (*alpm.Handle, error
 			}
 		}
 	}
+	h.SetIgnorePkgs(conf.IgnorePkg)
+	h.SetIgnoreGroups(conf.IgnoreGroup)
+
 	return h, nil
 }
 
@@ -276,6 +279,7 @@ func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) RpcResul
 				Source:       db.Name(),
 				Architecture: p.Architecture(),
 				PackageBase:  p.Base(),
+				IsIgnored:    p.ShouldIgnore(),
 			}
 
 			if computeRequiredBy {

@@ -39,6 +39,7 @@ type InfoRecord struct {
 	LocalVersion   string
 	Source         string `json:"Source"`
 	Architecture   string `json:"Architecture"`
+	IsIgnored      bool
 }
 
 // Package is a data structure for the package tview table

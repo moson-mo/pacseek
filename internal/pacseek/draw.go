@@ -270,78 +270,33 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 		ps.tableDetails.SetCell(0, i, hcell)
 	}
 
-	// lines
-	n := 0
+	// lines (not ignored)
+	r := 1
 	for i := 0; i < len(up); i++ {
-		i := i
-		n = i + 2
-		cellDesc := &tview.TableCell{
-			Text:            "[::b]" + up[i].Name,
-			Color:           ps.conf.Colors().Accent,
-			BackgroundColor: tcell.ColorBlack,
-			Clicked: func() bool {
-				ps.selectedPackage = &up[i]
-				ps.drawPackageInfo(up[i], ps.width)
-				return true
-			},
+		if !up[i].IsIgnored {
+			r++
+			ps.drawUpgradeableLine(up[i], r, false)
 		}
-		cellSource := &tview.TableCell{
-			Text:            up[i].Source,
-			Color:           ps.conf.Colors().Accent,
-			BackgroundColor: tcell.ColorBlack,
-		}
-		cellVnew := &tview.TableCell{
-			Text:            "[::b]" + up[i].Version,
-			Color:           ps.conf.Colors().PackagelistSourceRepository,
-			BackgroundColor: tcell.ColorBlack,
-			Clicked: func() bool {
-				if ps.conf.ShowPkgbuildInternally {
-					ps.selectedPackage = &up[i]
-					ps.displayPkgbuild()
-				} else {
-					ps.runCommand(util.Shell(), "-c", ps.getPkgbuildCommand(up[i].Source, up[i].PackageBase))
-				}
-				return true
-			},
-		}
-		cellVold := &tview.TableCell{
-			Text:            up[i].LocalVersion,
-			Color:           ps.conf.Colors().PackagelistSourceAUR,
-			BackgroundColor: tcell.ColorBlack,
-		}
-		ps.tableDetails.SetCell(n, 0, cellDesc).
-			SetCell(n, 1, cellSource).
-			SetCell(n, 2, cellVnew).
-			SetCell(n, 3, cellVold)
-
-		// rebuild button for AUR packages
-		if up[i].Source == "AUR" {
-			cellRebuild := &tview.TableCell{
-				Text:            " [::b]Rebuild / Update",
-				Color:           ps.conf.Colors().SettingsFieldText,
-				BackgroundColor: ps.conf.Colors().SearchBar,
-				Clicked: func() bool {
-					ps.installPackage(up[i], false)
-					ps.cacheInfo.Delete("#upgrades#")
-					ps.displayUpgradable()
-					return true
-				},
-			}
-			ps.tableDetails.SetCell(n, 4, cellRebuild)
+	}
+	// lines (ignored)
+	for i := 0; i < len(up); i++ {
+		if up[i].IsIgnored {
+			r++
+			ps.drawUpgradeableLine(up[i], r, true)
 		}
 	}
 
 	// no updates found message else sysupgrade button
-	n += 2
+	r += 2
 	if len(up) == 0 {
-		ps.tableDetails.SetCell(n, 0, &tview.TableCell{
+		ps.tableDetails.SetCell(r, 0, &tview.TableCell{
 			Text:            "No upgrades found",
 			Color:           ps.conf.Colors().PackagelistHeader,
 			BackgroundColor: tcell.ColorBlack,
 		})
 	} else {
-		ps.tableDetails.SetCell(n, 0, &tview.TableCell{
-			Text:            " Sysupgrade",
+		ps.tableDetails.SetCell(r, 0, &tview.TableCell{
+			Text:            " [::b]Sysupgrade",
 			Align:           tview.AlignCenter,
 			Color:           ps.conf.Colors().SettingsFieldText,
 			BackgroundColor: ps.conf.Colors().SearchBar,
@@ -356,8 +311,9 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 
 	// refresh button
 	if cached {
-		ps.tableDetails.SetCell(n+2, 0, &tview.TableCell{
-			Text:            "[::b]Refresh",
+		r += 2
+		ps.tableDetails.SetCell(r, 0, &tview.TableCell{
+			Text:            " [::b]Refresh",
 			Color:           ps.conf.Colors().SettingsFieldText,
 			BackgroundColor: ps.conf.Colors().SearchBar,
 			Align:           tview.AlignCenter,
@@ -368,9 +324,80 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 			},
 		})
 	}
+
 	// set nil to avoid printing package details when resizing
 	// somewhat hacky, needs refactoring (well, everything needs refactoring here)
 	ps.selectedPackage = nil
+}
+
+// draws a line for an upgradable package
+func (ps *UI) drawUpgradeableLine(up InfoRecord, lNum int, ignored bool) {
+	cellDesc := &tview.TableCell{
+		Text:            "[::b]" + up.Name,
+		Color:           ps.conf.Colors().Accent,
+		BackgroundColor: tcell.ColorBlack,
+		Clicked: func() bool {
+			ps.selectedPackage = &up
+			ps.drawPackageInfo(up, ps.width)
+			return true
+		},
+	}
+	cellSource := &tview.TableCell{
+		Text:            up.Source,
+		Color:           ps.conf.Colors().Accent,
+		BackgroundColor: tcell.ColorBlack,
+	}
+	cellVnew := &tview.TableCell{
+		Text:            "[::b]" + up.Version,
+		Color:           ps.conf.Colors().PackagelistSourceRepository,
+		BackgroundColor: tcell.ColorBlack,
+		Clicked: func() bool {
+			if ps.conf.ShowPkgbuildInternally {
+				ps.selectedPackage = &up
+				ps.displayPkgbuild()
+			} else {
+				ps.runCommand(util.Shell(), "-c", ps.getPkgbuildCommand(up.Source, up.PackageBase))
+			}
+			return true
+		},
+	}
+	cellVold := &tview.TableCell{
+		Text:            up.LocalVersion,
+		Color:           ps.conf.Colors().PackagelistSourceAUR,
+		BackgroundColor: tcell.ColorBlack,
+	}
+
+	ps.tableDetails.SetCell(lNum, 0, cellDesc).
+		SetCell(lNum, 1, cellSource).
+		SetCell(lNum, 2, cellVnew).
+		SetCell(lNum, 3, cellVold)
+
+	// rebuild button for AUR packages
+	if up.Source == "AUR" && !ignored {
+		cellRebuild := &tview.TableCell{
+			Text:            " [::b]Rebuild / Update",
+			Color:           ps.conf.Colors().SettingsFieldText,
+			BackgroundColor: ps.conf.Colors().SearchBar,
+			Clicked: func() bool {
+				ps.installPackage(up, false)
+				ps.cacheInfo.Delete("#upgrades#")
+				ps.displayUpgradable()
+				return true
+			},
+		}
+		ps.tableDetails.SetCell(lNum, 4, cellRebuild)
+	}
+
+	if ignored {
+		cellDesc.SetTextColor(ps.conf.Colors().PackagelistHeader)
+		cellVnew.SetTextColor(ps.conf.Colors().PackagelistHeader)
+		cellIgnored := &tview.TableCell{
+			Text:            "ignored",
+			Color:           ps.conf.Colors().PackagelistHeader,
+			BackgroundColor: tcell.ColorBlack,
+		}
+		ps.tableDetails.SetCell(lNum, 4, cellIgnored)
+	}
 }
 
 // draw packages on screen
