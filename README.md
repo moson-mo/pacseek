@@ -13,10 +13,15 @@ pacseek is terminal user interface which allows you to browse and search through
 
 ![pacseek](https://github.com/moson-mo/pacseek/blob/main/assets/pacseek_animation.gif?raw=true?inline=true)
 
-Package installation / removal is done with an AUR helper. Make sure you have one installed.  
-In the default configuration, [yay](https://github.com/Jguer/yay) is being used. You can change this in the settings.  
+Package installation / removal is done with an AUR helper.   
+In the default configuration, [yay](https://github.com/Jguer/yay) is being used.  
+You can change this in the settings -> `Install command` / `AUR Install command`
 
-#### Features
+There are some [examples for configuring other helpers](https://github.com/moson-mo/pacseek/wiki/Configuration#examples-for-other-aur-helpers) or even makepkg.
+<br/>
+<br/>
+
+### Features
 
 * Search for packages in the Arch repositories and AUR
   * by: name / name & description
@@ -45,12 +50,14 @@ In the default configuration, [yay](https://github.com/Jguer/yay) is being used.
 * Search for upgrades / show list of upgradable packages⁴
 * Show a list of all installed packages
 
-¹ (requires an AUR helper. With the default config this is `yay`. You can change this in the settings)  
+¹ (By default, `yay` is being used to install/remove/upgrade packages. You can change this in the settings)  
 ² (only applicable to AUR packages)  
 ³ (by default `curl` & `less` are used. Can be changed in the settings)  
 ⁴ (requires `fakeroot` to be installed)
+<br/>
+<br/>
 
-#### Libraries used
+### Libraries used
 
 * [tview](https://github.com/rivo/tview)
 * [fuzzysearch](https://github.com/lithammer/fuzzysearch)
@@ -58,8 +65,9 @@ In the default configuration, [yay](https://github.com/Jguer/yay) is being used.
 * [go-cache](https://github.com/patrickmn/go-cache)
 * [goaurrpc](https://github.com/moson-mo/goaurrpc)
 * [chroma](https://github.com/alecthomas/chroma)
+<br/>
 
-#### How to build / run / install
+### How to build / run / install
 
 ```
 $ git clone https://github.com/moson-mo/pacseek.git
@@ -70,16 +78,27 @@ $ ./pacseek
 
 Binaries are available on the [Releases](https://github.com/moson-mo/pacseek/releases/) page.  
 Also an [AUR package](https://aur.archlinux.org/packages/pacseek/) is available.
+<br/>
+<br/>
 
-#### Navigation / Usage
+### Navigation / Usage
 
 You can either use the keyboard or mouse to navigate through the different components.  
-While the search bar is focused, use the ENTER key to search for packages.  
+While the search bar is focused, use the <kbd>ENTER</kbd> key to search for packages.  
 
-With TAB you can navigate to the package list. Use the cursor keys to navigate within the list.  
-To install/remove a package, press ENTER.  
+With <kbd>TAB</kbd> you can navigate to the package list. Use the cursor keys to navigate within the list.  
+To install/remove a package, press <kbd>ENTER</kbd>.  
 
-The settings form can be opened with CTRL+S.
-To quit pacseek, you can use CTRL+Q, CTRL+C or ESC.
+The settings form can be opened with <kbd>CTRL</kbd>+<kbd>S</kbd>.
+To quit pacseek, you can use <kbd>CTRL</kbd>+<kbd>Q</kbd>, <kbd>CTRL</kbd>+<kbd>C</kbd> or <kbd>ESC</kbd>.
+<br/>
+<br/>
 
-More detailed information can be found in the [Wiki](https://github.com/moson-mo/pacseek/wiki/)
+### Configuration
+
+You change all configuration options from the settings screen (<kbd>CTRL</kbd>+<kbd>S</kbd>).  
+The configuration file (json format) can be found at `~/.config/pacseek/config.json`
+<br/>
+<br/>
+
+More detailed information regarding usage and configuration can be found in the [Wiki](https://github.com/moson-mo/pacseek/wiki/) or manpage: `man pacseek`
