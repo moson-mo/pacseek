@@ -2,6 +2,7 @@ package pacseek
 
 import (
 	"strconv"
+	"os/exec"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/moson-mo/pacseek/internal/config"
@@ -261,6 +262,12 @@ func (ps *UI) setupKeyBindings() {
 			}
 			ps.displayInstalled(false)
 			return nil
+		}
+
+		// CTRL+O - opens repo url
+		if event.Key() == tcell.KeyCtrlO {
+		  exec.Command("xdg-open", ps.selectedPackage.URL).Run();
+		  return nil
 		}
 
 		// Shift+Left - decrease size of left container
