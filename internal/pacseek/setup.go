@@ -244,6 +244,15 @@ func (ps *UI) setupKeyBindings() {
 			}
 		}
 
+		// CTRL+O - Show URL for selected package
+		if event.Key() == tcell.KeyCtrlO {
+			if ps.selectedPackage == nil {
+			  return nil
+			}
+			exec.Command("xdg-open", ps.selectedPackage.URL).Run();
+			return nil
+		}
+
 		// CTRL+G - Upgradable packages
 		if event.Key() == tcell.KeyCtrlG {
 			if pkgbuildVisible {
@@ -262,15 +271,6 @@ func (ps *UI) setupKeyBindings() {
 			}
 			ps.displayInstalled(false)
 			return nil
-		}
-
-		// CTRL+O - opens repo url
-		if event.Key() == tcell.KeyCtrlO {
-		if ps.selectedPackage == nil {
-		  return nil
-		}
-		  exec.Command("xdg-open", ps.selectedPackage.URL).Run();
-		  return nil
 		}
 
 		// Shift+Left - decrease size of left container
