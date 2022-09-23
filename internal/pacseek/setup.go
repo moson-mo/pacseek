@@ -245,10 +245,7 @@ func (ps *UI) setupKeyBindings() {
 		}
 
 		// CTRL+O - Show URL for selected package
-		if event.Key() == tcell.KeyCtrlO {
-			if ps.selectedPackage == nil {
-			  return nil
-			}
+		if event.Key() == tcell.KeyCtrlO && ps.selectedPackage != nil {
 			exec.Command("xdg-open", ps.selectedPackage.URL).Run();
 			return nil
 		}
