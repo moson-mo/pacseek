@@ -241,15 +241,15 @@ func (ps *UI) displayHelp() {
 		SetCellSimple(2, 0, "Up/Down: Navigate within package list").
 		SetCellSimple(3, 0, "Shift+Left/Right: Change size of package list").
 		SetCellSimple(4, 0, "CTRL+S: Open/Close settings").
-		SetCellSimple(5, 0, "CTRL+O: Opens selected package repo url").
-		SetCellSimple(6, 0, "CTRL+N: Show these instructions").
-		SetCellSimple(7, 0, "CTRL+U: Perform sysupgrade").
-		SetCellSimple(8, 0, "CTRL+A: Perform AUR upgrade (if configured)").
-		SetCellSimple(9, 0, "CTRL+W: Wipe cache").
-		SetCellSimple(10, 0, "CTRL+P: Show PKGBUILD for selected package").
+		SetCellSimple(5, 0, "CTRL+N: Show these instructions").
+		SetCellSimple(6, 0, "CTRL+U: Perform sysupgrade").
+		SetCellSimple(7, 0, "CTRL+A: Perform AUR upgrade (if configured)").
+		SetCellSimple(8, 0, "CTRL+W: Wipe cache").
+		SetCellSimple(9, 0, "CTRL+P: Show PKGBUILD for selected package").
+		SetCellSimple(10, 0, "CTRL+O: Show URL for selected package").
 		SetCellSimple(11, 0, "CTRL+G: Show list of upgradeable packages").
 		SetCellSimple(12, 0, "CTRL+L: Show list of all installed packages").
-		SetCellSimple(13, 0, "CTRL+Q / ESC: Quit")
+		SetCellSimple(14, 0, "CTRL+Q / ESC: Quit")
 }
 
 // displays about text

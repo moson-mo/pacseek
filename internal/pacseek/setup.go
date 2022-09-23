@@ -266,6 +266,9 @@ func (ps *UI) setupKeyBindings() {
 
 		// CTRL+O - opens repo url
 		if event.Key() == tcell.KeyCtrlO {
+		if ps.selectedPackage == nil {
+		  return nil
+		}
 		  exec.Command("xdg-open", ps.selectedPackage.URL).Run();
 		  return nil
 		}
