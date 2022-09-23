@@ -1,6 +1,7 @@
 package pacseek
 
 import (
+	"os/exec"
 	"sort"
 	"strings"
 	"time"
@@ -249,7 +250,16 @@ func (ps *UI) displayHelp() {
 		SetCellSimple(10, 0, "CTRL+O: Show URL for selected package").
 		SetCellSimple(11, 0, "CTRL+G: Show list of upgradeable packages").
 		SetCellSimple(12, 0, "CTRL+L: Show list of all installed packages").
-		SetCellSimple(14, 0, "CTRL+Q / ESC: Quit")
+		SetCellSimple(14, 0, "CTRL+Q / ESC: Quit").
+		SetCell(16, 0, &tview.TableCell{
+			Text:            "For detailed instructions, please check the man page or visit the [::b]Wiki",
+			Color:           tcell.ColorWhite,
+			BackgroundColor: tcell.ColorBlack,
+			Clicked: func() bool {
+				exec.Command("xdg-open", "https://github.com/moson-mo/pacseek/wiki/Usage").Run()
+				return true
+			},
+		})
 }
 
 // displays about text
