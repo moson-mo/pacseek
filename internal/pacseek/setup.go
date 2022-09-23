@@ -2,6 +2,7 @@ package pacseek
 
 import (
 	"strconv"
+	"os/exec"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/moson-mo/pacseek/internal/config"
@@ -241,6 +242,12 @@ func (ps *UI) setupKeyBindings() {
 					}
 				}
 			}
+		}
+
+		// CTRL+O - Show URL for selected package
+		if event.Key() == tcell.KeyCtrlO && ps.selectedPackage != nil {
+			exec.Command("xdg-open", ps.selectedPackage.URL).Run();
+			return nil
 		}
 
 		// CTRL+G - Upgradable packages
