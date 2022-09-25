@@ -1,4 +1,4 @@
-.TH PACSEEK 1 "2022 September" "pacseek 1.6.9"
+.TH PACSEEK 1 "2022 September" "pacseek 1.6.10"
 
 .SH NAME
 
@@ -346,6 +346,28 @@ The styles available are
 .IR Round .
 
 .TP
+.BI "\(dqGlyphStyle\(dq\fR: " \(dqstring\(dq
+The glyph styles available are
+.IR Plain ,
+.IR Angled ,
+.IR Round ,
+.IR Curly ,
+.IR Pipes ,
+.IR ASCII ,
+.IR Plain-No-X ,
+.IR "Angled-No-X " (default),
+.IR Round-No-X ,
+.IR Curly-No-X ,
+.IR Pipes-No-X ,
+.IR ASCII-No-X .
+
+If you want to define your own glyph style, set it to
+.IR Custom .
+This will generate a file
+.I ~/.config/pacseek/glyphs.json
+in which you can the glyphs used for various UI elements.
+
+.TP
 .BI "\(dqShowPkgbuildCommand\(dq\fR: " \(dqstring\(dq
 The command that is being executed when clicking on
 .B Show PKGBUILD
@@ -379,6 +401,41 @@ This is resource intensive and should be enabled only if you really need it.
 
 The default is
 .IR false .
+
+.SS Glyph customization
+
+.PP
+These settings are used after setting the
+.B GlyphStyle
+option to
+.IR Custom .
+This will generate a file at
+.I ~/.config/pacseek/glyphs.json
+which should be edited with the following options
+
+.TP
+.B Glyph options
+
+.RS
+.IP \(bu 2
+.BI "\(dqPackage\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqInstalled\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqNotInstalled\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqPrefixState\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSuffixState\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqSettings\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqPkgbuild\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqHelp\(dq\fR: " \(dqstring\(dq
+.IP \(bu 2
+.BI "\(dqUpgrades\(dq\fR: " \(dqstring\(dq
+.RE
 
 .SS Color scheme settings
 
