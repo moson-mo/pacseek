@@ -31,7 +31,6 @@ func (ps *UI) createComponents() {
 
 	// component config
 	ps.flexRoot.SetBorder(true).
-		SetTitle(" [::b]" + ps.conf.Glyphs().Package + "pacseek - v" + version + " ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.inputSearch.SetLabelStyle(tcell.StyleDefault.Bold(true)).
 		SetBorder(true)
@@ -55,7 +54,6 @@ func (ps *UI) createComponents() {
 	ps.formSettings.
 		SetItemPadding(0).
 		SetBorder(true).
-		SetTitle(" [::b]Settings ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.textMessage.SetDynamicColors(true).
 		SetBorder(true)
@@ -148,12 +146,19 @@ func (ps *UI) applyASCIIMode() {
 
 // apply colors from color scheme
 func (ps *UI) applyGlyphStyle() {
+
+	// titles
+	ps.formSettings.SetTitle(" [::b]" + ps.conf.Glyphs().Settings + "Settings ")
+	ps.flexRoot.SetTitle(" [::b]" + ps.conf.Glyphs().Package + "pacseek - v" + version + " ")
+
+	// package list
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
 		c := ps.tablePackages.GetCell(i, 2)
 		if ref, ok := c.Reference.(bool); ok {
 			c.SetText(ps.getInstalledStateText(ref))
 		}
 	}
+
 }
 
 // set up handlers for keyboard bindings

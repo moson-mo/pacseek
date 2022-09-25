@@ -236,7 +236,7 @@ func (ps *UI) displayMessage(message string, isError bool) {
 // displays help text
 func (ps *UI) displayHelp() {
 	ps.tableDetails.Clear().
-		SetTitle(" [::b]Usage ")
+		SetTitle(" [::b]" + ps.conf.Glyphs().Help + "Usage ")
 	ps.tableDetails.SetCellSimple(0, 0, "ENTER: Search; Install or remove a selected package").
 		SetCellSimple(1, 0, "TAB / CTRL+Up/Down/Right/Left: Navigate between boxes").
 		SetCellSimple(2, 0, "Up/Down: Navigate within package list").

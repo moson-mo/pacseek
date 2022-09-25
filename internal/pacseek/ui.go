@@ -107,6 +107,7 @@ func New(conf *config.Settings, flags args.Flags) (*UI, error) {
 	}
 	ui.displayMessage(conf.GlyphStyle, false)
 	ui.applyColors()
+	ui.applyGlyphStyle()
 	ui.setupKeyBindings()
 	ui.setupSettingsForm()
 

@@ -189,7 +189,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 // draw package information on screen
 func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 	ps.tableDetails.Clear().
-		SetTitle(" [::b]" + i.Name + " ")
+		SetTitle(" [::b]" + ps.conf.Glyphs().Package + i.Name + " ")
 	r := 0
 	ln := 0
 
@@ -268,7 +268,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 // draw list of upgradable packages
 func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 	ps.tableDetails.Clear().
-		SetTitle(" [::b]Upgradable packages ")
+		SetTitle(" [::b]" + ps.conf.Glyphs().Upgrades + "Upgradable packages ")
 
 	// header
 	columns := []string{"Package  ", "Source  ", "New version  ", "Installed version", ""}
@@ -444,7 +444,7 @@ func (ps *UI) drawPackageListContent(packages []Package) {
 
 // draw pkgbuild on screen
 func (ps *UI) drawPkgbuild(content, pkg string) {
-	ps.textPkgbuild.SetTitle(" [::b]PKGBUILD - " + pkg + " ")
+	ps.textPkgbuild.SetTitle(" [::b]" + ps.conf.Glyphs().Pkgbuild + "PKGBUILD - " + pkg + " ")
 	err := quick.Highlight(ps.pkgbuildWriter, tview.Escape(content), "bash", "terminal16m", ps.conf.Colors().StylePKGBUILD)
 	if err != nil {
 		ps.textPkgbuild.SetText(err.Error())
