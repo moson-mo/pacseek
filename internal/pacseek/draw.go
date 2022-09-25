@@ -28,6 +28,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 	}
 	cIndex := util.IndexOf(config.ColorSchemes(), ps.conf.ColorScheme)
 	bIndex := util.IndexOf(config.BorderStyles(), ps.conf.BorderStyle)
+	gIndex := util.IndexOf(config.GlyphStyles(), ps.conf.GlyphStyle)
 
 	// handle text/drop-down field changes
 	sc := func(txt string) {
@@ -50,6 +51,16 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 		dd.SetSelectedFunc(func(text string, index int) {
 			ps.conf.SetBorderStyle(text)
 			if text != ps.conf.BorderStyle {
+				ps.settingsChanged = true
+			}
+		})
+	}
+	ps.formSettings.AddDropDown("Glyph style: ", config.GlyphStyles(), gIndex, nil)
+	if dd, ok := ps.formSettings.GetFormItemByLabel("Glyph style: ").(*tview.DropDown); ok {
+		dd.SetSelectedFunc(func(text string, index int) {
+			ps.conf.SetGlyphStyle(text)
+			ps.applyGlyphStyle()
+			if text != ps.conf.GlyphStyle {
 				ps.settingsChanged = true
 			}
 		})
@@ -410,10 +421,7 @@ func (ps *UI) drawPackageListContent(packages []Package) {
 	// rows
 	for i, pkg := range packages {
 		color := ps.conf.Colors().PackagelistSourceRepository
-		installed := "-"
-		if pkg.IsInstalled {
-			installed = "Y"
-		}
+
 		if pkg.Source == "AUR" {
 			color = ps.conf.Colors().PackagelistSourceAUR
 		}
@@ -425,10 +433,10 @@ func (ps *UI) drawPackageListContent(packages []Package) {
 				BackgroundColor: tcell.ColorBlack,
 			}).
 			SetCell(i+1, 2, &tview.TableCell{
-				Text:            installed,
-				Expansion:       1000,
-				Color:           tcell.ColorWhite,
-				BackgroundColor: tcell.ColorBlack,
+				Text:        ps.getInstalledStateText(pkg.IsInstalled),
+				Expansion:   1000,
+				Reference:   pkg.IsInstalled,
+				Transparent: true,
 			})
 	}
 	ps.tablePackages.ScrollToBeginning()
@@ -642,14 +650,27 @@ func (ps *UI) updateInstalledState() {
 	// update currently shown packages
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
 		newCell := &tview.TableCell{
-			Text:            "-",
-			Expansion:       1000,
-			Color:           tcell.ColorWhite,
-			BackgroundColor: tcell.ColorBlack,
-		}
-		if isPackageInstalled(ps.alpmHandle, ps.tablePackages.GetCell(i, 0).Text) {
-			newCell.Text = "Y"
+			Text:      ps.getInstalledStateText(isPackageInstalled(ps.alpmHandle, ps.tablePackages.GetCell(i, 0).Text)),
+			Expansion: 1000,
 		}
 		ps.tablePackages.SetCell(i, 2, newCell)
 	}
+}
+
+// compose text for "Installed" column in package list
+func (ps *UI) getInstalledStateText(isInstalled bool) string {
+	glyphs := ps.conf.Glyphs()
+	colStrInstalled := "[#ff0000::b]"
+	installed := glyphs.NotInstalled
+
+	if isInstalled {
+		installed = glyphs.Installed
+		colStrInstalled = "[#00ff00::b]"
+	}
+
+	if ps.conf.ColorScheme == "Monochrome" || ps.flags.MonochromeMode {
+		colStrInstalled = "[white::b]"
+	}
+
+	return glyphs.PrefixState + colStrInstalled + installed + "[white::-]" + glyphs.SuffixState
 }

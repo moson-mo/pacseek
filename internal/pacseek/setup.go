@@ -1,8 +1,9 @@
 package pacseek
 
 import (
-	"strconv"
 	"os/exec"
+	"strconv"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/moson-mo/pacseek/internal/config"
@@ -30,7 +31,7 @@ func (ps *UI) createComponents() {
 
 	// component config
 	ps.flexRoot.SetBorder(true).
-		SetTitle(" [::b]pacseek - v" + version + " ").
+		SetTitle(" [::b]" + ps.conf.Glyphs().Package + "pacseek - v" + version + " ").
 		SetTitleAlign(tview.AlignLeft)
 	ps.inputSearch.SetLabelStyle(tcell.StyleDefault.Bold(true)).
 		SetBorder(true)
@@ -139,6 +140,20 @@ func (ps *UI) applyASCIIMode() {
 
 	ps.spinner.SetBorder(false).
 		SetBorderPadding(1, 1, 1, 1)
+
+	if !strings.HasPrefix(ps.conf.GlyphStyle, "ASCII") {
+		ps.conf.SetGlyphStyle("ASCII")
+	}
+}
+
+// apply colors from color scheme
+func (ps *UI) applyGlyphStyle() {
+	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
+		c := ps.tablePackages.GetCell(i, 2)
+		if ref, ok := c.Reference.(bool); ok {
+			c.SetText(ps.getInstalledStateText(ref))
+		}
+	}
 }
 
 // set up handlers for keyboard bindings
@@ -246,7 +261,7 @@ func (ps *UI) setupKeyBindings() {
 
 		// CTRL+O - Show URL for selected package
 		if event.Key() == tcell.KeyCtrlO && ps.selectedPackage != nil {
-			exec.Command("xdg-open", ps.selectedPackage.URL).Run();
+			exec.Command("xdg-open", ps.selectedPackage.URL).Run()
 			return nil
 		}
 
@@ -478,6 +493,8 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.ColorScheme = opt
 			case "Border style: ":
 				ps.conf.BorderStyle = opt
+			case "Glyph style: ":
+				ps.conf.GlyphStyle = opt
 			}
 		} else if cb, ok := item.(*tview.Checkbox); ok {
 			switch cb.GetLabel() {

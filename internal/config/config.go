@@ -30,7 +30,9 @@ type Settings struct {
 	ShowPkgbuildCommand     string
 	ShowPkgbuildInternally  bool
 	ComputeRequiredBy       bool
+	GlyphStyle              string
 	colors                  Colors
+	glyphs                  Glyphs
 }
 
 // Defaults returns the default settings
@@ -56,6 +58,7 @@ func Defaults() *Settings {
 		ShowPkgbuildCommand:    "curl -s \"{url}\"|less",
 		ShowPkgbuildInternally: true,
 		ComputeRequiredBy:      false,
+		GlyphStyle:             defaultGlyphStyle,
 	}
 
 	return &s
@@ -104,6 +107,7 @@ func Load() (*Settings, error) {
 	ret.applyUpgradeFixes()
 	ret.SetColorScheme(ret.ColorScheme)
 	ret.SetBorderStyle(ret.BorderStyle)
+	ret.SetGlyphStyle(ret.GlyphStyle)
 	return &ret, nil
 }
 
@@ -151,6 +155,12 @@ func (s *Settings) applyUpgradeFixes() {
 	// show PKGBUILD command: added with 1.4.7
 	if s.ShowPkgbuildCommand == "" {
 		s.ShowPkgbuildCommand = def.ShowPkgbuildCommand
+		fixApplied = true
+	}
+
+	// Glyph style added with 1.6.9
+	if s.GlyphStyle == "" {
+		s.GlyphStyle = def.GlyphStyle
 		fixApplied = true
 	}
 

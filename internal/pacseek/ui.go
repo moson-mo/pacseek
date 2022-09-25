@@ -105,6 +105,7 @@ func New(conf *config.Settings, flags args.Flags) (*UI, error) {
 	if flags.AsciiMode {
 		ui.applyASCIIMode()
 	}
+	ui.displayMessage(conf.GlyphStyle, false)
 	ui.applyColors()
 	ui.setupKeyBindings()
 	ui.setupSettingsForm()

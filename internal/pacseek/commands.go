@@ -47,7 +47,7 @@ func (ps *UI) installSelectedPackage() {
 		return
 	}
 	row, _ := ps.tablePackages.GetSelection()
-	installed := ps.tablePackages.GetCell(row, 2).Text == "Y"
+	installed := ps.tablePackages.GetCell(row, 2).Reference == true
 
 	ps.installPackage(*ps.selectedPackage, installed)
 }
