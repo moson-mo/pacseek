@@ -649,9 +649,11 @@ func (ps *UI) updateInstalledState() {
 
 	// update currently shown packages
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
+		isInstalled := isPackageInstalled(ps.alpmHandle, ps.tablePackages.GetCell(i, 0).Text)
 		newCell := &tview.TableCell{
-			Text:      ps.getInstalledStateText(isPackageInstalled(ps.alpmHandle, ps.tablePackages.GetCell(i, 0).Text)),
+			Text:      ps.getInstalledStateText(isInstalled),
 			Expansion: 1000,
+			Reference: isInstalled,
 		}
 		ps.tablePackages.SetCell(i, 2, newCell)
 	}
