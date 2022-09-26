@@ -454,6 +454,7 @@ func (ps *UI) displayInstalled(displayUpdatesAfter bool) {
 					in[i].Version = aurPkg.Version
 					in[i].Source = "AUR"
 					in[i].Popularity = aurPkg.Popularity
+					in[i].NumVotes = aurPkg.NumVotes
 				}
 			}
 		}
