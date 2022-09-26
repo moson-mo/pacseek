@@ -16,7 +16,7 @@ import (
 )
 
 // draws input fields on settings form
-func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, pkgbuildInteranl bool) {
+func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, pkgbuildInternal bool) {
 	ps.formSettings.Clear(false)
 	mode := 0
 	if ps.conf.SearchMode != "StartsWith" {
@@ -67,7 +67,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 	}
 	ps.formSettings.AddCheckbox("Disable AUR: ", disableAur, func(checked bool) {
 		ps.settingsChanged = true
-		ps.drawSettingsFields(checked, disableCache, separateAurCommands, pkgbuildInteranl)
+		ps.drawSettingsFields(checked, disableCache, separateAurCommands, pkgbuildInternal)
 		ps.app.SetFocus(ps.formSettings)
 	})
 	if !disableAur {
@@ -78,7 +78,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 	ps.formSettings.AddCheckbox("Disable Cache: ", disableCache, func(checked bool) {
 		ps.settingsChanged = true
 		i, _ := ps.formSettings.GetFocusedItemIndex()
-		ps.drawSettingsFields(disableAur, checked, separateAurCommands, pkgbuildInteranl)
+		ps.drawSettingsFields(disableAur, checked, separateAurCommands, pkgbuildInternal)
 		ps.formSettings.SetFocus(i)
 		ps.app.SetFocus(ps.formSettings)
 	})
@@ -104,7 +104,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 		AddCheckbox("Separate AUR commands: ", separateAurCommands, func(checked bool) {
 			ps.settingsChanged = true
 			i, _ := ps.formSettings.GetFocusedItemIndex()
-			ps.drawSettingsFields(disableAur, disableCache, checked, pkgbuildInteranl)
+			ps.drawSettingsFields(disableAur, disableCache, checked, pkgbuildInternal)
 			ps.formSettings.SetFocus(i)
 			ps.app.SetFocus(ps.formSettings)
 		})
@@ -123,14 +123,14 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 	ps.formSettings.AddInputField("Install command: ", ps.conf.InstallCommand, 40, nil, sc).
 		AddInputField("Upgrade command: ", ps.conf.SysUpgradeCommand, 40, nil, sc).
 		AddInputField("Uninstall command: ", ps.conf.UninstallCommand, 40, nil, sc).
-		AddCheckbox("Show PKGBUILD internally: ", pkgbuildInteranl, func(checked bool) {
+		AddCheckbox("Show PKGBUILD internally: ", pkgbuildInternal, func(checked bool) {
 			ps.settingsChanged = true
 			i, _ := ps.formSettings.GetFocusedItemIndex()
 			ps.drawSettingsFields(disableAur, disableCache, separateAurCommands, checked)
 			ps.formSettings.SetFocus(i)
 			ps.app.SetFocus(ps.formSettings)
 		})
-	if !pkgbuildInteranl {
+	if !pkgbuildInternal {
 		ps.formSettings.AddInputField("Show PKGBUILD command: ", ps.conf.ShowPkgbuildCommand, 40, nil, sc)
 	}
 
