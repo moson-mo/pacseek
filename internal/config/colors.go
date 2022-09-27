@@ -46,7 +46,7 @@ var (
 			SettingsFieldBackground:     tcell.NewHexColor(0x0564A0),
 			SettingsFieldText:           tcell.ColorWhite,
 			SettingsFieldLabel:          tcell.ColorYellow,
-			SettingsDropdownNotSelected: tcell.NewHexColor(0x0564A0),
+			SettingsDropdownNotSelected: tcell.NewHexColor(0x1793d1),
 			StylePKGBUILD:               "dracula",
 		},
 		"Endeavour OS": {
@@ -59,7 +59,7 @@ var (
 			SettingsFieldBackground:     tcell.NewHexColor(0x7f3fbf),
 			SettingsFieldText:           tcell.ColorWhite,
 			SettingsFieldLabel:          tcell.ColorYellow,
-			SettingsDropdownNotSelected: tcell.NewHexColor(0x7f3fbf),
+			SettingsDropdownNotSelected: tcell.NewHexColor(0x7f7fff),
 			StylePKGBUILD:               "friendly",
 		},
 		"Red": {

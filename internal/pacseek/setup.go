@@ -113,7 +113,7 @@ func (ps *UI) applyColors() {
 
 // apply drop-down colors
 func (ps *UI) applyDropDownColors() {
-	for _, title := range []string{"Search mode: ", "Search by: ", "Color scheme: ", "Border style: "} {
+	for _, title := range []string{"Search mode: ", "Search by: ", "Color scheme: ", "Border style: ", "Glyph style: "} {
 		if dd, ok := ps.formSettings.GetFormItemByLabel(title).(*tview.DropDown); ok {
 			dd.SetListStyles(tcell.StyleDefault.Background(ps.conf.Colors().SettingsDropdownNotSelected).Foreground(ps.conf.Colors().SettingsFieldText),
 				tcell.StyleDefault.Background(ps.conf.Colors().SettingsFieldText).Foreground(ps.conf.Colors().SettingsDropdownNotSelected))
