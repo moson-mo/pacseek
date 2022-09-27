@@ -651,9 +651,10 @@ func (ps *UI) updateInstalledState() {
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
 		isInstalled := isPackageInstalled(ps.alpmHandle, ps.tablePackages.GetCell(i, 0).Text)
 		newCell := &tview.TableCell{
-			Text:      ps.getInstalledStateText(isInstalled),
-			Expansion: 1000,
-			Reference: isInstalled,
+			Text:        ps.getInstalledStateText(isInstalled),
+			Expansion:   1000,
+			Reference:   isInstalled,
+			Transparent: true,
 		}
 		ps.tablePackages.SetCell(i, 2, newCell)
 	}
@@ -671,8 +672,8 @@ func (ps *UI) getInstalledStateText(isInstalled bool) string {
 	}
 
 	if ps.conf.ColorScheme == "Monochrome" || ps.flags.MonochromeMode {
-		colStrInstalled = "[white::b]"
+		colStrInstalled = "[white:black:b]"
 	}
 
-	return glyphs.PrefixState + colStrInstalled + installed + "[white::-]" + glyphs.SuffixState
+	return "[white:black:-]" + glyphs.PrefixState + colStrInstalled + installed + "[white:black:-]" + glyphs.SuffixState
 }
