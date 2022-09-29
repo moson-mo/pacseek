@@ -16,7 +16,7 @@ import (
 )
 
 // draws input fields on settings form
-func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, pkgbuildInternal bool) {
+func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, pkgbuildInternal, disableFeed bool) {
 	ps.formSettings.Clear(false)
 	mode := 0
 	if ps.conf.SearchMode != "StartsWith" {
@@ -67,7 +67,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 	}
 	ps.formSettings.AddCheckbox("Disable AUR: ", disableAur, func(checked bool) {
 		ps.settingsChanged = true
-		ps.drawSettingsFields(checked, disableCache, separateAurCommands, pkgbuildInternal)
+		ps.drawSettingsFields(checked, disableCache, separateAurCommands, pkgbuildInternal, disableFeed)
 		ps.app.SetFocus(ps.formSettings)
 	})
 	if !disableAur {
@@ -78,7 +78,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 	ps.formSettings.AddCheckbox("Disable Cache: ", disableCache, func(checked bool) {
 		ps.settingsChanged = true
 		i, _ := ps.formSettings.GetFocusedItemIndex()
-		ps.drawSettingsFields(disableAur, checked, separateAurCommands, pkgbuildInternal)
+		ps.drawSettingsFields(disableAur, checked, separateAurCommands, pkgbuildInternal, disableFeed)
 		ps.formSettings.SetFocus(i)
 		ps.app.SetFocus(ps.formSettings)
 	})
@@ -104,7 +104,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 		AddCheckbox("Separate AUR commands: ", separateAurCommands, func(checked bool) {
 			ps.settingsChanged = true
 			i, _ := ps.formSettings.GetFocusedItemIndex()
-			ps.drawSettingsFields(disableAur, disableCache, checked, pkgbuildInternal)
+			ps.drawSettingsFields(disableAur, disableCache, checked, pkgbuildInternal, disableFeed)
 			ps.formSettings.SetFocus(i)
 			ps.app.SetFocus(ps.formSettings)
 		})
@@ -126,12 +126,24 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 		AddCheckbox("Show PKGBUILD internally: ", pkgbuildInternal, func(checked bool) {
 			ps.settingsChanged = true
 			i, _ := ps.formSettings.GetFocusedItemIndex()
-			ps.drawSettingsFields(disableAur, disableCache, separateAurCommands, checked)
+			ps.drawSettingsFields(disableAur, disableCache, separateAurCommands, checked, disableFeed)
 			ps.formSettings.SetFocus(i)
 			ps.app.SetFocus(ps.formSettings)
 		})
 	if !pkgbuildInternal {
 		ps.formSettings.AddInputField("Show PKGBUILD command: ", ps.conf.ShowPkgbuildCommand, 40, nil, sc)
+	}
+
+	ps.formSettings.AddCheckbox("Disable news feed: ", disableFeed, func(checked bool) {
+		ps.settingsChanged = true
+		i, _ := ps.formSettings.GetFocusedItemIndex()
+		ps.drawSettingsFields(disableAur, disableCache, separateAurCommands, pkgbuildInternal, checked)
+		ps.formSettings.SetFocus(i)
+		ps.app.SetFocus(ps.formSettings)
+	})
+	if !disableFeed {
+		ps.formSettings.AddInputField("News-feed URL(s): ", ps.conf.FeedURLs, 40, nil, sc)
+		ps.formSettings.AddInputField("Feed max items: ", strconv.Itoa(ps.conf.FeedMaxItems), 6, nil, sc)
 	}
 
 	ps.applyDropDownColors()
@@ -188,6 +200,12 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 
 // draw package information on screen
 func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
+	// remove "Latest news" if they were shown previously
+	if ps.flexRight.GetItemCount() == 2 {
+		ps.flexRight.RemoveItem(ps.flexRight.GetItem(1))
+	}
+
+	// clear content and set name
 	ps.tableDetails.Clear().
 		SetTitle(" [::b]" + ps.conf.Glyphs().Package + i.Name + " ")
 	r := 0
@@ -270,6 +288,12 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 	ps.tableDetails.Clear().
 		SetTitle(" [::b]" + ps.conf.Glyphs().Upgrades + "Upgradable packages ")
 
+	// draw news if enabled
+	if !ps.conf.DisableNewsFeed && ps.flexRight.GetItemCount() != 2 {
+		ps.flexRight.AddItem(ps.tableNews, ps.conf.FeedMaxItems+4, 0, false)
+		ps.drawNews()
+	}
+
 	// header
 	columns := []string{"Package  ", "Source  ", "New version  ", "Installed version", ""}
 	for i, col := range columns {
@@ -339,6 +363,31 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 	// set nil to avoid printing package details when resizing
 	// somewhat hacky, needs refactoring (well, everything needs refactoring here)
 	ps.selectedPackage = nil
+}
+
+// draw news items
+func (ps *UI) drawNews() {
+	go func() {
+		news, err := getNews(ps.conf.FeedURLs, ps.conf.FeedMaxItems)
+		if err != nil {
+			ps.app.QueueUpdateDraw(func() {
+				ps.tableNews.SetCellSimple(0, 0, "Failed fetching feed(s): "+err.Error())
+			})
+			return
+		}
+
+		ps.app.QueueUpdateDraw(func() {
+			for r, item := range news {
+				ps.tableNews.SetCell(r, 0, &tview.TableCell{
+					Text: "[white:black:b]* " + item.Title,
+					Clicked: func() bool {
+						exec.Command("xdg-open", item.Link).Run()
+						return true
+					},
+				})
+			}
+		})
+	}()
 }
 
 // draws a line for an upgradable package

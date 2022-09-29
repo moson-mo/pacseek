@@ -45,6 +45,7 @@ type UI struct {
 	textMessage   *tview.TextView
 	textPkgbuild  *tview.TextView
 	prevComponent tview.Primitive
+	tableNews     *tview.Table
 
 	locker        *sync.RWMutex
 	messageLocker *sync.RWMutex

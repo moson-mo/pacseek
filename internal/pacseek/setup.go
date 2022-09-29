@@ -28,6 +28,7 @@ func (ps *UI) createComponents() {
 	ps.formSettings = tview.NewForm()
 	ps.textMessage = tview.NewTextView()
 	ps.textPkgbuild = tview.NewTextView()
+	ps.tableNews = tview.NewTable()
 
 	// component config
 	ps.flexRoot.SetBorder(true).
@@ -63,6 +64,13 @@ func (ps *UI) createComponents() {
 		SetTitleAlign(tview.AlignLeft).
 		SetBorderPadding(1, 1, 1, 1)
 	ps.pkgbuildWriter = tview.ANSIWriter(ps.textPkgbuild)
+	ps.tableNews.SetSelectable(false, false).
+		SetFocusFunc(func() {
+			ps.app.SetFocus(ps.inputSearch)
+		}).
+		SetBorderPadding(1, 1, 1, 1).
+		SetBorder(true).
+		SetTitleAlign(tview.AlignLeft)
 
 	// layouting
 	ps.leftProportion = 4
@@ -85,6 +93,7 @@ func (ps *UI) applyColors() {
 	ps.tableDetails.SetTitleColor(ps.conf.Colors().Title)
 	ps.inputSearch.SetFieldBackgroundColor(ps.conf.Colors().SearchBar)
 	ps.textPkgbuild.SetTitleColor(ps.conf.Colors().Title)
+	ps.tableNews.SetTitleColor(ps.conf.Colors().Title)
 
 	// settings form
 	ps.formSettings.SetFieldBackgroundColor(ps.conf.Colors().SettingsFieldBackground).
@@ -150,6 +159,7 @@ func (ps *UI) applyGlyphStyle() {
 	// titles
 	ps.formSettings.SetTitle(" [::b]" + ps.conf.Glyphs().Settings + "Settings ")
 	ps.flexRoot.SetTitle(" [::b]" + ps.conf.Glyphs().Package + "pacseek - v" + version + " ")
+	ps.tableNews.SetTitle(" [::b]" + ps.conf.Glyphs().Pkgbuild + "Latest news ")
 
 	// package list
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
@@ -158,7 +168,6 @@ func (ps *UI) applyGlyphStyle() {
 			c.SetText(ps.getInstalledStateText(ref))
 		}
 	}
-
 }
 
 // set up handlers for keyboard bindings
@@ -208,7 +217,7 @@ func (ps *UI) setupKeyBindings() {
 				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
 				ps.app.SetFocus(ps.inputSearch)
 				if event.Key() == tcell.KeyEscape {
-					ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally)
+					ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally, ps.conf.DisableNewsFeed)
 					ps.settingsChanged = false
 				}
 			}
@@ -272,7 +281,7 @@ func (ps *UI) setupKeyBindings() {
 
 		// CTRL+G - Upgradable packages
 		if event.Key() == tcell.KeyCtrlG {
-			if pkgbuildVisible {
+			if pkgbuildVisible || settingsVisible {
 				ps.flexRight.Clear()
 				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
 			}
@@ -422,18 +431,18 @@ func (ps *UI) setupSettingsForm() {
 	// Save button clicked
 	ps.formSettings.AddButton("Apply & Save", func() {
 		ps.saveSettings(false)
-		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally)
+		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally, ps.conf.DisableNewsFeed)
 	})
 
 	// Defaults button clicked
 	ps.formSettings.AddButton("Defaults", func() {
 		ps.conf = config.Defaults()
-		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally)
+		ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally, ps.conf.DisableNewsFeed)
 		ps.saveSettings(true)
 	})
 
 	// add our input fields
-	ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally)
+	ps.drawSettingsFields(ps.conf.DisableAur, ps.conf.DisableCache, ps.conf.AurUseDifferentCommands, ps.conf.ShowPkgbuildInternally, ps.conf.DisableNewsFeed)
 }
 
 // read settings from from and saves to config file
@@ -486,6 +495,14 @@ func (ps *UI) saveSettings(defaults bool) {
 				}
 			case "Show PKGBUILD command: ":
 				ps.conf.ShowPkgbuildCommand = txt
+			case "News-feed URL(s): ":
+				ps.conf.FeedURLs = txt
+			case "Feed max items: ":
+				ps.conf.FeedMaxItems, err = strconv.Atoi(txt)
+				if err != nil {
+					ps.displayMessage("Can't convert feed max items value to int", true)
+					return
+				}
 			}
 		} else if dd, ok := item.(*tview.DropDown); ok {
 			_, opt := dd.GetCurrentOption()
@@ -513,6 +530,8 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.ShowPkgbuildInternally = cb.IsChecked()
 			case "Compute \"Required by\": ":
 				ps.conf.ComputeRequiredBy = cb.IsChecked()
+			case "Disable news feed: ":
+				ps.conf.DisableNewsFeed = cb.IsChecked()
 			}
 		}
 	}

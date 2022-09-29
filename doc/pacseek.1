@@ -393,6 +393,36 @@ The default is
 .IR true.
 
 .TP
+.BI "\(dqDisableNewsFeed\(dq\fR: " bool
+When checked, the news feed will be disabled.
+
+The default is
+.IR false.
+
+.TP
+.BI "\(dqFeedURLs\(dq\fR: " \(dqstring\(dq
+The RSS feed URL(s) for displaying news items.
+Multiple URL's can be specified by separating them with a semi-colon.
+
+This option is only applicable when
+.B DisableNewsFeed
+is unchecked
+
+The default is
+.IR "https://archlinux.org/feeds/news/".
+
+.TP
+.BI "\(dqFeedMaxItems\(dq\fR: " number
+The maximum number of news items to display.
+
+This option is only applicable when
+.B DisableNewsFeed
+is unchecked
+
+The default is
+.IR 5.
+
+.TP
 .BI "\(dqComputeRequiredBy\(dq\fR: " bool
 When enabled, it will compute the list of
 .B Required by

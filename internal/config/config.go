@@ -31,6 +31,9 @@ type Settings struct {
 	ShowPkgbuildInternally  bool
 	ComputeRequiredBy       bool
 	GlyphStyle              string
+	DisableNewsFeed         bool
+	FeedURLs                string
+	FeedMaxItems            int
 	colors                  Colors
 	glyphs                  Glyphs
 }
@@ -59,6 +62,9 @@ func Defaults() *Settings {
 		ShowPkgbuildInternally: true,
 		ComputeRequiredBy:      false,
 		GlyphStyle:             defaultGlyphStyle,
+		DisableNewsFeed:        false,
+		FeedURLs:               "https://archlinux.org/feeds/news/",
+		FeedMaxItems:           5,
 	}
 
 	return &s
@@ -161,6 +167,16 @@ func (s *Settings) applyUpgradeFixes() {
 	// Glyph style added with 1.6.9
 	if s.GlyphStyle == "" {
 		s.GlyphStyle = def.GlyphStyle
+		fixApplied = true
+	}
+
+	// News feed added with 1.7.0
+	if s.FeedURLs == "" {
+		s.FeedURLs = def.FeedURLs
+		fixApplied = true
+	}
+	if s.FeedMaxItems == 0 {
+		s.FeedMaxItems = def.FeedMaxItems
 		fixApplied = true
 	}
 
