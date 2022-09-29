@@ -1,5 +1,5 @@
-[![pacseek](https://img.shields.io/static/v1?label=pacseek&message=v1.6.15&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek/)
-[![pacseek-bin](https://img.shields.io/static/v1?label=pacseek-bin&message=v1.6.15&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek-bin/)
+[![pacseek](https://img.shields.io/static/v1?label=pacseek&message=v1.7.0&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek/)
+[![pacseek-bin](https://img.shields.io/static/v1?label=pacseek-bin&message=v1.7.0&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek-bin/)
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/moson-mo/pacseek/Build)](https://github.com/moson-mo/pacseek/actions) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/moson-mo/pacseek)](https://goreportcard.com/report/github.com/moson-mo/pacseek)
@@ -50,6 +50,10 @@ There are some [examples for configuring other helpers](https://github.com/moson
 * Display PKGBUILD file
 * Search for upgrades / show list of upgradable packages⁴
 * Show a list of all installed packages
+* News feed
+  * Shown on upgrades screen
+  * Feed URL(s) can be changed
+  * Clicking on an item will `xdg-open` the URL to the article
 
 ¹ (By default, `yay` is being used to install/remove/upgrade packages. You can change this in the settings)  
 ² (only applicable to AUR packages)  
@@ -66,6 +70,7 @@ There are some [examples for configuring other helpers](https://github.com/moson
 * [go-cache](https://github.com/patrickmn/go-cache)
 * [goaurrpc](https://github.com/moson-mo/goaurrpc)
 * [chroma](https://github.com/alecthomas/chroma)
+* [gofeed](https://github.com/mmcdole/gofeed)
 <br/>
 
 ### How to build / run / install

@@ -379,12 +379,13 @@ func (ps *UI) drawNews() {
 		ps.app.QueueUpdateDraw(func() {
 			for r, item := range news {
 				ps.tableNews.SetCell(r, 0, &tview.TableCell{
-					Text: "[white:black:b]* " + item.Title,
+					Text: "[white:black:]* [::u]" + item.Title,
 					Clicked: func() bool {
 						exec.Command("xdg-open", item.Link).Run()
 						return true
 					},
-				})
+				}).
+					SetCellSimple(r, 1, "("+item.PublishedParsed.Format("2006-01-02")+")")
 			}
 		})
 	}()
