@@ -378,6 +378,7 @@ func (ps *UI) drawNews() {
 
 		ps.app.QueueUpdateDraw(func() {
 			for r, item := range news {
+				item := item
 				ps.tableNews.SetCell(r, 0, &tview.TableCell{
 					Text: "[white:black:]* [::u]" + item.Title,
 					Clicked: func() bool {
