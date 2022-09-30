@@ -275,7 +275,7 @@ func (ps *UI) setupKeyBindings() {
 
 		// CTRL+O - Open URL for selected package
 		if event.Key() == tcell.KeyCtrlO && ps.selectedPackage != nil {
-			exec.Command("xdg-open", ps.selectedPackage.URL).Run()
+			exec.Command("xdg-open", ps.selectedPackage.URL).Start()
 			return nil
 		}
 

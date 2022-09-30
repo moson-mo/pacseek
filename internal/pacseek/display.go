@@ -256,7 +256,7 @@ func (ps *UI) displayHelp() {
 			Color:           tcell.ColorWhite,
 			BackgroundColor: tcell.ColorBlack,
 			Clicked: func() bool {
-				exec.Command("xdg-open", "https://github.com/moson-mo/pacseek/wiki/Usage").Run()
+				exec.Command("xdg-open", "https://github.com/moson-mo/pacseek/wiki/Usage").Start()
 				return true
 			},
 		})

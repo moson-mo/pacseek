@@ -270,7 +270,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 				}
 				if strings.Contains(k, "URL") {
 					cell.SetClickedFunc(func() bool {
-						exec.Command("xdg-open", v).Run()
+						exec.Command("xdg-open", v).Start()
 						return true
 					})
 				}
@@ -382,7 +382,7 @@ func (ps *UI) drawNews() {
 				ps.tableNews.SetCell(r, 0, &tview.TableCell{
 					Text: "[white:black:]* [::u]" + item.Title,
 					Clicked: func() bool {
-						exec.Command("xdg-open", item.Link).Run()
+						exec.Command("xdg-open", item.Link).Start()
 						return true
 					},
 				}).
