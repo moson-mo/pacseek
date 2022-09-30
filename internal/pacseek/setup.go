@@ -273,7 +273,7 @@ func (ps *UI) setupKeyBindings() {
 			}
 		}
 
-		// CTRL+O - Show URL for selected package
+		// CTRL+O - Open URL for selected package
 		if event.Key() == tcell.KeyCtrlO && ps.selectedPackage != nil {
 			exec.Command("xdg-open", ps.selectedPackage.URL).Run()
 			return nil
@@ -497,7 +497,7 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.ShowPkgbuildCommand = txt
 			case "News-feed URL(s): ":
 				ps.conf.FeedURLs = txt
-			case "Feed max items: ":
+			case "News-feed max items: ":
 				ps.conf.FeedMaxItems, err = strconv.Atoi(txt)
 				if err != nil {
 					ps.displayMessage("Can't convert feed max items value to int", true)
@@ -530,7 +530,7 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.ShowPkgbuildInternally = cb.IsChecked()
 			case "Compute \"Required by\": ":
 				ps.conf.ComputeRequiredBy = cb.IsChecked()
-			case "Disable news feed: ":
+			case "Disable news-feed: ":
 				ps.conf.DisableNewsFeed = cb.IsChecked()
 			}
 		}

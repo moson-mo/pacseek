@@ -134,7 +134,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 		ps.formSettings.AddInputField("Show PKGBUILD command: ", ps.conf.ShowPkgbuildCommand, 40, nil, sc)
 	}
 
-	ps.formSettings.AddCheckbox("Disable news feed: ", disableFeed, func(checked bool) {
+	ps.formSettings.AddCheckbox("Disable news-feed: ", disableFeed, func(checked bool) {
 		ps.settingsChanged = true
 		i, _ := ps.formSettings.GetFocusedItemIndex()
 		ps.drawSettingsFields(disableAur, disableCache, separateAurCommands, pkgbuildInternal, checked)
@@ -143,7 +143,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 	})
 	if !disableFeed {
 		ps.formSettings.AddInputField("News-feed URL(s): ", ps.conf.FeedURLs, 40, nil, sc)
-		ps.formSettings.AddInputField("Feed max items: ", strconv.Itoa(ps.conf.FeedMaxItems), 6, nil, sc)
+		ps.formSettings.AddInputField("News-feed max items: ", strconv.Itoa(ps.conf.FeedMaxItems), 6, nil, sc)
 	}
 
 	ps.applyDropDownColors()
