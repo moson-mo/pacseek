@@ -65,6 +65,9 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 			}
 		})
 	}
+	ps.formSettings.AddCheckbox("Save tiling proportion: ", ps.conf.SaveTilingProportion, func(checked bool) {
+		ps.settingsChanged = true
+	})
 	ps.formSettings.AddCheckbox("Disable AUR: ", disableAur, func(checked bool) {
 		ps.settingsChanged = true
 		ps.drawSettingsFields(checked, disableCache, separateAurCommands, pkgbuildInternal, disableFeed)

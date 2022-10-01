@@ -73,7 +73,6 @@ func (ps *UI) createComponents() {
 		SetTitleAlign(tview.AlignLeft)
 
 	// layouting
-	ps.leftProportion = 4
 	ps.flexRoot.AddItem(ps.flexContainer, 0, 1, true).
 		AddItem(ps.textMessage, 0, 0, false)
 	ps.flexContainer.AddItem(ps.flexLeft, 0, ps.leftProportion, true).
@@ -188,9 +187,14 @@ func (ps *UI) setupKeyBindings() {
 
 		// CTRL+Q - Quit
 		if event.Key() == tcell.KeyCtrlQ ||
-			(event.Key() == tcell.KeyEscape && !settingsVisible && !pkgbuildVisible) {
+			(event.Key() == tcell.KeyEscape && !settingsVisible && !pkgbuildVisible) ||
+			event.Key() == tcell.KeyCtrlC {
 			ps.alpmHandle.Release()
 			if !ps.settingsChanged {
+				if ps.conf.SaveTilingProportion {
+					ps.conf.LeftProportion = ps.leftProportion
+					ps.saveSettings(false)
+				}
 				ps.app.Stop()
 			}
 			ask := tview.NewModal().
@@ -532,6 +536,8 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.ComputeRequiredBy = cb.IsChecked()
 			case "Disable news-feed: ":
 				ps.conf.DisableNewsFeed = cb.IsChecked()
+			case "Save tiling proportion: ":
+				ps.conf.SaveTilingProportion = cb.IsChecked()
 			}
 		}
 	}
