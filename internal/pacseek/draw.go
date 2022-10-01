@@ -740,7 +740,7 @@ func (ps *UI) getInstalledStateText(isInstalled bool) string {
 	}
 
 	ret := "[white:black:-]" + glyphs.PrefixState + colStrInstalled + installed + "[white:black:-]" + glyphs.SuffixState
-	if ps.conf.Transparent {
+	if ps.conf.Colors().DefaultBackground == tcell.ColorDefault {
 		ret = strings.Replace(ret, ":black:", ":-:", -1)
 	}
 	return ret

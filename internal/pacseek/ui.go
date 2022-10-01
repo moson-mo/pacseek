@@ -112,6 +112,7 @@ func New(conf *config.Settings, flags args.Flags) (*UI, error) {
 	ui.createComponents()
 	if flags.MonochromeMode {
 		ui.conf.SetColorScheme("Monochrome")
+		ui.conf.SetTransparency(ui.conf.Transparent)
 	}
 	if flags.AsciiMode {
 		ui.applyASCIIMode()
