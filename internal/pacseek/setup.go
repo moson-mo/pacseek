@@ -543,6 +543,8 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.DisableNewsFeed = cb.IsChecked()
 			case "Save window layout: ":
 				ps.conf.SaveWindowLayout = cb.IsChecked()
+			case "Transparent: ":
+				ps.conf.Transparent = cb.IsChecked()
 			}
 		}
 	}

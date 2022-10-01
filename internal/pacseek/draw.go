@@ -40,12 +40,20 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 	if dd, ok := ps.formSettings.GetFormItemByLabel("Color scheme: ").(*tview.DropDown); ok {
 		dd.SetSelectedFunc(func(text string, index int) {
 			ps.conf.SetColorScheme(text)
+			if cb, ok := ps.formSettings.GetFormItemByLabel("Transparent: ").(*tview.Checkbox); ok {
+				ps.conf.SetTransparency(cb.IsChecked())
+			}
 			ps.applyColors()
 			if text != ps.conf.ColorScheme {
 				ps.settingsChanged = true
 			}
 		})
 	}
+	ps.formSettings.AddCheckbox("Transparent: ", ps.conf.Transparent, func(checked bool) {
+		ps.settingsChanged = true
+		ps.conf.SetTransparency(checked)
+		ps.applyColors()
+	})
 	ps.formSettings.AddDropDown("Border style: ", config.BorderStyles(), bIndex, nil)
 	if dd, ok := ps.formSettings.GetFormItemByLabel("Border style: ").(*tview.DropDown); ok {
 		dd.SetSelectedFunc(func(text string, index int) {
@@ -732,7 +740,7 @@ func (ps *UI) getInstalledStateText(isInstalled bool) string {
 	}
 
 	ret := "[white:black:-]" + glyphs.PrefixState + colStrInstalled + installed + "[white:black:-]" + glyphs.SuffixState
-	if ps.conf.Colors().Transparent {
+	if ps.conf.Transparent {
 		ret = strings.Replace(ret, ":black:", ":-:", -1)
 	}
 	return ret

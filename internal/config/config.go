@@ -36,6 +36,7 @@ type Settings struct {
 	FeedMaxItems            int
 	SaveWindowLayout        bool
 	LeftProportion          int
+	Transparent             bool
 	colors                  Colors
 	glyphs                  Glyphs
 }
@@ -69,6 +70,7 @@ func Defaults() *Settings {
 		FeedMaxItems:           5,
 		SaveWindowLayout:       false,
 		LeftProportion:         4,
+		Transparent:            false,
 	}
 
 	return &s
@@ -116,6 +118,7 @@ func Load() (*Settings, error) {
 	}
 	ret.applyUpgradeFixes()
 	ret.SetColorScheme(ret.ColorScheme)
+	ret.SetTransparency(ret.Transparent)
 	ret.SetBorderStyle(ret.BorderStyle)
 	ret.SetGlyphStyle(ret.GlyphStyle)
 	return &ret, nil
