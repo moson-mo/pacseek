@@ -192,8 +192,7 @@ func (ps *UI) setupKeyBindings() {
 
 		// CTRL+Q - Quit
 		if event.Key() == tcell.KeyCtrlQ ||
-			(event.Key() == tcell.KeyEscape && !settingsVisible && !pkgbuildVisible) ||
-			event.Key() == tcell.KeyCtrlC {
+			(event.Key() == tcell.KeyEscape && !settingsVisible && !pkgbuildVisible) {
 			ps.alpmHandle.Release()
 			if !ps.settingsChanged {
 				if ps.conf.SaveWindowLayout {
