@@ -34,7 +34,7 @@ type Settings struct {
 	DisableNewsFeed         bool
 	FeedURLs                string
 	FeedMaxItems            int
-	SaveTilingProportion    bool
+	SaveWindowLayout        bool
 	LeftProportion          int
 	colors                  Colors
 	glyphs                  Glyphs
@@ -67,7 +67,7 @@ func Defaults() *Settings {
 		DisableNewsFeed:        false,
 		FeedURLs:               "https://archlinux.org/feeds/news/",
 		FeedMaxItems:           5,
-		SaveTilingProportion:   false,
+		SaveWindowLayout:       false,
 		LeftProportion:         4,
 	}
 

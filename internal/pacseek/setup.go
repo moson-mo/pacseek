@@ -191,7 +191,7 @@ func (ps *UI) setupKeyBindings() {
 			event.Key() == tcell.KeyCtrlC {
 			ps.alpmHandle.Release()
 			if !ps.settingsChanged {
-				if ps.conf.SaveTilingProportion {
+				if ps.conf.SaveWindowLayout {
 					ps.conf.LeftProportion = ps.leftProportion
 					ps.saveSettings(false)
 				}
@@ -536,8 +536,8 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.ComputeRequiredBy = cb.IsChecked()
 			case "Disable news-feed: ":
 				ps.conf.DisableNewsFeed = cb.IsChecked()
-			case "Save tiling proportion: ":
-				ps.conf.SaveTilingProportion = cb.IsChecked()
+			case "Save window layout: ":
+				ps.conf.SaveWindowLayout = cb.IsChecked()
 			}
 		}
 	}
