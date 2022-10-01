@@ -40,12 +40,20 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 	if dd, ok := ps.formSettings.GetFormItemByLabel("Color scheme: ").(*tview.DropDown); ok {
 		dd.SetSelectedFunc(func(text string, index int) {
 			ps.conf.SetColorScheme(text)
+			if cb, ok := ps.formSettings.GetFormItemByLabel("Transparent: ").(*tview.Checkbox); ok {
+				ps.conf.SetTransparency(cb.IsChecked())
+			}
 			ps.applyColors()
 			if text != ps.conf.ColorScheme {
 				ps.settingsChanged = true
 			}
 		})
 	}
+	ps.formSettings.AddCheckbox("Transparent: ", ps.conf.Transparent, func(checked bool) {
+		ps.settingsChanged = true
+		ps.conf.SetTransparency(checked)
+		ps.applyColors()
+	})
 	ps.formSettings.AddDropDown("Border style: ", config.BorderStyles(), bIndex, nil)
 	if dd, ok := ps.formSettings.GetFormItemByLabel("Border style: ").(*tview.DropDown); ok {
 		dd.SetSelectedFunc(func(text string, index int) {
@@ -228,7 +236,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 			cell := &tview.TableCell{
 				Text:            "[::b]" + k,
 				Color:           ps.conf.Colors().Accent,
-				BackgroundColor: tcell.ColorBlack,
+				BackgroundColor: ps.conf.Colors().DefaultBackground,
 			}
 
 			if k == " Show PKGBUILD" {
@@ -262,7 +270,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 				cell := &tview.TableCell{
 					Text:            l,
 					Color:           tcell.ColorWhite,
-					BackgroundColor: tcell.ColorBlack,
+					BackgroundColor: ps.conf.Colors().DefaultBackground,
 				}
 				if k == "Description" {
 					cell.SetText("[::b]" + l)
@@ -303,7 +311,7 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 		hcell := &tview.TableCell{
 			Text:            col,
 			Color:           ps.conf.Colors().PackagelistHeader,
-			BackgroundColor: tcell.ColorBlack,
+			BackgroundColor: ps.conf.Colors().DefaultBackground,
 		}
 		ps.tableDetails.SetCell(0, i, hcell)
 	}
@@ -330,7 +338,7 @@ func (ps *UI) drawUpgradable(up []InfoRecord, cached bool) {
 		ps.tableDetails.SetCell(r, 0, &tview.TableCell{
 			Text:            "No upgrades found",
 			Color:           ps.conf.Colors().PackagelistHeader,
-			BackgroundColor: tcell.ColorBlack,
+			BackgroundColor: ps.conf.Colors().DefaultBackground,
 		})
 	} else {
 		ps.tableDetails.SetCell(r, 0, &tview.TableCell{
@@ -389,7 +397,7 @@ func (ps *UI) drawNews() {
 						return true
 					},
 					Color:           tcell.ColorWhite,
-					BackgroundColor: tcell.ColorBlack,
+					BackgroundColor: ps.conf.Colors().DefaultBackground,
 				}).
 					SetCellSimple(r, 1, "("+item.PublishedParsed.Format("2006-01-02")+")")
 			}
@@ -402,7 +410,7 @@ func (ps *UI) drawUpgradeableLine(up InfoRecord, lNum int, ignored bool) {
 	cellDesc := &tview.TableCell{
 		Text:            "[::b]" + up.Name,
 		Color:           ps.conf.Colors().Accent,
-		BackgroundColor: tcell.ColorBlack,
+		BackgroundColor: ps.conf.Colors().DefaultBackground,
 		Clicked: func() bool {
 			ps.selectedPackage = &up
 			ps.drawPackageInfo(up, ps.width)
@@ -412,12 +420,12 @@ func (ps *UI) drawUpgradeableLine(up InfoRecord, lNum int, ignored bool) {
 	cellSource := &tview.TableCell{
 		Text:            up.Source,
 		Color:           ps.conf.Colors().Accent,
-		BackgroundColor: tcell.ColorBlack,
+		BackgroundColor: ps.conf.Colors().DefaultBackground,
 	}
 	cellVnew := &tview.TableCell{
 		Text:            "[::b]" + up.Version,
 		Color:           ps.conf.Colors().PackagelistSourceRepository,
-		BackgroundColor: tcell.ColorBlack,
+		BackgroundColor: ps.conf.Colors().DefaultBackground,
 		Clicked: func() bool {
 			if ps.conf.ShowPkgbuildInternally {
 				ps.selectedPackage = &up
@@ -431,7 +439,7 @@ func (ps *UI) drawUpgradeableLine(up InfoRecord, lNum int, ignored bool) {
 	cellVold := &tview.TableCell{
 		Text:            up.LocalVersion,
 		Color:           ps.conf.Colors().PackagelistSourceAUR,
-		BackgroundColor: tcell.ColorBlack,
+		BackgroundColor: ps.conf.Colors().DefaultBackground,
 	}
 
 	ps.tableDetails.SetCell(lNum, 0, cellDesc).
@@ -461,7 +469,7 @@ func (ps *UI) drawUpgradeableLine(up InfoRecord, lNum int, ignored bool) {
 		cellIgnored := &tview.TableCell{
 			Text:            "ignored",
 			Color:           ps.conf.Colors().PackagelistHeader,
-			BackgroundColor: tcell.ColorBlack,
+			BackgroundColor: ps.conf.Colors().DefaultBackground,
 		}
 		ps.tableDetails.SetCell(lNum, 4, cellIgnored)
 	}
@@ -486,7 +494,7 @@ func (ps *UI) drawPackageListContent(packages []Package) {
 			SetCell(i+1, 1, &tview.TableCell{
 				Text:            pkg.Source,
 				Color:           color,
-				BackgroundColor: tcell.ColorBlack,
+				BackgroundColor: ps.conf.Colors().DefaultBackground,
 			}).
 			SetCell(i+1, 2, &tview.TableCell{
 				Text:        ps.getInstalledStateText(pkg.IsInstalled),
@@ -518,7 +526,7 @@ func (ps *UI) drawPackageListHeader() {
 			Text:            col,
 			NotSelectable:   true,
 			Color:           ps.conf.Colors().PackagelistHeader,
-			BackgroundColor: tcell.ColorBlack,
+			BackgroundColor: ps.conf.Colors().DefaultBackground,
 			Clicked: func() bool {
 				switch col {
 				case "Package":
@@ -731,5 +739,9 @@ func (ps *UI) getInstalledStateText(isInstalled bool) string {
 		colStrInstalled = "[white:black:b]"
 	}
 
-	return "[white:black:-]" + glyphs.PrefixState + colStrInstalled + installed + "[white:black:-]" + glyphs.SuffixState
+	ret := "[white:black:-]" + glyphs.PrefixState + colStrInstalled + installed + "[white:black:-]" + glyphs.SuffixState
+	if ps.conf.Transparent {
+		ret = strings.Replace(ret, ":black:", ":-:", -1)
+	}
+	return ret
 }

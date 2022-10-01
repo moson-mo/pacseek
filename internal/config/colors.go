@@ -24,6 +24,7 @@ type Colors struct {
 	SettingsFieldText           tcell.Color
 	SettingsFieldLabel          tcell.Color
 	SettingsDropdownNotSelected tcell.Color
+	DefaultBackground           tcell.Color
 	StylePKGBUILD               string
 	colorParsingError           error
 }
@@ -132,7 +133,6 @@ var (
 
 // SetColorScheme applies a color scheme
 func (s *Settings) SetColorScheme(scheme string) error {
-	//s.ColorScheme = scheme
 	if scheme == "Custom" {
 		var err error
 		s.colors, err = loadCustomColors()
@@ -141,8 +141,19 @@ func (s *Settings) SetColorScheme(scheme string) error {
 		}
 		return nil
 	}
+
 	s.colors = colorSchemes[scheme]
+
 	return nil
+}
+
+// SetTransparency switched transparency on or off
+func (s *Settings) SetTransparency(enable bool) {
+	if enable {
+		s.colors.DefaultBackground = tcell.ColorDefault
+	} else {
+		s.colors.DefaultBackground = tcell.ColorBlack
+	}
 }
 
 // loads custom colors from file
@@ -196,6 +207,7 @@ func createCustomColorsFile(colorFile string) error {
 // custom JSON marshalling for our colors
 func (c *Colors) marshalJSON() ([]byte, error) {
 	return json.MarshalIndent(&struct {
+		Transparent                 bool
 		Accent                      string
 		Title                       string
 		SearchBar                   string
@@ -255,6 +267,7 @@ func (c *Colors) unmarshalJSON(data []byte) error {
 	c.SettingsFieldLabel = c.colorFromHexString(d.SettingsFieldLabel)
 	c.SettingsDropdownNotSelected = c.colorFromHexString(d.SettingsDropdownNotSelected)
 	c.StylePKGBUILD = d.StylePKGBUILD
+
 	return nil
 }
 
