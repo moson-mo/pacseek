@@ -98,8 +98,8 @@ func New(conf *config.Settings, flags args.Flags) (*UI, error) {
 		return nil, err
 	}
 
-	// set tiling proportion
-	if conf.SaveTilingProportion {
+	// set window layout
+	if conf.SaveWindowLayout {
 		if conf.LeftProportion < 1 || conf.LeftProportion > 9 {
 			conf.LeftProportion = 4
 		}
