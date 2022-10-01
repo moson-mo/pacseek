@@ -380,11 +380,13 @@ func (ps *UI) drawNews() {
 			for r, item := range news {
 				item := item
 				ps.tableNews.SetCell(r, 0, &tview.TableCell{
-					Text: "[white:black:]* [::u]" + item.Title,
+					Text: "* [::u]" + item.Title,
 					Clicked: func() bool {
 						exec.Command("xdg-open", item.Link).Start()
 						return true
 					},
+					Color:           tcell.ColorWhite,
+					BackgroundColor: tcell.ColorBlack,
 				}).
 					SetCellSimple(r, 1, "("+item.PublishedParsed.Format("2006-01-02")+")")
 			}
