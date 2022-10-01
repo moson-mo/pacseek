@@ -1,5 +1,5 @@
-[![pacseek](https://img.shields.io/static/v1?label=pacseek&message=v1.7.2&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek/)
-[![pacseek-bin](https://img.shields.io/static/v1?label=pacseek-bin&message=v1.7.2&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek-bin/)
+[![pacseek](https://img.shields.io/static/v1?label=pacseek&message=v1.7.3&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek/)
+[![pacseek-bin](https://img.shields.io/static/v1?label=pacseek-bin&message=v1.7.3&color=1793d1&style=for-the-badge&logo=archlinux)](https://aur.archlinux.org/packages/pacseek-bin/)
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/moson-mo/pacseek/Build)](https://github.com/moson-mo/pacseek/actions) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/moson-mo/pacseek)](https://goreportcard.com/report/github.com/moson-mo/pacseek)
@@ -35,7 +35,7 @@ There are some [examples for configuring other helpers](https://github.com/moson
   * Color schemes
   * Border styles
   * Component sizes / proportions
-  * Glyph styles (showing the installed state)
+  * Glyph styles
 * ASCII mode for non unicode terminals
 * Sortable search results by
   * Package name
