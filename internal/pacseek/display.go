@@ -254,7 +254,7 @@ func (ps *UI) displayHelp() {
 		SetCell(16, 0, &tview.TableCell{
 			Text:            "For detailed instructions, please check the man page or visit the [::b]Wiki",
 			Color:           tcell.ColorWhite,
-			BackgroundColor: tcell.ColorBlack,
+			BackgroundColor: ps.conf.Colors().DefaultBackground,
 			Clicked: func() bool {
 				exec.Command("xdg-open", "https://github.com/moson-mo/pacseek/wiki/Usage").Start()
 				return true
@@ -269,19 +269,19 @@ func (ps *UI) displayAbout() {
 		SetCell(0, 0, &tview.TableCell{
 			Text:            "[::b]Version",
 			Color:           ps.conf.Colors().Accent,
-			BackgroundColor: tcell.ColorBlack,
+			BackgroundColor: ps.conf.Colors().DefaultBackground,
 		}).
 		SetCellSimple(0, 1, version).
 		SetCell(1, 0, &tview.TableCell{
 			Text:            "[::b]Author",
 			Color:           ps.conf.Colors().Accent,
-			BackgroundColor: tcell.ColorBlack,
+			BackgroundColor: ps.conf.Colors().DefaultBackground,
 		}).
 		SetCellSimple(1, 1, "Mario Oenning").
 		SetCell(2, 0, &tview.TableCell{
 			Text:            "[::b]URL",
 			Color:           ps.conf.Colors().Accent,
-			BackgroundColor: tcell.ColorBlack,
+			BackgroundColor: ps.conf.Colors().DefaultBackground,
 		}).
 		SetCellSimple(2, 1, "https://github.com/moson-mo/pacseek")
 
@@ -387,7 +387,7 @@ func (ps *UI) displayUpgradable() {
 					ps.tableDetails.SetCell(i+1, 0, &tview.TableCell{
 						Text:            line,
 						Color:           tcell.ColorRed,
-						BackgroundColor: tcell.ColorBlack,
+						BackgroundColor: ps.conf.Colors().DefaultBackground,
 					})
 				}
 				ps.displayMessage("Failed to sync temporary DB's", true)

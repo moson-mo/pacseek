@@ -87,12 +87,14 @@ func (ps *UI) createComponents() {
 // apply colors from color scheme
 func (ps *UI) applyColors() {
 	// containers
-	ps.flexRoot.SetTitleColor(ps.conf.Colors().Title)
-	ps.formSettings.SetTitleColor(ps.conf.Colors().Title)
-	ps.tableDetails.SetTitleColor(ps.conf.Colors().Title)
-	ps.inputSearch.SetFieldBackgroundColor(ps.conf.Colors().SearchBar)
-	ps.textPkgbuild.SetTitleColor(ps.conf.Colors().Title)
-	ps.tableNews.SetTitleColor(ps.conf.Colors().Title)
+	ps.flexRoot.SetTitleColor(ps.conf.Colors().Title).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+	ps.formSettings.SetTitleColor(ps.conf.Colors().Title).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+	ps.tableDetails.SetTitleColor(ps.conf.Colors().Title).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+	ps.inputSearch.SetFieldBackgroundColor(ps.conf.Colors().SearchBar).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+	ps.textPkgbuild.SetTitleColor(ps.conf.Colors().Title).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+	ps.tableNews.SetTitleColor(ps.conf.Colors().Title).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+	ps.tablePackages.SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+	ps.spinner.SetBackgroundColor(ps.conf.Colors().DefaultBackground)
 
 	// settings form
 	ps.formSettings.SetFieldBackgroundColor(ps.conf.Colors().SettingsFieldBackground).
@@ -111,6 +113,9 @@ func (ps *UI) applyColors() {
 			col = ps.conf.Colors().PackagelistSourceAUR
 		}
 		c.SetTextColor(col)
+		c.SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+		c = ps.tablePackages.GetCell(i, 2)
+		c.SetText(ps.getInstalledStateText(c.Reference.(bool)))
 	}
 
 	// details

@@ -24,7 +24,9 @@ type Colors struct {
 	SettingsFieldText           tcell.Color
 	SettingsFieldLabel          tcell.Color
 	SettingsDropdownNotSelected tcell.Color
+	DefaultBackground           tcell.Color
 	StylePKGBUILD               string
+	Transparent                 bool
 	colorParsingError           error
 }
 
@@ -114,6 +116,20 @@ var (
 			SettingsDropdownNotSelected: tcell.NewHexColor(0xcc7a00),
 			StylePKGBUILD:               "fruity",
 		},
+		"Transparent": {
+			Accent:                      tcell.NewHexColor(0x1793d1),
+			Title:                       tcell.NewHexColor(0x00dfff),
+			SearchBar:                   tcell.NewHexColor(0x0564A0),
+			PackagelistSourceRepository: tcell.NewHexColor(0x00b000),
+			PackagelistSourceAUR:        tcell.NewHexColor(0x1793d1),
+			PackagelistHeader:           tcell.ColorYellow,
+			SettingsFieldBackground:     tcell.NewHexColor(0x0564A0),
+			SettingsFieldText:           tcell.ColorWhite,
+			SettingsFieldLabel:          tcell.ColorYellow,
+			SettingsDropdownNotSelected: tcell.NewHexColor(0x1793d1),
+			StylePKGBUILD:               "dracula",
+			Transparent:                 true,
+		},
 		"Monochrome": {
 			Accent:                      tcell.ColorWhite,
 			Title:                       tcell.ColorWhite,
@@ -132,7 +148,6 @@ var (
 
 // SetColorScheme applies a color scheme
 func (s *Settings) SetColorScheme(scheme string) error {
-	//s.ColorScheme = scheme
 	if scheme == "Custom" {
 		var err error
 		s.colors, err = loadCustomColors()
@@ -142,6 +157,11 @@ func (s *Settings) SetColorScheme(scheme string) error {
 		return nil
 	}
 	s.colors = colorSchemes[scheme]
+	if s.colors.Transparent {
+		s.colors.DefaultBackground = tcell.ColorDefault
+	} else {
+		s.colors.DefaultBackground = tcell.ColorBlack
+	}
 	return nil
 }
 
@@ -196,6 +216,7 @@ func createCustomColorsFile(colorFile string) error {
 // custom JSON marshalling for our colors
 func (c *Colors) marshalJSON() ([]byte, error) {
 	return json.MarshalIndent(&struct {
+		Transparent                 bool
 		Accent                      string
 		Title                       string
 		SearchBar                   string
@@ -209,6 +230,7 @@ func (c *Colors) marshalJSON() ([]byte, error) {
 		StylePKGBUILD               string
 		Comments                    string
 	}{
+		Transparent:                 c.Transparent,
 		Accent:                      fmt.Sprintf("%06x", c.Accent.Hex()),
 		Title:                       fmt.Sprintf("%06x", c.Title.Hex()),
 		SearchBar:                   fmt.Sprintf("%06x", c.SearchBar.Hex()),
@@ -227,6 +249,7 @@ func (c *Colors) marshalJSON() ([]byte, error) {
 // custom JSON unmarshalling for our colors
 func (c *Colors) unmarshalJSON(data []byte) error {
 	d := &struct {
+		Transparent                 bool
 		Accent                      string
 		Title                       string
 		SearchBar                   string
@@ -255,6 +278,13 @@ func (c *Colors) unmarshalJSON(data []byte) error {
 	c.SettingsFieldLabel = c.colorFromHexString(d.SettingsFieldLabel)
 	c.SettingsDropdownNotSelected = c.colorFromHexString(d.SettingsDropdownNotSelected)
 	c.StylePKGBUILD = d.StylePKGBUILD
+
+	if d.Transparent {
+		c.DefaultBackground = tcell.ColorDefault
+	} else {
+		c.DefaultBackground = tcell.ColorBlack
+	}
+
 	return nil
 }
 
@@ -275,5 +305,5 @@ func (s *Settings) Colors() Colors {
 
 // Returns all available color schemes
 func ColorSchemes() []string {
-	return []string{"Arch Linux", "Endeavour OS", "Red", "Green", "Blue", "Orange", "Monochrome", "Custom"}
+	return []string{"Arch Linux", "Endeavour OS", "Red", "Green", "Blue", "Orange", "Monochrome", "Transparent", "Custom"}
 }
