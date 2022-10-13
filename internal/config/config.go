@@ -37,6 +37,7 @@ type Settings struct {
 	SaveWindowLayout        bool
 	LeftProportion          int
 	Transparent             bool
+	PackageColumnWidth      int
 	colors                  Colors
 	glyphs                  Glyphs
 }
@@ -71,6 +72,7 @@ func Defaults() *Settings {
 		SaveWindowLayout:       false,
 		LeftProportion:         4,
 		Transparent:            false,
+		PackageColumnWidth:     0,
 	}
 
 	return &s

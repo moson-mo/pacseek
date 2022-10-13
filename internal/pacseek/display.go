@@ -19,7 +19,7 @@ func (ps *UI) displayPackages(text string) {
 	showFunc := func() {
 		ps.shownPackages = packages
 		best := bestMatch(text, packages) + 1
-		ps.drawPackageListContent(packages)
+		ps.drawPackageListContent(packages, ps.conf.PackageColumnWidth)
 		if ps.flexRight.GetItem(0) == ps.formSettings {
 			ps.flexRight.Clear()
 			ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
@@ -432,7 +432,7 @@ func (ps *UI) displayInstalled(displayUpdatesAfter bool) {
 	if installedCached, found := ps.cacheSearch.Get("#installed#"); found {
 		packages := installedCached.([]Package)
 		ps.shownPackages = packages
-		ps.drawPackageListContent(packages)
+		ps.drawPackageListContent(packages, ps.conf.PackageColumnWidth)
 		ps.tablePackages.Select(1, 0)
 		return
 	}
@@ -477,7 +477,7 @@ func (ps *UI) displayInstalled(displayUpdatesAfter bool) {
 		}
 		ps.shownPackages = packages
 		ps.app.QueueUpdateDraw(func() {
-			ps.drawPackageListContent(packages)
+			ps.drawPackageListContent(packages, ps.conf.PackageColumnWidth)
 			if displayUpdatesAfter {
 				ps.displayUpgradable()
 			} else {

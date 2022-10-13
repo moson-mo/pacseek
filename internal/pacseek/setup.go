@@ -105,7 +105,7 @@ func (ps *UI) applyColors() {
 	ps.applyDropDownColors()
 
 	// package list
-	ps.drawPackageListHeader()
+	ps.drawPackageListHeader(ps.conf.PackageColumnWidth)
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
 		c := ps.tablePackages.GetCell(i, 1)
 		col := ps.conf.Colors().PackagelistSourceRepository
@@ -509,6 +509,12 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.FeedMaxItems, err = strconv.Atoi(txt)
 				if err != nil {
 					ps.displayMessage("Can't convert feed max items value to int", true)
+					return
+				}
+			case "Package column width: ":
+				ps.conf.PackageColumnWidth, err = strconv.Atoi(txt)
+				if err != nil {
+					ps.displayMessage("Can't convert package column width value to int", true)
 					return
 				}
 			}

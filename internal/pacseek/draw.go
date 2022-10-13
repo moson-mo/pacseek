@@ -157,6 +157,12 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 		ps.formSettings.AddInputField("News-feed max items: ", strconv.Itoa(ps.conf.FeedMaxItems), 6, nil, sc)
 	}
 
+	ps.formSettings.AddInputField("Package column width: ", strconv.Itoa(ps.conf.PackageColumnWidth), 6, nil, func(text string) {
+		ps.settingsChanged = true
+		width, _ := strconv.Atoi(text)
+		ps.drawPackageListContent(ps.shownPackages, width)
+	})
+
 	ps.applyDropDownColors()
 
 	// key bindings
@@ -476,11 +482,11 @@ func (ps *UI) drawUpgradeableLine(up InfoRecord, lNum int, ignored bool) {
 }
 
 // draw packages on screen
-func (ps *UI) drawPackageListContent(packages []Package) {
+func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 	ps.tablePackages.Clear()
 
 	// header
-	ps.drawPackageListHeader()
+	ps.drawPackageListHeader(pkgwidth)
 
 	// rows
 	for i, pkg := range packages {
@@ -490,7 +496,12 @@ func (ps *UI) drawPackageListContent(packages []Package) {
 			color = ps.conf.Colors().PackagelistSourceAUR
 		}
 
-		ps.tablePackages.SetCellSimple(i+1, 0, pkg.Name).
+		ps.tablePackages.SetCell(i+1, 0, &tview.TableCell{
+			Text:            pkg.Name,
+			Color:           tcell.ColorWhite,
+			BackgroundColor: tcell.ColorBlack,
+			MaxWidth:        pkgwidth,
+		}).
 			SetCell(i+1, 1, &tview.TableCell{
 				Text:            pkg.Source,
 				Color:           color,
@@ -518,15 +529,21 @@ func (ps *UI) drawPkgbuild(content, pkg string) {
 }
 
 // adds header row to package table
-func (ps *UI) drawPackageListHeader() {
+func (ps *UI) drawPackageListHeader(pkgwidth int) {
 	columns := []string{"Package", "Source", "Installed"}
 	for i, col := range columns {
 		col := col
+		width := 0
+		if i == 0 {
+			width = pkgwidth
+			col = fmt.Sprintf("%-"+strconv.Itoa(width)+"s", col)
+		}
 		ps.tablePackages.SetCell(0, i, &tview.TableCell{
 			Text:            col,
 			NotSelectable:   true,
 			Color:           ps.conf.Colors().PackagelistHeader,
 			BackgroundColor: ps.conf.Colors().DefaultBackground,
+			MaxWidth:        width,
 			Clicked: func() bool {
 				switch col {
 				case "Package":
@@ -616,7 +633,7 @@ func (ps *UI) sortAndRedrawPackageList(runeKey rune) {
 		}
 	}
 	ps.sortAscending = !ps.sortAscending
-	ps.drawPackageListContent(ps.shownPackages)
+	ps.drawPackageListContent(ps.shownPackages, ps.conf.PackageColumnWidth)
 	ps.tablePackages.Select(1, 0)
 }
 
