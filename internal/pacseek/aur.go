@@ -23,7 +23,7 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 		t = "search&by=name"
 	}
 
-	req, err := http.NewRequest("GET", aurUrl+"?v=5&type="+t+"&arg="+term, nil)
+	req, err := http.NewRequest("GET", aurUrl+"?v=5&type="+t+"&arg="+url.PathEscape(term), nil)
 	if err != nil {
 		return packages, err
 	}
