@@ -1,10 +1,9 @@
 package args
 
 import (
-	"errors"
 	"strings"
 
-	"github.com/moson-mo/pacseek/internal/util"
+	"github.com/pborman/getopt/v2"
 )
 
 // Flags struct holds our flag options
@@ -15,65 +14,41 @@ type Flags struct {
 	MonochromeMode bool
 	ShowUpdates    bool
 	ShowInstalled  bool
+	Help           bool
 }
 
 // Parse is parsing our arguments and creates a Flags struct from it
-func Parse(args []string) (*Flags, error) {
-	flags := &Flags{}
-	prevFlag := ""
+func Parse() Flags {
+	repos := getopt.String('r', "", "Limit searching to a comma separated list of repositories")
+	term := getopt.String('s', "", "Search-term")
+	ascii := getopt.Bool('a', "ASCII mode")
+	mono := getopt.Bool('m', "Monochrome mode")
+	upd := getopt.Bool('u', "Show updates after startup")
+	inst := getopt.Bool('i', "Show installed packages after startup")
+	help := getopt.BoolLong("help", 'h', "Show usage / help")
+	qhelp := getopt.BoolLong("?", '?', "Show usage / help")
 
-	// set search term to first argument if it's not a flag
-	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
-		flags.SearchTerm = args[0]
+	err := getopt.Getopt(nil)
+	if err != nil {
+		return Flags{
+			Help: true,
+		}
 	}
 
-	for i, flag := range args {
-		// set search term to the last argument if it's not a flag and the previous flag was not a string flag
-		if len(args) == i+1 && !strings.HasPrefix(flag, "-") && !util.SliceContains(stringFlags(), prevFlag) {
-			flags.SearchTerm = flag
-		}
-		// if we have a flag
-		if strings.HasPrefix(flag, "-") {
-			flag = strings.ReplaceAll(flag, "-", "") // strip dashes from flag
-
-			// iterate over characters in flag to allow several options in just one flag, e.g. "-amui"
-			for _, r := range flag {
-				if !util.SliceContains(possibleFlags(), string(r)) {
-					return nil, errors.New("flag not supported: " + flag)
-				}
-				switch r {
-				case 'a':
-					flags.AsciiMode = true
-				case 'm':
-					flags.MonochromeMode = true
-				case 'u':
-					flags.ShowUpdates = true
-				case 'i':
-					flags.ShowInstalled = true
-				case 's':
-					if len(args) <= i+1 {
-						return nil, errors.New("search-term argument is missing")
-					}
-					flags.SearchTerm = args[i+1]
-				case 'r':
-					if len(args) <= i+1 {
-						return nil, errors.New("repositories argument is missing")
-					}
-					flags.Repositories = strings.Split(args[i+1], ",")
-				}
-			}
-		}
-		prevFlag = flag
+	flags := Flags{
+		Repositories:   strings.Split(*repos, ","),
+		SearchTerm:     *term,
+		AsciiMode:      *ascii,
+		MonochromeMode: *mono,
+		ShowUpdates:    *upd,
+		ShowInstalled:  *inst,
 	}
-	flags.SearchTerm = strings.ToLower(flags.SearchTerm)
 
-	return flags, nil
-}
+	flags.Help = *help || *qhelp
 
-func possibleFlags() []string {
-	return []string{"s", "r", "a", "m", "u", "i"}
-}
+	if flags.SearchTerm == "" && len(getopt.Args()) > 0 {
+		flags.SearchTerm = getopt.Args()[0]
+	}
 
-func stringFlags() []string {
-	return []string{"s", "r"}
+	return flags
 }
