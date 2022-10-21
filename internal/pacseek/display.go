@@ -494,7 +494,7 @@ func bestMatch(text string, packages []Package) int {
 	prevRank := 9999
 	for i := 0; i < len(packages); i++ {
 		rank := fuzzy.RankMatch(text, packages[i].Name)
-		if rank < prevRank {
+		if rank < prevRank && rank != -1 {
 			bestMatch = i
 			prevRank = rank
 		}
