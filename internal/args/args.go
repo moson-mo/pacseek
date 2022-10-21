@@ -65,6 +65,8 @@ func Parse(args []string) (*Flags, error) {
 		}
 		prevFlag = flag
 	}
+	flags.SearchTerm = strings.ToLower(flags.SearchTerm)
+
 	return flags, nil
 }
 

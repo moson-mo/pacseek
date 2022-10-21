@@ -17,12 +17,10 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 	client := http.Client{
 		Timeout: time.Millisecond * time.Duration(timeout),
 	}
-	t := "suggest"
-	if mode == "Contains" {
+
+	t := "search"
+	if by == "Name" {
 		t = "search&by=name"
-	}
-	if by == "Name & Description" {
-		t = "search"
 	}
 
 	req, err := http.NewRequest("GET", aurUrl+"?v=5&type="+t+"&arg="+term, nil)
@@ -43,45 +41,33 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 		return packages, err
 	}
 
-	if t == "suggest" {
-		var s []string
-		err = json.Unmarshal(b, &s)
-		if err != nil {
-			return packages, err
-		}
-		for _, pkg := range s {
+	var s RpcResult
+	err = json.Unmarshal(b, &s)
+	if err != nil {
+		return packages, err
+	}
+
+	if s.Error != "" {
+		return packages, errors.New(s.Error)
+	}
+
+	// we need to sort our results here. The official aurweb /rpc endpoint is not ordering by name...
+	sort.Slice(s.Results, func(i, j int) bool {
+		return s.Results[i].Name < s.Results[j].Name
+	})
+
+	i := 0
+	for _, pkg := range s.Results {
+		// filter records
+		if (mode == "StartsWith" && by == "Name" && strings.HasPrefix(pkg.Name, term)) ||
+			(mode == "StartsWith" && by != "Name" && (strings.HasPrefix(pkg.Name, term) || strings.HasPrefix(strings.ToLower(pkg.Description), term))) ||
+			mode == "Contains" {
 			packages = append(packages, Package{
-				Name:   pkg,
-				Source: "AUR",
+				Name:         pkg.Name,
+				Source:       "AUR",
+				LastModified: pkg.LastModified,
+				Popularity:   pkg.Popularity,
 			})
-		}
-	} else {
-		var s RpcResult
-		err = json.Unmarshal(b, &s)
-		if err != nil {
-			return packages, err
-		}
-
-		if s.Error != "" {
-			return packages, errors.New(s.Error)
-		}
-
-		// we need to sort our results here. The official aurweb /rpc endpoint is not ordering by name...
-		sort.Slice(s.Results, func(i, j int) bool {
-			return s.Results[i].Name < s.Results[j].Name
-		})
-
-		i := 0
-		for _, pkg := range s.Results {
-			if (mode == "StartsWith" && (strings.HasPrefix(pkg.Name, term) || strings.HasPrefix(pkg.Description, term))) ||
-				mode == "Contains" {
-				packages = append(packages, Package{
-					Name:         pkg.Name,
-					Source:       "AUR",
-					LastModified: pkg.LastModified,
-					Popularity:   pkg.Popularity,
-				})
-			}
 			if len(packages) >= maxResults {
 				break
 			}

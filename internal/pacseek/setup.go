@@ -346,7 +346,7 @@ func (ps *UI) setupKeyBindings() {
 		}
 		// ENTER
 		if event.Key() == tcell.KeyEnter {
-			ps.lastSearchTerm = ps.inputSearch.GetText()
+			ps.lastSearchTerm = strings.ToLower(ps.inputSearch.GetText())
 			if len(ps.lastSearchTerm) == 0 {
 				ps.displayInstalled(false)
 				return nil

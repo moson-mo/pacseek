@@ -718,7 +718,7 @@ func getDependenciesJoined(i InfoRecord) string {
 // updates the "install state" of all packages in cache and package list
 func (ps *UI) updateInstalledState() {
 	// update cached packages
-	sterm := ps.inputSearch.GetText()
+	sterm := strings.ToLower(ps.inputSearch.GetText())
 	cpkg, exp, found := ps.cacheSearch.GetWithExpiration(sterm)
 	if found {
 		scpkg := cpkg.([]Package)

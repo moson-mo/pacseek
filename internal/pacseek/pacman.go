@@ -72,7 +72,7 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 			}
 
 			if compFunc(pkg.Name(), term) ||
-				(by == "Name & Description" && compFunc(pkg.Description(), term)) {
+				(by == "Name & Description" && compFunc(strings.ToLower(pkg.Description()), term)) {
 				pkg := Package{
 					Name:         pkg.Name(),
 					Source:       db.Name(),
