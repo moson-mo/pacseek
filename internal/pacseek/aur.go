@@ -25,7 +25,14 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 		t = "search"
 	}
 
-	r, err := client.Get(aurUrl + "?v=5&type=" + t + "&arg=" + term)
+	req, err := http.NewRequest("GET", aurUrl+"?v=5&type="+t+"&arg="+term, nil)
+	if err != nil {
+		return packages, err
+	}
+
+	req.Header.Set("User-Agent", "pacseek/"+version)
+
+	r, err := client.Do(req)
 	if err != nil {
 		return packages, err
 	}
@@ -35,6 +42,7 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 	if err != nil {
 		return packages, err
 	}
+
 	if t == "suggest" {
 		var s []string
 		err = json.Unmarshal(b, &s)
@@ -90,16 +98,22 @@ func infoAur(aurUrl string, timeout int, pkg ...string) RpcResult {
 		Timeout: time.Millisecond * time.Duration(timeout),
 	}
 
-	var r *http.Response
-	var err error
-
 	data := url.Values{}
 	data.Add("v", "5")
 	data.Add("type", "info")
 	for _, p := range pkg {
 		data.Add("arg[]", p)
 	}
-	r, err = client.Post(aurUrl, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+
+	req, err := http.NewRequest("POST", aurUrl, strings.NewReader(data.Encode()))
+	if err != nil {
+		return RpcResult{Error: err.Error()}
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", "pacseek/"+version)
+
+	r, err := client.Do(req)
 	if err != nil {
 		return RpcResult{Error: err.Error()}
 	}
