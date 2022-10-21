@@ -36,12 +36,15 @@ func Parse() Flags {
 	}
 
 	flags := Flags{
-		Repositories:   strings.Split(*repos, ","),
 		SearchTerm:     *term,
 		AsciiMode:      *ascii,
 		MonochromeMode: *mono,
 		ShowUpdates:    *upd,
 		ShowInstalled:  *inst,
+	}
+
+	if len(*repos) > 0 {
+		flags.Repositories = strings.Split(*repos, ",")
 	}
 
 	flags.Help = *help || *qhelp
