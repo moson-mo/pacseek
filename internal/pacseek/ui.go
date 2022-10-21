@@ -21,7 +21,7 @@ const (
 	UrlArmPackage   = "https://archlinuxarm.org/packages/%s/%s"
 	UrlRepoPkgbuild = "https://raw.githubusercontent.com/archlinux/svntogit-%s/packages/%s/trunk/PKGBUILD"
 
-	version = "1.7.4"
+	version = "1.7.5"
 )
 
 // UI is holding our application information and all tview components
