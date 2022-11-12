@@ -107,6 +107,9 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 				ps.settingsChanged = true
 			}
 		}).
+		AddCheckbox("Enable Auto-suggest: ", ps.conf.EnableAutoSuggest, func(checked bool) {
+			ps.settingsChanged = true
+		}).
 		AddCheckbox("Compute \"Required by\": ", ps.conf.ComputeRequiredBy, func(checked bool) {
 			ps.settingsChanged = true
 		}).

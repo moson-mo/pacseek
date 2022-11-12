@@ -43,3 +43,22 @@ func MaxLenMapKey(strMap map[string]string) int {
 	}
 	return maxLen
 }
+
+// UniqueStrings merges string slices
+func UniqueStrings(strSlices ...[]string) []string {
+	uniqueMap := map[string]bool{}
+
+	for _, strSlice := range strSlices {
+		for _, str := range strSlice {
+			uniqueMap[str] = true
+		}
+	}
+
+	result := make([]string, 0, len(uniqueMap))
+
+	for key := range uniqueMap {
+		result = append(result, key)
+	}
+
+	return result
+}

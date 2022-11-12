@@ -35,6 +35,9 @@ func (ps *UI) createComponents() {
 		SetTitleAlign(tview.AlignLeft)
 	ps.inputSearch.SetLabelStyle(tcell.StyleDefault.Bold(true)).
 		SetBorder(true)
+	if ps.conf.EnableAutoSuggest {
+		ps.inputSearch.SetAutocompleteFunc(ps.autoComplete)
+	}
 	ps.tableDetails.SetFocusFunc(func() {
 		if ps.flexRight.GetItem(0) == ps.textPkgbuild {
 			ps.app.SetFocus(ps.textPkgbuild)
@@ -91,6 +94,7 @@ func (ps *UI) applyColors() {
 	ps.formSettings.SetTitleColor(ps.conf.Colors().Title).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
 	ps.tableDetails.SetTitleColor(ps.conf.Colors().Title).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
 	ps.inputSearch.SetFieldBackgroundColor(ps.conf.Colors().SearchBar).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+	ps.inputSearch.SetAutocompleteStyles(ps.conf.Colors().SettingsDropdownNotSelected, tcell.StyleDefault, tcell.StyleDefault.Reverse(true))
 	ps.textPkgbuild.SetTitleColor(ps.conf.Colors().Title).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
 	ps.tableNews.SetTitleColor(ps.conf.Colors().Title).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
 	ps.tablePackages.SetBackgroundColor(ps.conf.Colors().DefaultBackground)
@@ -190,10 +194,9 @@ func (ps *UI) setupKeyBindings() {
 		settingsVisible := ps.flexRight.GetItem(0) == ps.formSettings
 		pkgbuildVisible := ps.flexRight.GetItem(0) == ps.textPkgbuild
 
-		// CTRL+Q - Quit
+		// CTRL+Q / ESC - Quit
 		if event.Key() == tcell.KeyCtrlQ ||
-			(event.Key() == tcell.KeyEscape && !settingsVisible && !pkgbuildVisible) {
-			ps.alpmHandle.Release()
+			(event.Key() == tcell.KeyEscape && !settingsVisible && !pkgbuildVisible && !ps.conf.EnableAutoSuggest) {
 			if !ps.settingsChanged {
 				if ps.conf.SaveWindowLayout {
 					ps.conf.LeftProportion = ps.leftProportion
@@ -337,24 +340,26 @@ func (ps *UI) setupKeyBindings() {
 		return false
 	})
 
-	// search
-	ps.inputSearch.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// TAB / Down
-		if event.Key() == tcell.KeyTAB || event.Key() == tcell.KeyDown {
-			ps.app.SetFocus(ps.tablePackages)
-			return nil
-		}
-		// ENTER
-		if event.Key() == tcell.KeyEnter {
+	// input field
+	// ENTER / TAB
+	ps.inputSearch.SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEnter {
 			ps.lastSearchTerm = strings.ToLower(ps.inputSearch.GetText())
 			if len(ps.lastSearchTerm) == 0 {
 				ps.displayInstalled(false)
-				return nil
+				return
 			} else if len(ps.lastSearchTerm) < 2 {
 				ps.displayMessage("Minimum number of characters is 2", true)
-				return nil
+				return
 			}
 			ps.displayPackages(ps.lastSearchTerm)
+		} else if key == tcell.KeyTAB {
+			ps.app.SetFocus(ps.tablePackages)
+		}
+	}).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// Down
+		if event.Key() == tcell.KeyDown && !ps.conf.EnableAutoSuggest {
+			ps.app.SetFocus(ps.tablePackages)
 			return nil
 		}
 		// CTRL+Right
@@ -550,6 +555,13 @@ func (ps *UI) saveSettings(defaults bool) {
 				ps.conf.SaveWindowLayout = cb.IsChecked()
 			case "Transparent: ":
 				ps.conf.Transparent = cb.IsChecked()
+			case "Enable Auto-suggest: ":
+				ps.conf.EnableAutoSuggest = cb.IsChecked()
+				if ps.conf.EnableAutoSuggest {
+					ps.inputSearch.SetAutocompleteFunc(ps.autoComplete)
+				} else {
+					ps.inputSearch.SetAutocompleteFunc(nil)
+				}
 			}
 		}
 	}

@@ -93,6 +93,17 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 	return packages, installed, nil
 }
 
+func suggestRepos(h *alpm.Handle, term string) []string {
+	pkgs, _, _ := searchRepos(h, term, "", "", 20)
+
+	names := []string{}
+	for _, pkg := range pkgs {
+		names = append(names, pkg.Name)
+	}
+
+	return names
+}
+
 // create/update temporary sync DB
 func syncToTempDB(confPath string, repos []string) (*alpm.Handle, error) {
 	// check if fakeroot is installed

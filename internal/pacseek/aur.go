@@ -120,3 +120,36 @@ func infoAur(aurUrl string, timeout int, pkg ...string) RpcResult {
 
 	return p
 }
+
+// calls the AUR rpc API (suggest type) and returns package names
+func suggestAur(aurUrl, term string, timeout int) []string {
+	packages := []string{}
+	client := http.Client{
+		Timeout: time.Millisecond * time.Duration(timeout),
+	}
+
+	req, err := http.NewRequest("GET", aurUrl+"?v=5&type=suggest&arg="+url.PathEscape(term), nil)
+	if err != nil {
+		return packages
+	}
+
+	req.Header.Set("User-Agent", "pacseek/"+version)
+
+	r, err := client.Do(req)
+	if err != nil {
+		return packages
+	}
+
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		return packages
+	}
+
+	err = json.Unmarshal(b, &packages)
+	if err != nil {
+		return packages
+	}
+
+	return packages
+}

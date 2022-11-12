@@ -9,6 +9,7 @@ import (
 	"github.com/Jguer/go-alpm/v2"
 	"github.com/gdamore/tcell/v2"
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	"github.com/moson-mo/pacseek/internal/util"
 	"github.com/rivo/tview"
 )
 
@@ -485,6 +486,36 @@ func (ps *UI) displayInstalled(displayUpdatesAfter bool) {
 			}
 		})
 	}()
+}
+
+// auto-complete function for our input field
+func (ps *UI) autoComplete(text string) []string {
+	if len(text) > 1 {
+		cached, found := ps.cacheSearch.Get("suggest-" + text)
+		if found {
+			return cached.([]string)
+		}
+
+		go func() {
+			ps.locker.Lock()
+			defer ps.locker.Unlock()
+			repo := suggestRepos(ps.alpmHandle, text)
+			aur := suggestAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout)
+
+			max := 20
+			results := util.UniqueStrings(repo, aur)
+			sort.Strings(results)
+			if len(results) < max {
+				max = len(results)
+			}
+
+			ps.cacheSearch.Add("suggest-"+text, results[:max], time.Duration(ps.conf.CacheExpiry)*time.Minute)
+
+			ps.inputSearch.Autocomplete()
+			ps.app.Draw()
+		}()
+	}
+	return []string{}
 }
 
 // returns index of best matching package name

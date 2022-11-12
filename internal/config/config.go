@@ -38,6 +38,7 @@ type Settings struct {
 	LeftProportion          int
 	Transparent             bool
 	PackageColumnWidth      int
+	EnableAutoSuggest       bool
 	colors                  Colors
 	glyphs                  Glyphs
 }
@@ -73,6 +74,7 @@ func Defaults() *Settings {
 		LeftProportion:         4,
 		Transparent:            false,
 		PackageColumnWidth:     0,
+		EnableAutoSuggest:      false,
 	}
 
 	return &s
