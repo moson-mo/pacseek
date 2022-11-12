@@ -3,7 +3,6 @@ package pacseek
 import (
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -36,13 +35,9 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 	}
 
 	defer r.Body.Close()
-	b, err := io.ReadAll(r.Body)
-	if err != nil {
-		return packages, err
-	}
 
 	var s RpcResult
-	err = json.Unmarshal(b, &s)
+	err = json.NewDecoder(r.Body).Decode(&s)
 	if err != nil {
 		return packages, err
 	}
@@ -105,12 +100,9 @@ func infoAur(aurUrl string, timeout int, pkg ...string) RpcResult {
 	}
 
 	defer r.Body.Close()
-	b, err := io.ReadAll(r.Body)
-	if err != nil {
-		return RpcResult{Error: err.Error()}
-	}
+
 	var p RpcResult
-	err = json.Unmarshal(b, &p)
+	err = json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
 		return RpcResult{Error: err.Error()}
 	}
@@ -141,12 +133,7 @@ func suggestAur(aurUrl, term string, timeout int) []string {
 	}
 
 	defer r.Body.Close()
-	b, err := io.ReadAll(r.Body)
-	if err != nil {
-		return packages
-	}
-
-	err = json.Unmarshal(b, &packages)
+	err = json.NewDecoder(r.Body).Decode(&packages)
 	if err != nil {
 		return packages
 	}
