@@ -1,6 +1,7 @@
 package pacseek
 
 import (
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -52,7 +53,7 @@ func (ps *UI) createComponents() {
 	ps.tablePackages.SetSelectable(true, false).
 		SetFixed(1, 1).
 		SetBorder(true).
-		SetTitleAlign(tview.AlignLeft)
+		SetTitleAlign(tview.AlignRight)
 	ps.spinner.SetText("").
 		SetBorder(true)
 	ps.formSettings.
@@ -420,6 +421,7 @@ func (ps *UI) setupKeyBindings() {
 			ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
 		}
 		ps.displayPackageInfo(row, column)
+		ps.tablePackages.SetTitle(fmt.Sprintf(" (%d/%d) ", row, ps.tablePackages.GetRowCount()-1))
 	})
 
 	// PKGBUILD
