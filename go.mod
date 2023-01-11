@@ -6,7 +6,7 @@ require (
 	github.com/Jguer/go-alpm/v2 v2.1.2
 	github.com/Morganamilo/go-pacmanconf v0.0.0-20210502114700-cff030e927a5
 	github.com/alecthomas/chroma v0.10.0
-	github.com/gdamore/tcell/v2 v2.5.4
+	github.com/gdamore/tcell/v2 v2.5.5-0.20230109002058-5e9dd83b5281
 	github.com/lithammer/fuzzysearch v1.1.5
 	github.com/mmcdole/gofeed v1.1.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
