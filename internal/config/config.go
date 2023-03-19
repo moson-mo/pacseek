@@ -46,7 +46,7 @@ type Settings struct {
 // Defaults returns the default settings
 func Defaults() *Settings {
 	s := Settings{
-		AurRpcUrl:              "https://server.moson.rocks/rpc",
+		AurRpcUrl:              "https://aurapi.moson.org/rpc",
 		AurTimeout:             5000,
 		AurSearchDelay:         500,
 		DisableAur:             false,
@@ -188,6 +188,12 @@ func (s *Settings) applyUpgradeFixes() {
 	}
 	if s.FeedMaxItems == 0 {
 		s.FeedMaxItems = def.FeedMaxItems
+		fixApplied = true
+	}
+
+	// URL change added with 1.7.8
+	if s.AurRpcUrl == "https://server.moson.rocks/rpc" {
+		s.AurRpcUrl = "https://aurapi.moson.org/rpc"
 		fixApplied = true
 	}
 
