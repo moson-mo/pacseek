@@ -21,6 +21,8 @@ const (
 	UrlArmPackage   = "https://archlinuxarm.org/packages/%s/%s"
 	UrlRepoPkgbuild = "https://raw.githubusercontent.com/archlinux/svntogit-%s/packages/%s/trunk/PKGBUILD"
 
+	UrlAurMaintainer = "https://aur.archlinux.org/packages?SeB=m&K=%s"
+
 	version = "1.7.7"
 )
 

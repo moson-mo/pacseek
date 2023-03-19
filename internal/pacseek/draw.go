@@ -294,6 +294,12 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 						return true
 					})
 				}
+				if k == "Maintainer" && i.Source == "AUR" {
+					cell.SetClickedFunc(func() bool {
+						exec.Command("xdg-open", fmt.Sprintf(UrlAurMaintainer, v)).Start()
+						return true
+					})
+				}
 				ps.tableDetails.SetCell(r, 1, cell)
 				r++
 			}
