@@ -508,7 +508,7 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 		ps.tablePackages.SetCell(i+1, 0, &tview.TableCell{
 			Text:            pkg.Name,
 			Color:           tcell.ColorWhite,
-			BackgroundColor: tcell.ColorBlack,
+			BackgroundColor: ps.conf.Colors().DefaultBackground,
 			MaxWidth:        pkgwidth,
 		}).
 			SetCell(i+1, 1, &tview.TableCell{
@@ -517,6 +517,7 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 				BackgroundColor: ps.conf.Colors().DefaultBackground,
 			}).
 			SetCell(i+1, 2, &tview.TableCell{
+				Color:       ps.conf.Colors().DefaultBackground,
 				Text:        ps.getInstalledStateText(pkg.IsInstalled),
 				Expansion:   1000,
 				Reference:   pkg.IsInstalled,
@@ -765,9 +766,11 @@ func (ps *UI) getInstalledStateText(isInstalled bool) string {
 		colStrInstalled = "[white:black:b]"
 	}
 
-	ret := "[white:black:-]" + glyphs.PrefixState + colStrInstalled + installed + "[white:black:-]" + glyphs.SuffixState
+	whiteBlack := "[white:black:-]"
 	if ps.conf.Colors().DefaultBackground == tcell.ColorDefault {
-		ret = strings.Replace(ret, ":black:", ":-:", -1)
+		whiteBlack = "[white:-:-]"
 	}
+	ret := whiteBlack + glyphs.PrefixState + colStrInstalled + installed + whiteBlack + glyphs.SuffixState
+
 	return ret
 }

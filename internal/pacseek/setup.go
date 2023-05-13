@@ -99,6 +99,7 @@ func (ps *UI) applyColors() {
 	ps.textPkgbuild.SetTitleColor(ps.conf.Colors().Title).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
 	ps.tableNews.SetTitleColor(ps.conf.Colors().Title).SetBackgroundColor(ps.conf.Colors().DefaultBackground)
 	ps.tablePackages.SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+	ps.tablePackages.SetSelectedStyle(tcell.StyleDefault.Reverse(true))
 	ps.spinner.SetBackgroundColor(ps.conf.Colors().DefaultBackground)
 
 	// settings form
@@ -112,14 +113,22 @@ func (ps *UI) applyColors() {
 	// package list
 	ps.drawPackageListHeader(ps.conf.PackageColumnWidth)
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
-		c := ps.tablePackages.GetCell(i, 1)
+		// Package
+		c := ps.tablePackages.GetCell(i, 0)
+		c.SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+
+		// Source
+		c = ps.tablePackages.GetCell(i, 1)
 		col := ps.conf.Colors().PackagelistSourceRepository
 		if c.Text == "AUR" {
 			col = ps.conf.Colors().PackagelistSourceAUR
 		}
 		c.SetTextColor(col)
 		c.SetBackgroundColor(ps.conf.Colors().DefaultBackground)
+
+		// Installed
 		c = ps.tablePackages.GetCell(i, 2)
+		c.SetTextColor(ps.conf.Colors().DefaultBackground)
 		c.SetText(ps.getInstalledStateText(c.Reference.(bool)))
 	}
 
