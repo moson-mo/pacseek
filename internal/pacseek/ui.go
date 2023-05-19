@@ -19,7 +19,7 @@ const (
 	UrlAurPkgbuild  = "https://raw.githubusercontent.com/archlinux/aur/%s/PKGBUILD"
 	UrlPackage      = "https://archlinux.org/packages/%s/%s/%s"
 	UrlArmPackage   = "https://archlinuxarm.org/packages/%s/%s"
-	UrlRepoPkgbuild = "https://raw.githubusercontent.com/archlinux/svntogit-%s/packages/%s/trunk/PKGBUILD"
+	UrlRepoPkgbuild = "https://gitlab.archlinux.org/archlinux/packaging/packages/%s/-/raw/main/PKGBUILD"
 
 	UrlAurMaintainer = "https://aur.archlinux.org/packages?SeB=m&K=%s"
 
@@ -147,7 +147,7 @@ func (ps *UI) Start() error {
 
 // getArchRepos returns a list of Arch Linux repositories
 func getArchRepos() []string {
-	return []string{"core", "community", "community-testing", "extra", "kde-unstable", "multilib", "multilib-testing", "testing"}
+	return []string{"core", "core-testing", "extra", "extra-testing", "multilib", "multilib-testing", "kde-unstable"}
 }
 
 // getArchArmRepos returns a list of Arch Linux ARM repositories
