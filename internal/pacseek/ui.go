@@ -147,7 +147,7 @@ func (ps *UI) Start() error {
 
 // getArchRepos returns a list of Arch Linux repositories
 func getArchRepos() []string {
-	return []string{"core", "core-testing", "extra", "extra-testing", "multilib", "multilib-testing", "kde-unstable"}
+	return []string{"core", "core-testing", "extra", "extra-testing", "multilib", "multilib-testing", "kde-unstable", "gnome-unstable"}
 }
 
 // getArchArmRepos returns a list of Arch Linux ARM repositories
