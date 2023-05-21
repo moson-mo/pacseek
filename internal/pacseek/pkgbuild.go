@@ -10,12 +10,19 @@ import (
 	"github.com/moson-mo/pacseek/internal/util"
 )
 
+type RegexReplace struct {
+	repl  string
+	match *regexp.Regexp
+}
+
 // regex replacements for Gitlab URL's
-// https://gitlab.archlinux.org/archlinux/devtools/-/blob/b519c8128e59e5431e2854b322e8b3a0088643cc/src/lib/api/gitlab.sh#L87
-var gitlabRepl = map[string]*regexp.Regexp{
-	`$1-$2`: regexp.MustCompile(`([a-zA-Z0-9]+)\+([a-zA-Z]+)`),
-	`plus`:  regexp.MustCompile(`\+`),
-	`-`:     regexp.MustCompile(`[^a-zA-Z0-9_\-\.]`),
+// https://gitlab.archlinux.org/archlinux/devtools/-/blob/6ce666a1669235749c17d5c44d8a24dea4a135da/src/lib/api/gitlab.sh#L95
+var gitlabRepl = []RegexReplace{
+	{repl: `$1-$2`, match: regexp.MustCompile(`([a-zA-Z0-9]+)\+([a-zA-Z]+)`)},
+	{repl: `plus`, match: regexp.MustCompile(`\+`)},
+	{repl: `-`, match: regexp.MustCompile(`[^a-zA-Z0-9_\-\.]`)},
+	{repl: `-`, match: regexp.MustCompile(`[_\-]{2,}`)},
+	{repl: `unix-tree`, match: regexp.MustCompile(`^tree$`)},
 }
 
 // download the PKGBUILD file
@@ -43,8 +50,8 @@ func getPkgbuildUrl(source, base string) string {
 }
 
 func encodePackageGitlabUrl(pkgname string) string {
-	for rep, regex := range gitlabRepl {
-		pkgname = regex.ReplaceAllString(pkgname, rep)
+	for _, regex := range gitlabRepl {
+		pkgname = regex.match.ReplaceAllString(pkgname, regex.repl)
 	}
 	return pkgname
 }
