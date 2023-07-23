@@ -41,6 +41,7 @@ Wiki:    https://github.com/moson-mo/pacseek/wiki
 func main() {
 	if os.Getuid() == 0 {
 		fmt.Println("pacseek should not be run as root.")
+		os.Exit(1)
 	}
 
 	f := args.Parse()
