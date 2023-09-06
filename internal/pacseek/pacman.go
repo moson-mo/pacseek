@@ -262,6 +262,7 @@ func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) RpcResul
 			deps := []string{}
 			makedeps := []string{}
 			odeps := []string{}
+			cdeps := []string{}
 			prov := []string{}
 			conf := []string{}
 			for _, d := range p.Depends().Slice() {
@@ -272,6 +273,9 @@ func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) RpcResul
 			}
 			for _, d := range p.OptionalDepends().Slice() {
 				odeps = append(odeps, d.Name)
+			}
+			for _, d := range p.CheckDepends().Slice() {
+				cdeps = append(cdeps, d.Name)
 			}
 
 			i := InfoRecord{
@@ -285,6 +289,7 @@ func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) RpcResul
 				Depends:      deps,
 				MakeDepends:  makedeps,
 				OptDepends:   odeps,
+				CheckDepends: cdeps,
 				URL:          p.URL(),
 				LastModified: int(p.BuildDate().UTC().Unix()),
 				Source:       db.Name(),
@@ -294,7 +299,11 @@ func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) RpcResul
 			}
 
 			if computeRequiredBy {
-				i.RequiredBy = p.ComputeRequiredBy()
+				optFor := p.ComputeOptionalFor()
+				for i, pkg := range optFor {
+					optFor[i] = pkg + " (opt)"
+				}
+				i.RequiredBy = append(p.ComputeRequiredBy(), optFor...)
 			}
 			if lpkg := local.Pkg(p.Name()); lpkg != nil {
 				i.LocalVersion = lpkg.Version()

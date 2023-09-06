@@ -712,16 +712,25 @@ func getDependenciesJoined(i InfoRecord) string {
 	if odeps != "" {
 		odeps += " (opt)"
 	}
-
-	deps := strings.Join(i.Depends, ", ")
-	if deps != "" && mdeps != "" {
-		deps += "\n"
+	cdeps := strings.Join(i.CheckDepends, " (check), ")
+	if cdeps != "" {
+		cdeps += " (check)"
 	}
-	deps += mdeps
+	deps := strings.Join(i.Depends, ", ")
+
 	if deps != "" && odeps != "" {
 		deps += "\n"
 	}
 	deps += odeps
+	if deps != "" && mdeps != "" {
+		deps += "\n"
+	}
+	deps += mdeps
+	if deps != "" && cdeps != "" {
+		deps += "\n"
+	}
+	deps += cdeps
+
 	return deps
 }
 
