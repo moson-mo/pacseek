@@ -265,6 +265,7 @@ func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) RpcResul
 			cdeps := []string{}
 			prov := []string{}
 			conf := []string{}
+
 			for _, d := range p.Depends().Slice() {
 				deps = append(deps, d.Name)
 			}
@@ -276,6 +277,12 @@ func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) RpcResul
 			}
 			for _, d := range p.CheckDepends().Slice() {
 				cdeps = append(cdeps, d.Name)
+			}
+			for _, pr := range p.Provides().Slice() {
+				prov = append(prov, pr.Name)
+			}
+			for _, c := range p.Conflicts().Slice() {
+				conf = append(conf, c.Name)
 			}
 
 			i := InfoRecord{
