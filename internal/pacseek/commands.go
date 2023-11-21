@@ -25,6 +25,9 @@ func (ps *UI) installPackage(pkg InfoRecord, installed bool) {
 		command += " " + pkg.Name
 	}
 
+	// replace optdepends
+	command = strings.Replace(command, "{optdepends}", strings.Join(pkg.OptDepends, " "), -1)
+
 	// replace {giturl} with AUR url if defined
 	if pkg.Source == "AUR" {
 		command = strings.Replace(command, "{giturl}", "https://aur.archlinux.org/"+pkg.PackageBase+".git", -1)
