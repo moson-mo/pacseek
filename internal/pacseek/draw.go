@@ -238,7 +238,7 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 	maxLen := util.MaxLenMapKey(fields)
 	for _, k := range order {
 		if v, ok := fields[k]; ok && v != "" {
-			if ln == 1 || k == "Last modified" {
+			if ln == 1 {
 				r++
 			}
 			// split lines if they do not fit on the screen
@@ -307,6 +307,9 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 				r++
 			}
 			ln++
+			if k == "Package URL" {
+				r++
+			}
 		}
 	}
 	ps.tableDetails.ScrollToBeginning()
@@ -655,51 +658,51 @@ func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 	order := []string{
 		"Description",
 		"Version",
-		"Provides",
-		"Conflicts",
-		"Licenses",
 		"Maintainer",
-		"Dependencies",
-		"Required by",
-		"URL",
+		"Licenses",
 		"Votes",
 		"Popularity",
 		"Last modified",
 		"Flagged out of date",
+		"URL",
 		"Package URL",
+		"Provides",
+		"Conflicts",
+		"Required by",
+		"Dependencies",
 		" Show PKGBUILD", //the space in front is an ugly alignment hack ;)
 	}
 
 	fields := map[string]string{}
-	fields[order[0]] = i.Description
-	fields[order[1]] = i.Version
-	fields[order[2]] = strings.Join(i.Provides, ", ")
-	fields[order[3]] = strings.Join(i.Conflicts, ", ")
-	fields[order[4]] = strings.Join(i.License, ", ")
-	fields[order[5]] = i.Maintainer
-	fields[order[6]] = getDependenciesJoined(i, ps.getInstalledStateText(true), ps.getInstalledStateText(false), ps.conf.SepDepsWithNewLine)
-	fields[order[7]] = strings.Join(i.RequiredBy, ", ")
-	fields[order[8]] = i.URL
+	fields["Description"] = i.Description
+	fields["Version"] = i.Version
+	fields["Provides"] = strings.Join(i.Provides, ", ")
+	fields["Conflicts"] = strings.Join(i.Conflicts, ", ")
+	fields["Licenses"] = strings.Join(i.License, ", ")
+	fields["Maintainer"] = i.Maintainer
+	fields["Dependencies"] = getDependenciesJoined(i, ps.getInstalledStateText(true), ps.getInstalledStateText(false), ps.conf.SepDepsWithNewLine)
+	fields["Required by"] = strings.Join(i.RequiredBy, ", ")
+	fields["URL"] = i.URL
 	if i.Source == "AUR" {
-		fields[order[9]] = fmt.Sprintf("%d", i.NumVotes)
-		fields[order[10]] = fmt.Sprintf("%f", i.Popularity)
-		fields[order[13]] = fmt.Sprintf(UrlAurPackage, i.Name)
+		fields["Votes"] = fmt.Sprintf("%d", i.NumVotes)
+		fields["Popularity"] = fmt.Sprintf("%f", i.Popularity)
+		fields["Package URL"] = fmt.Sprintf(UrlAurPackage, i.Name)
 	} else if (!ps.isArm && util.SliceContains(getArchRepos(), i.Source)) ||
 		ps.isArm && util.SliceContains(getArchArmRepos(), i.Source) {
 		if ps.isArm {
-			fields[order[13]] = fmt.Sprintf(UrlArmPackage, i.Architecture, i.Name)
+			fields["Package URL"] = fmt.Sprintf(UrlArmPackage, i.Architecture, i.Name)
 		} else {
-			fields[order[13]] = fmt.Sprintf(UrlPackage, i.Source, i.Architecture, i.Name)
+			fields["Package URL"] = fmt.Sprintf(UrlPackage, i.Source, i.Architecture, i.Name)
 		}
 	}
 	if i.LastModified != 0 {
-		fields[order[11]] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
+		fields["Last modified"] = time.Unix(int64(i.LastModified), 0).UTC().Format("2006-01-02 - 15:04:05 (UTC)")
 	}
 	if i.OutOfDate != 0 {
-		fields[order[12]] = time.Unix(int64(i.OutOfDate), 0).UTC().Format("[red]2006-01-02 - 15:04:05 (UTC)")
+		fields["Flagged out of date"] = time.Unix(int64(i.OutOfDate), 0).UTC().Format("[red]2006-01-02 - 15:04:05 (UTC)")
 	}
 	if !ps.isArm || (ps.isArm && i.Source == "AUR") {
-		fields[order[14]] = ps.getPkgbuildCommand(i.Source, i.PackageBase)
+		fields[" Show PKGBUILD"] = ps.getPkgbuildCommand(i.Source, i.PackageBase)
 	}
 
 	return fields, order
