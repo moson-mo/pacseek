@@ -39,6 +39,7 @@ type Settings struct {
 	Transparent             bool
 	PackageColumnWidth      int
 	EnableAutoSuggest       bool
+	SepDepsWithNewLine      bool
 	colors                  Colors
 	glyphs                  Glyphs
 }
@@ -75,6 +76,7 @@ func Defaults() *Settings {
 		Transparent:            false,
 		PackageColumnWidth:     0,
 		EnableAutoSuggest:      false,
+		SepDepsWithNewLine:     true,
 	}
 
 	return &s

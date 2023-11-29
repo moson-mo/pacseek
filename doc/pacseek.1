@@ -454,12 +454,21 @@ The default is
 .IR false .
 
 .TP
-.BI "\(dqPackageColumnWidth\(dq\fR: " bool
+.BI "\(dqPackageColumnWidth\(dq\fR: " number
 The width for the package column.
 Set it to 0 to dynamically adjust the width.
 
 The default is
 .IR 0.
+
+.TP
+.BI "\(dqSepDepsWithNewLine\(dq\fR: " bool
+When enabled, pacseek will separate the list of
+.B Dependencies
+(in the details) with a new line instead of comma.
+
+The default is
+.IR true .
 
 .SS Glyph customization
 

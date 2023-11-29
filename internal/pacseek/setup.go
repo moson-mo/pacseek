@@ -573,6 +573,8 @@ func (ps *UI) saveSettings(defaults bool) {
 				} else {
 					ps.inputSearch.SetAutocompleteFunc(nil)
 				}
+			case "Separate Deps with Newline: ":
+				ps.conf.SepDepsWithNewLine = cb.IsChecked()
 			}
 		}
 	}

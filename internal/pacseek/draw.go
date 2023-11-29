@@ -165,6 +165,9 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 		width, _ := strconv.Atoi(text)
 		ps.drawPackageListContent(ps.shownPackages, width)
 	})
+	ps.formSettings.AddCheckbox("Separate Deps with Newline: ", ps.conf.SepDepsWithNewLine, func(checked bool) {
+		ps.settingsChanged = true
+	})
 
 	ps.applyDropDownColors()
 
@@ -674,7 +677,7 @@ func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 	fields[order[3]] = strings.Join(i.Conflicts, ", ")
 	fields[order[4]] = strings.Join(i.License, ", ")
 	fields[order[5]] = i.Maintainer
-	fields[order[6]] = getDependenciesJoined(i, ps.getInstalledStateText(true))
+	fields[order[6]] = getDependenciesJoined(i, ps.getInstalledStateText(true), ps.getInstalledStateText(false), ps.conf.SepDepsWithNewLine)
 	fields[order[7]] = strings.Join(i.RequiredBy, ", ")
 	fields[order[8]] = i.URL
 	if i.Source == "AUR" {
@@ -703,19 +706,26 @@ func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 }
 
 // join and format different dependencies as string
-func getDependenciesJoined(i InfoRecord, installedIcon string) string {
+func getDependenciesJoined(i InfoRecord, installedIcon, notInstalledicon string, newline bool) string {
 	deps := []string{}
 	for _, dep := range i.DepsAndSatisfiers {
-		add := dep.DepName
+		add := ""
 		if dep.Installed {
 			add += installedIcon
+		} else {
+			add += notInstalledicon
 		}
+		add += " " + dep.DepName
 		if dep.DepType != "dep" {
 			add += " (" + dep.DepType + ")"
 		}
 		deps = append(deps, add)
 	}
-	return strings.Join(deps, ", ")
+	separator := ", "
+	if newline {
+		separator = "\n"
+	}
+	return strings.Join(deps, separator)
 }
 
 // updates the "install state" of all packages in cache and package list
