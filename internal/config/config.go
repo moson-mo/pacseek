@@ -68,6 +68,7 @@ func Defaults() *Settings {
 		ShowPkgbuildInternally: true,
 		ComputeRequiredBy:      false,
 		GlyphStyle:             defaultGlyphStyle,
+		glyphs:                 glyphStyles[defaultGlyphStyle],
 		DisableNewsFeed:        false,
 		FeedURLs:               "https://archlinux.org/feeds/news/",
 		FeedMaxItems:           5,
