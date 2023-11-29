@@ -220,7 +220,9 @@ func getInstalled(h *alpm.Handle, computeRequiredBy bool) ([]InfoRecord, []strin
 		}
 	}
 
-	return infoPacman(h, computeRequiredBy, installed...).Results, notFound
+	results := infoPacman(h, computeRequiredBy, installed...).Results
+	addLocalSatisfiers(h, results...)
+	return results, notFound
 }
 
 // checks the local db if a package is installed
@@ -234,8 +236,8 @@ func isPackageInstalled(h *alpm.Handle, pkg string) bool {
 }
 
 // retrieves package information from the pacman DB's and returns it in the same format as the AUR call
-func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) RpcResult {
-	r := RpcResult{
+func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) SearchResults {
+	r := SearchResults{
 		Results: []InfoRecord{},
 	}
 
@@ -267,22 +269,22 @@ func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) RpcResul
 			conf := []string{}
 
 			for _, d := range p.Depends().Slice() {
-				deps = append(deps, d.Name)
+				deps = append(deps, d.String())
 			}
 			for _, d := range p.MakeDepends().Slice() {
-				makedeps = append(makedeps, d.Name)
+				makedeps = append(makedeps, d.String())
 			}
 			for _, d := range p.OptionalDepends().Slice() {
-				odeps = append(odeps, d.Name)
+				odeps = append(odeps, d.String())
 			}
 			for _, d := range p.CheckDepends().Slice() {
-				cdeps = append(cdeps, d.Name)
+				cdeps = append(cdeps, d.String())
 			}
 			for _, pr := range p.Provides().Slice() {
-				prov = append(prov, pr.Name)
+				prov = append(prov, pr.String())
 			}
 			for _, c := range p.Conflicts().Slice() {
-				conf = append(conf, c.Name)
+				conf = append(conf, c.String())
 			}
 
 			i := InfoRecord{
@@ -326,4 +328,41 @@ func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) RpcResul
 	}
 
 	return r
+}
+
+// add locally installed satisfiers to pacakge info records
+func addLocalSatisfiers(h *alpm.Handle, pkgs ...InfoRecord) {
+	local, err := h.LocalDB()
+
+	for i := 0; i < len(pkgs); i++ {
+		depList := []struct {
+			deptype string
+			deps    []string
+		}{
+			{"dep", pkgs[i].Depends},
+			{"opt", pkgs[i].OptDepends},
+			{"make", pkgs[i].MakeDepends},
+			{"check", pkgs[i].CheckDepends},
+		}
+
+		satisfiers := []DependencySatisfier{}
+		for _, entry := range depList {
+			for _, dep := range entry.deps {
+				sat := DependencySatisfier{
+					DepName:   dep,
+					DepType:   entry.deptype,
+					Installed: false,
+				}
+				if err == nil {
+					found, _ := local.PkgCache().FindSatisfier(dep)
+					if found != nil {
+						sat.Satisfier = found.Name()
+						sat.Installed = true
+					}
+				}
+				satisfiers = append(satisfiers, sat)
+			}
+		}
+		pkgs[i].DepsAndSatisfiers = satisfiers
+	}
 }

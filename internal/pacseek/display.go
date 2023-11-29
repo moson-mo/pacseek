@@ -116,26 +116,21 @@ func (ps *UI) displayPackages(text string) {
 func (ps *UI) cacheSearchAndPackageInfo(packages []Package, searchTerm string) {
 	// get string slices for AUR and repo packages
 	aurPkgs := []string{}
+	repoPkgs := []string{}
 	for _, pkg := range packages {
 		if pkg.Source == "AUR" {
 			aurPkgs = append(aurPkgs, pkg.Name)
-		}
-	}
-	repoPkgs := []string{}
-	for _, pkg := range packages {
-		if pkg.Source != "AUR" {
+		} else {
 			repoPkgs = append(repoPkgs, pkg.Name)
 		}
 	}
 
 	// get detailed package information for all packages and add to cache
 	if !ps.conf.DisableCache {
-		aurInfos := infoAur(ps.conf.AurRpcUrl, ps.conf.AurTimeout, aurPkgs...)
-		for _, pkg := range aurInfos.Results {
-			ps.cacheInfo.Set(pkg.Name+"-"+pkg.Source, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
-		}
-		repoInfos := infoPacman(ps.alpmHandle, ps.conf.ComputeRequiredBy, repoPkgs...)
-		for _, pkg := range repoInfos.Results {
+		aurInfos := ps.getInfo("AUR", aurPkgs...)
+		repoInfos := ps.getInfo("repo", repoPkgs...)
+
+		for _, pkg := range append(aurInfos.Results, repoInfos.Results...) {
 			ps.cacheInfo.Set(pkg.Name+"-"+pkg.Source, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)
 		}
 
@@ -153,7 +148,7 @@ func (ps *UI) displayPackageInfo(row, column int) {
 	pkg := ps.tablePackages.GetCell(row, 0).Text
 	source := ps.tablePackages.GetCell(row, 1).Text
 
-	info := RpcResult{}
+	info := SearchResults{}
 
 	showFunc := func() {
 		if !ps.isPackageSelected(pkg, false) {
@@ -198,11 +193,7 @@ func (ps *UI) displayPackageInfo(row, column int) {
 			ps.stopSpinner()
 		}()
 
-		if source == "AUR" {
-			info = infoAur(ps.conf.AurRpcUrl, ps.conf.AurTimeout, pkg)
-		} else {
-			info = infoPacman(ps.alpmHandle, ps.conf.ComputeRequiredBy, pkg)
-		}
+		info = ps.getInfo(source, pkg)
 		if !ps.conf.DisableCache && len(info.Results) == 1 {
 			ps.cacheInfo.Set(pkg+"-"+info.Results[0].Source, info.Results[0], time.Duration(ps.conf.CacheExpiry)*time.Minute)
 		}
@@ -447,7 +438,7 @@ func (ps *UI) displayInstalled(displayUpdatesAfter bool) {
 		}()
 
 		in, nf := getInstalled(ps.alpmHandle, ps.conf.ComputeRequiredBy)
-		aurPkgs := infoAur(ps.conf.AurRpcUrl, ps.conf.AurTimeout, nf...).Results
+		aurPkgs := ps.getInfo("AUR", nf...).Results
 		for _, aurPkg := range aurPkgs {
 			for i := 0; i < len(in); i++ {
 				if in[i].Source == "local" && in[i].Name == aurPkg.Name {

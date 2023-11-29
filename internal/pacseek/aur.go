@@ -36,7 +36,7 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 
 	defer r.Body.Close()
 
-	var s RpcResult
+	var s SearchResults
 	err = json.NewDecoder(r.Body).Decode(&s)
 	if err != nil {
 		return packages, err
@@ -74,7 +74,7 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 }
 
 // calls the AUR rpc API (info type) and returns package information
-func infoAur(aurUrl string, timeout int, pkg ...string) RpcResult {
+func infoAur(aurUrl string, timeout int, pkg ...string) SearchResults {
 	client := http.Client{
 		Timeout: time.Millisecond * time.Duration(timeout),
 	}
@@ -88,7 +88,7 @@ func infoAur(aurUrl string, timeout int, pkg ...string) RpcResult {
 
 	req, err := http.NewRequest("POST", aurUrl, strings.NewReader(data.Encode()))
 	if err != nil {
-		return RpcResult{Error: err.Error()}
+		return SearchResults{Error: err.Error()}
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -96,15 +96,15 @@ func infoAur(aurUrl string, timeout int, pkg ...string) RpcResult {
 
 	r, err := client.Do(req)
 	if err != nil {
-		return RpcResult{Error: err.Error()}
+		return SearchResults{Error: err.Error()}
 	}
 
 	defer r.Body.Close()
 
-	var p RpcResult
+	var p SearchResults
 	err = json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		return RpcResult{Error: err.Error()}
+		return SearchResults{Error: err.Error()}
 	}
 	for i := 0; i < len(p.Results); i++ {
 		p.Results[i].Source = "AUR"

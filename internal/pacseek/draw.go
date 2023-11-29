@@ -674,7 +674,7 @@ func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 	fields[order[3]] = strings.Join(i.Conflicts, ", ")
 	fields[order[4]] = strings.Join(i.License, ", ")
 	fields[order[5]] = i.Maintainer
-	fields[order[6]] = getDependenciesJoined(i)
+	fields[order[6]] = getDependenciesJoined(i, ps.getInstalledStateText(true))
 	fields[order[7]] = strings.Join(i.RequiredBy, ", ")
 	fields[order[8]] = i.URL
 	if i.Source == "AUR" {
@@ -703,35 +703,19 @@ func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 }
 
 // join and format different dependencies as string
-func getDependenciesJoined(i InfoRecord) string {
-	mdeps := strings.Join(i.MakeDepends, " (make), ")
-	if mdeps != "" {
-		mdeps += " (make)"
+func getDependenciesJoined(i InfoRecord, installedIcon string) string {
+	deps := []string{}
+	for _, dep := range i.DepsAndSatisfiers {
+		add := dep.DepName
+		if dep.Installed {
+			add += installedIcon
+		}
+		if dep.DepType != "dep" {
+			add += " (" + dep.DepType + ")"
+		}
+		deps = append(deps, add)
 	}
-	odeps := strings.Join(i.OptDepends, " (opt), ")
-	if odeps != "" {
-		odeps += " (opt)"
-	}
-	cdeps := strings.Join(i.CheckDepends, " (check), ")
-	if cdeps != "" {
-		cdeps += " (check)"
-	}
-	deps := strings.Join(i.Depends, ", ")
-
-	if deps != "" && odeps != "" {
-		deps += "\n"
-	}
-	deps += odeps
-	if deps != "" && mdeps != "" {
-		deps += "\n"
-	}
-	deps += mdeps
-	if deps != "" && cdeps != "" {
-		deps += "\n"
-	}
-	deps += cdeps
-
-	return deps
+	return strings.Join(deps, ", ")
 }
 
 // updates the "install state" of all packages in cache and package list
