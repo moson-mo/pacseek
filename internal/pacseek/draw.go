@@ -312,6 +312,12 @@ func (ps *UI) drawPackageInfo(i InfoRecord, width int) {
 			}
 		}
 	}
+	// check if we got more lines than current screen height
+	_, _, _, height := ps.tableDetails.GetInnerRect()
+	ps.tableDetailsMore = false
+	if r > height-1 {
+		ps.tableDetailsMore = true
+	}
 	ps.tableDetails.ScrollToBeginning()
 }
 

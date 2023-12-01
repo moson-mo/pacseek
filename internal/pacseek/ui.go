@@ -69,6 +69,8 @@ type UI struct {
 	isArm           bool
 	flags           args.Flags
 
+	tableDetailsMore bool
+
 	pkgbuildWriter io.Writer
 }
 

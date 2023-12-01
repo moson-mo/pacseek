@@ -39,16 +39,17 @@ func (ps *UI) createComponents() {
 	if ps.conf.EnableAutoSuggest {
 		ps.inputSearch.SetAutocompleteFunc(ps.autoComplete)
 	}
-	ps.tableDetails.SetFocusFunc(func() {
-		if ps.flexRight.GetItem(0) == ps.textPkgbuild {
-			ps.app.SetFocus(ps.textPkgbuild)
-		} else {
-			ps.app.SetFocus(ps.tablePackages)
-		}
-	}).
+	ps.tableDetails.SetEvaluateAllRows(true).
+		SetFocusFunc(func() {
+			if ps.flexRight.GetItem(0) == ps.textPkgbuild {
+				ps.app.SetFocus(ps.textPkgbuild)
+			} else if !ps.tableDetailsMore {
+				ps.app.SetFocus(ps.tablePackages)
+			}
+		}).
 		SetBorder(true).
 		SetTitleAlign(tview.AlignLeft).
-		SetBorderPadding(1, 1, 1, 1)
+		SetBorderPadding(1, 0, 1, 1)
 	ps.displayHelp()
 	ps.tablePackages.SetSelectable(true, false).
 		SetFixed(1, 1).
@@ -75,6 +76,21 @@ func (ps *UI) createComponents() {
 		SetBorderPadding(1, 1, 1, 1).
 		SetBorder(true).
 		SetTitleAlign(tview.AlignLeft)
+	ps.tableDetails.SetDrawFunc(func(screen tcell.Screen, x, y, width, height int) (int, int, int, int) {
+		// draw "more..." for package details exceeding screen limits
+		_, _, _, innerHeight := ps.tableDetails.GetInnerRect()
+		offset, _ := ps.tableDetails.GetOffset()
+		rowCount := ps.tableDetails.GetRowCount()
+
+		if rowCount-offset > innerHeight {
+			for i, char := range "..." {
+				style := tcell.StyleDefault.Background(ps.conf.Colors().DefaultBackground).
+					Foreground(tcell.ColorWhite)
+				screen.SetContent(x+2+i, y+height-2, char, nil, style)
+			}
+		}
+		return ps.tableDetails.GetInnerRect()
+	})
 
 	// layouting
 	ps.flexRoot.AddItem(ps.flexContainer, 0, 1, true).
@@ -247,7 +263,7 @@ func (ps *UI) setupKeyBindings() {
 		// CTRL+N - Show help/instructions
 		if event.Key() == tcell.KeyCtrlN {
 			ps.displayHelp()
-			if ps.flexRight.GetItem(0) == ps.formSettings {
+			if settingsVisible {
 				ps.flexRight.Clear()
 				ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
 			}
@@ -367,6 +383,7 @@ func (ps *UI) setupKeyBindings() {
 			ps.app.SetFocus(ps.tablePackages)
 		}
 	}).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		itemRight := ps.flexRight.GetItem(0)
 		// Down
 		if event.Key() == tcell.KeyDown && !ps.conf.EnableAutoSuggest {
 			ps.app.SetFocus(ps.tablePackages)
@@ -374,9 +391,12 @@ func (ps *UI) setupKeyBindings() {
 		}
 		// CTRL+Right
 		if event.Key() == tcell.KeyRight &&
-			event.Modifiers() == tcell.ModCtrl &&
-			ps.flexRight.GetItem(0) == ps.formSettings {
-			ps.app.SetFocus(ps.formSettings.GetFormItem(0))
+			event.Modifiers() == tcell.ModCtrl {
+			if itemRight == ps.formSettings {
+				ps.app.SetFocus(ps.formSettings.GetFormItem(0))
+			} else if itemRight == ps.tableDetails && ps.tableDetailsMore {
+				ps.app.SetFocus(ps.tableDetails)
+			}
 			ps.prevComponent = ps.inputSearch
 			return nil
 		}
@@ -387,26 +407,26 @@ func (ps *UI) setupKeyBindings() {
 	ps.tablePackages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// TAB / Up
 		row, _ := ps.tablePackages.GetSelection()
+		itemRight := ps.flexRight.GetItem(0)
 		if event.Key() == tcell.KeyTAB ||
 			(event.Key() == tcell.KeyUp && row <= 1) ||
 			(event.Key() == tcell.KeyUp && event.Modifiers() == tcell.ModCtrl) {
-			if ps.flexRight.GetItem(0) == ps.formSettings && event.Key() == tcell.KeyTAB {
+			if itemRight == ps.formSettings && event.Key() == tcell.KeyTAB {
 				ps.app.SetFocus(ps.formSettings.GetFormItem(0))
-			} else if ps.flexRight.GetItem(0) == ps.textPkgbuild && event.Key() == tcell.KeyTAB {
-				ps.app.SetFocus(ps.textPkgbuild)
+			} else if event.Key() == tcell.KeyTAB {
+				ps.app.SetFocus(itemRight)
 			} else {
 				ps.app.SetFocus(ps.inputSearch)
 			}
 			return nil
 		}
 		// Right
-		if event.Key() == tcell.KeyRight && ps.flexRight.GetItem(0) == ps.formSettings {
+		if event.Key() == tcell.KeyRight && itemRight == ps.formSettings {
 			ps.app.SetFocus(ps.formSettings.GetFormItem(0))
 			ps.prevComponent = ps.tablePackages
 			return nil
-		}
-		if event.Key() == tcell.KeyRight && ps.flexRight.GetItem(0) == ps.textPkgbuild {
-			ps.app.SetFocus(ps.textPkgbuild)
+		} else if event.Key() == tcell.KeyRight {
+			ps.app.SetFocus(itemRight)
 			ps.prevComponent = ps.tablePackages
 			return nil
 		}
@@ -437,6 +457,22 @@ func (ps *UI) setupKeyBindings() {
 	ps.textPkgbuild.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// CTRL+Left
 		if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModCtrl {
+			ps.app.SetFocus(ps.tablePackages)
+			return nil
+		}
+		// TAB
+		if event.Key() == tcell.KeyTAB {
+			ps.app.SetFocus(ps.inputSearch)
+			return nil
+		}
+
+		return event
+	})
+
+	// Package details
+	ps.tableDetails.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// Left
+		if event.Key() == tcell.KeyLeft {
 			ps.app.SetFocus(ps.tablePackages)
 			return nil
 		}
