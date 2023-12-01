@@ -400,6 +400,7 @@ func (ps *UI) setupKeyBindings() {
 			ps.prevComponent = ps.inputSearch
 			return nil
 		}
+
 		return event
 	})
 
@@ -438,6 +439,12 @@ func (ps *UI) setupKeyBindings() {
 		// ENTER
 		if event.Key() == tcell.KeyEnter {
 			ps.installSelectedPackage()
+			return nil
+		}
+		// Down / j / k -> noop: WTF? Prevent lock-up with empty list ;) :(
+		// upstream issue?
+		if (event.Key() == tcell.KeyDown || event.Rune() == 'k' || event.Rune() == 'j') &&
+			ps.tablePackages.GetRowCount() <= 1 {
 			return nil
 		}
 
