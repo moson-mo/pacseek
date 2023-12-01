@@ -10,7 +10,7 @@ require (
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/mmcdole/gofeed v1.2.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/rivo/tview v0.0.0-20231126152417-33a1d271f2b6
+	github.com/rivo/tview v0.0.0-20231024122735-6416d6b23c67
 )
 
 require (
