@@ -405,19 +405,24 @@ func (ps *UI) setupKeyBindings() {
 
 	// packages
 	ps.tablePackages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// TAB / Up
 		row, _ := ps.tablePackages.GetSelection()
 		itemRight := ps.flexRight.GetItem(0)
-		if event.Key() == tcell.KeyTAB ||
-			(event.Key() == tcell.KeyUp && row <= 1) ||
-			(event.Key() == tcell.KeyUp && event.Modifiers() == tcell.ModCtrl) {
-			if itemRight == ps.formSettings && event.Key() == tcell.KeyTAB {
+
+		// TAB
+		if event.Key() == tcell.KeyTAB {
+			if itemRight == ps.formSettings {
 				ps.app.SetFocus(ps.formSettings.GetFormItem(0))
-			} else if event.Key() == tcell.KeyTAB {
+			} else if (itemRight == ps.tableDetails && ps.tableDetailsMore) ||
+				(itemRight == ps.formSettings || itemRight == ps.textPkgbuild) {
 				ps.app.SetFocus(itemRight)
 			} else {
 				ps.app.SetFocus(ps.inputSearch)
 			}
+		}
+		// Up
+		if (event.Key() == tcell.KeyUp && row <= 1) ||
+			(event.Key() == tcell.KeyUp && event.Modifiers() == tcell.ModCtrl) {
+			ps.app.SetFocus(ps.inputSearch)
 			return nil
 		}
 		// Right
