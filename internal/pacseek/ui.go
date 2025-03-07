@@ -23,7 +23,7 @@ const (
 
 	UrlAurMaintainer = "https://aur.archlinux.org/packages?SeB=m&K=%s"
 
-	version = "1.8.4"
+	version = "1.8.5"
 )
 
 // UI is holding our application information and all tview components
