@@ -16,7 +16,7 @@ import (
 
 const (
 	UrlAurPackage   = "https://aur.archlinux.org/packages/%s"
-	UrlAurPkgbuild  = "https://raw.githubusercontent.com/archlinux/aur/%s/PKGBUILD"
+	UrlAurPkgbuild  = "https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=%s"
 	UrlPackage      = "https://archlinux.org/packages/%s/%s/%s"
 	UrlArmPackage   = "https://archlinuxarm.org/packages/%s/%s"
 	UrlRepoPkgbuild = "https://gitlab.archlinux.org/archlinux/packaging/packages/%s/-/raw/main/PKGBUILD"
