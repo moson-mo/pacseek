@@ -16,7 +16,7 @@ jobs:
       - name: Install go, gcc
         shell: bash
         run: |
-          echo 'Server = https://mirror.moson.org/arch/$repo/os/$arch' > /etc/pacman.d/mirrorlist
+          echo 'Server = https://arch.jensgutermuth.de/$repo/os/$arch' > /etc/pacman.d/mirrorlist
           pacman -Syu --noconfirm go gcc
 
       - name: Build
