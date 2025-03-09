@@ -13,6 +13,7 @@ type Glyphs struct {
 	Package      string
 	Installed    string
 	NotInstalled string
+	Marked       string
 	PrefixState  string
 	SuffixState  string
 	Settings     string
@@ -32,6 +33,7 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: "✗",
+			Marked:       "•",
 			Settings:     "🖉  ",
 			Pkgbuild:     "🗒  ",
 			Help:         "🕮  ",
@@ -41,6 +43,7 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: "✗",
+			Marked:       "•",
 			PrefixState:  "[",
 			SuffixState:  "]",
 			Settings:     "🖉  ",
@@ -52,6 +55,7 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: "✗",
+			Marked:       "•",
 			PrefixState:  "(",
 			SuffixState:  ")",
 			Settings:     "🖉  ",
@@ -63,6 +67,7 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: "✗",
+			Marked:       "•",
 			PrefixState:  "{",
 			SuffixState:  "}",
 			Settings:     "🖉  ",
@@ -74,6 +79,7 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: "✗",
+			Marked:       "•",
 			PrefixState:  "|",
 			SuffixState:  "|",
 			Settings:     "🖉  ",
@@ -85,11 +91,13 @@ var (
 			Package:      "",
 			Installed:    "Y",
 			NotInstalled: "-",
+			Marked:       "*",
 		},
 		"Plain-No-X": {
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: " ",
+			Marked:       "•",
 			Settings:     "🖉  ",
 			Pkgbuild:     "🗒  ",
 			Help:         "🕮  ",
@@ -99,6 +107,7 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: " ",
+			Marked:       "•",
 			PrefixState:  "[",
 			SuffixState:  "]",
 			Settings:     "🖉  ",
@@ -110,6 +119,7 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: " ",
+			Marked:       "•",
 			PrefixState:  "(",
 			SuffixState:  ")",
 			Settings:     "🖉  ",
@@ -121,6 +131,7 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: " ",
+			Marked:       "•",
 			PrefixState:  "{",
 			SuffixState:  "}",
 			Settings:     "🖉  ",
@@ -132,6 +143,7 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: " ",
+			Marked:       "•",
 			PrefixState:  "|",
 			SuffixState:  "|",
 			Settings:     "🖉  ",
@@ -143,6 +155,7 @@ var (
 			Package:      "",
 			Installed:    "Y",
 			NotInstalled: " ",
+			Marked:       "*",
 		},
 	}
 )

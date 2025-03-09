@@ -12,6 +12,8 @@ import (
 	"github.com/rivo/tview"
 )
 
+var pkglist []PkgStatus
+
 // sets up all our ui components
 func (ps *UI) createComponents() {
 	// flex grids
@@ -145,7 +147,7 @@ func (ps *UI) applyColors() {
 		// Installed
 		c = ps.tablePackages.GetCell(i, 2)
 		c.SetTextColor(ps.conf.Colors().DefaultBackground)
-		c.SetText(ps.getInstalledStateText(c.Reference.(bool)))
+		c.SetText(ps.getInstalledStateText(c.Reference.(int8)))
 	}
 
 	// details
@@ -198,7 +200,7 @@ func (ps *UI) applyGlyphStyle() {
 	// package list
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
 		c := ps.tablePackages.GetCell(i, 2)
-		if ref, ok := c.Reference.(bool); ok {
+		if ref, ok := c.Reference.(int8); ok {
 			c.SetText(ps.getInstalledStateText(ref))
 		}
 	}
@@ -438,7 +440,13 @@ func (ps *UI) setupKeyBindings() {
 		}
 		// ENTER
 		if event.Key() == tcell.KeyEnter {
-			ps.installSelectedPackage()
+			ps.installSelectedPackages(pkglist)
+			pkglist = nil
+			return nil
+		}
+		// SPACE
+		if event.Rune() == ' ' {
+			pkglist = ps.selectPackage(pkglist)
 			return nil
 		}
 		// Down / j / k -> noop: WTF? Prevent lock-up with empty list ;) :(
