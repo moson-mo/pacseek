@@ -483,8 +483,8 @@ func (ps *UI) drawUpgradeableLine(up InfoRecord, lNum int, ignored bool) {
 			Clicked: func() bool {
 				// sorry not very optimal
 				var pkglist []PkgStatus = nil
-				pkglist = append(pkglist, PkgStatus{up, false})
-				ps.installSelectedPackages(pkglist)
+				pkglist = append(pkglist, PkgStatus{up, PkgNone})
+				pkglist = ps.installSelectedPackages(pkglist)
 				ps.cacheInfo.Delete("#upgrades#")
 				ps.displayUpgradable()
 				return true
@@ -521,11 +521,10 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 		}
 
 		// necessary conversion for boolcast workaround
-		var isInstalled int8
+		var isInstalled PkgState = PkgNone
+		var isMarked PkgState = ps.getPkgState(pkglist, pkg.Name)
 		if pkg.IsInstalled {
-			isInstalled = 0x1
-		} else {
-			isInstalled = 0x0
+			isInstalled = PkgInstalled
 		}
 
 		ps.tablePackages.SetCell(i+1, 0, &tview.TableCell{
@@ -541,9 +540,9 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 			}).
 			SetCell(i+1, 2, &tview.TableCell{
 				Color:       ps.conf.Colors().DefaultBackground,
-				Text:        ps.getInstalledStateText(isInstalled | pkg.IsMarked),
+				Text:        ps.getInstalledStateText(isInstalled | isMarked),
 				Expansion:   1000,
-				Reference:   isInstalled | pkg.IsMarked,
+				Reference:   isInstalled | isMarked,
 				Transparent: true,
 			})
 	}
@@ -697,7 +696,7 @@ func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 	fields["Conflicts"] = strings.Join(i.Conflicts, ", ")
 	fields["Licenses"] = strings.Join(i.License, ", ")
 	fields["Maintainer"] = i.Maintainer
-	fields["Dependencies"] = getDependenciesJoined(i, ps.getInstalledStateText(0x1), ps.getInstalledStateText(0x0), ps.conf.SepDepsWithNewLine)
+	fields["Dependencies"] = getDependenciesJoined(i, ps.getInstalledStateText(PkgInstalled), ps.getInstalledStateText(PkgNone), ps.conf.SepDepsWithNewLine)
 	fields["Required by"] = strings.Join(i.RequiredBy, ", ")
 	fields["URL"] = i.URL
 	if i.Source == "AUR" {
@@ -748,29 +747,18 @@ func getDependenciesJoined(i InfoRecord, installedIcon, notInstalledicon string,
 	return strings.Join(deps, separator)
 }
 
-// this function maybe redundant i.e. needs probably rework
-// those functions are inefective and probably slow when big list
-func (ps *UI) getPkgMarked(pkgname string) int8 {
-	for i := range ps.shownPackages {
-		if ps.shownPackages[i].Name == pkgname {
-			return ps.shownPackages[i].IsMarked
+func (ps *UI) getPkgState(pkglist []PkgStatus, pkgname string) PkgState {
+	for i := range pkglist {
+		if pkglist[i].Pkg.Name == pkgname {
+			return pkglist[i].State
 		}
 	}
 
-	return 0x0
-}
-
-func (ps *UI) setPkgMarked(pkgname string, ismarked int8) {
-	for i := range ps.shownPackages {
-		if ps.shownPackages[i].Name == pkgname {
-			ps.shownPackages[i].IsMarked = ismarked
-			break
-		}
-	}
+	return PkgNone
 }
 
 // updates the "install state" of all packages in cache and package list
-func (ps *UI) updateInstalledState() {
+func (ps *UI) updateInstalledState(pkglist []PkgStatus) {
 	// update cached packages
 	sterm := strings.ToLower(ps.inputSearch.GetText())
 	cpkg, exp, found := ps.cacheSearch.GetWithExpiration(sterm)
@@ -778,21 +766,20 @@ func (ps *UI) updateInstalledState() {
 		scpkg := cpkg.([]Package)
 		for i := 0; i < len(scpkg); i++ {
 			scpkg[i].IsInstalled = isPackageInstalled(ps.alpmHandle, scpkg[i].Name)
-			scpkg[i].IsMarked = ps.getPkgMarked(scpkg[i].Name)
 		}
 		ps.cacheSearch.Set(sterm, scpkg, time.Until(exp))
 	}
 
 	// update currently shown packages
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
-		var isInstalled int8
+		var isInstalled PkgState
 		if isPackageInstalled(ps.alpmHandle, ps.tablePackages.GetCell(i, 0).Text) {
-			isInstalled = 0x1
+			isInstalled = PkgInstalled
 		} else {
-			isInstalled = 0x0
+			isInstalled = PkgNone
 		}
 
-		isMarked := ps.getPkgMarked(ps.tablePackages.GetCell(i, 0).Text)
+		isMarked := ps.getPkgState(pkglist, ps.tablePackages.GetCell(i, 0).Text)
 
 		newCell := &tview.TableCell{
 			Text:        ps.getInstalledStateText(isInstalled | isMarked),
@@ -805,21 +792,19 @@ func (ps *UI) updateInstalledState() {
 }
 
 // compose text for "Installed" column in package list
-func (ps *UI) getInstalledStateText(state int8) string {
+func (ps *UI) getInstalledStateText(state PkgState) string {
 	glyphs := ps.conf.Glyphs()
 	colStrInstalled := "[#ff0000::b]"
 	installed := glyphs.NotInstalled
 
-	// isInstalled == true
-	if state&0x1 == 0x1 {
+	if state&PkgInstalled == PkgInstalled {
 		installed = glyphs.Installed
 		colStrInstalled = "[#00ff00::b]"
 	}
 
-	// isMarked == true
-	if state&0x2 == 0x2 {
+	if state&PkgMarked == PkgMarked {
 		installed = glyphs.Marked
-		if state&0x1 == 0x1 {
+		if state&PkgInstalled == PkgInstalled {
 			colStrInstalled = "[#ff0000::b]"
 		} else {
 			colStrInstalled = "[#00ff00::b]"

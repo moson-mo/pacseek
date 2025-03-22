@@ -43,10 +43,20 @@ type InfoRecord struct {
 	DepsAndSatisfiers []DependencySatisfier
 }
 
+type PkgState int8
+
+const (
+	PkgNone      PkgState = 0x0
+	PkgInstalled          = 0x1
+	PkgMarked             = 0x2
+)
+
 type PkgStatus struct {
-	pkg       InfoRecord
-	installed bool
+	Pkg   InfoRecord
+	State PkgState
 }
+
+var pkglist []PkgStatus
 
 type DependencySatisfier struct {
 	DepType   string
@@ -60,7 +70,6 @@ type Package struct {
 	Name         string
 	Source       string
 	IsInstalled  bool
-	IsMarked     int8
 	LastModified int
 	Popularity   float64
 }

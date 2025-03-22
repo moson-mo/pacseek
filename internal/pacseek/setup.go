@@ -12,8 +12,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-var pkglist []PkgStatus
-
 // sets up all our ui components
 func (ps *UI) createComponents() {
 	// flex grids
@@ -147,7 +145,7 @@ func (ps *UI) applyColors() {
 		// Installed
 		c = ps.tablePackages.GetCell(i, 2)
 		c.SetTextColor(ps.conf.Colors().DefaultBackground)
-		c.SetText(ps.getInstalledStateText(c.Reference.(int8)))
+		c.SetText(ps.getInstalledStateText(c.Reference.(PkgState)))
 	}
 
 	// details
@@ -200,7 +198,7 @@ func (ps *UI) applyGlyphStyle() {
 	// package list
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
 		c := ps.tablePackages.GetCell(i, 2)
-		if ref, ok := c.Reference.(int8); ok {
+		if ref, ok := c.Reference.(PkgState); ok {
 			c.SetText(ps.getInstalledStateText(ref))
 		}
 	}
@@ -440,8 +438,7 @@ func (ps *UI) setupKeyBindings() {
 		}
 		// ENTER
 		if event.Key() == tcell.KeyEnter {
-			ps.installSelectedPackages(pkglist)
-			pkglist = nil
+			pkglist = ps.installSelectedPackages(pkglist)
 			return nil
 		}
 		// SPACE

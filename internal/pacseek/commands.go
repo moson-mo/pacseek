@@ -8,9 +8,9 @@ import (
 	"strings"
 )
 
-func (ps *UI) runShellInstall(command string, pkglist []PkgStatus) {
+func (ps *UI) runShellInstall(command string, pkglist []PkgStatus) []PkgStatus {
 	if pkglist == nil {
-		return
+		return nil
 	}
 
 	var pkgs_names string
@@ -18,11 +18,8 @@ func (ps *UI) runShellInstall(command string, pkglist []PkgStatus) {
 	//var pkgs_repos string
 
 	for i := range pkglist {
-		pkgs_names += " " + pkglist[i].pkg.Name
+		pkgs_names += " " + pkglist[i].Pkg.Name
 		//pkgs_opts += " " + pkglist[i].pkg.OptDepends
-
-		// unset marks, makes them disappear
-		ps.setPkgMarked(pkglist[i].pkg.Name, 0x0)
 	}
 
 	// if our command contains {pkg}, replace it with the package name, otherwise concat it
@@ -49,18 +46,54 @@ func (ps *UI) runShellInstall(command string, pkglist []PkgStatus) {
 	args := []string{"-c", command}
 
 	ps.runCommand(ps.shell, args...)
+	ps.cacheSearch.Flush()
+	// there is no way of checking if ps.runCommand wasn't aborted
+	// it's better to check whether package was installed after aborted
+	// if yes then remove it from pkglist
+	var tmp []PkgStatus
+	var state PkgState
+	for range pkglist {
+		tmp = nil
+		for i := range pkglist {
+			if isPackageInstalled(ps.alpmHandle, pkglist[i].Pkg.Name) {
+				state = PkgInstalled
+			} else {
+				state = PkgNone
+			}
+
+			// states not equal: means installed has changed thus remove from list
+			if (pkglist[i].State | PkgMarked) != (state | PkgMarked) {
+				pkglistSize := len(pkglist)
+				if i+1 == pkglistSize {
+					// everything successful return empty array
+					return nil
+				}
+				tmp = append(tmp, pkglist[:i]...)
+				// last element
+				if i != pkglistSize {
+					tmp = append(tmp, pkglist[i+1:]...)
+				}
+				pkglist = tmp
+				break
+			}
+		}
+	}
+
+	return pkglist
 }
 
 // installs or removes a packages
-func (ps *UI) installSelectedPackages(pkglist []PkgStatus) {
+// if this command succeeds resulting pkglist will be nil
+// we return it cuz it may not succeed e.g. abort install halfway through
+func (ps *UI) installSelectedPackages(pkglist []PkgStatus) []PkgStatus {
 	if ps.selectedPackage == nil {
-		return
+		return nil
 	}
 
 	// this is for case when user selects package (SPACE) and also presses Enter
 	marked := false
 	for i := range pkglist {
-		if pkglist[i].pkg.ID == ps.selectedPackage.ID {
+		if pkglist[i].Pkg.ID == ps.selectedPackage.ID {
 			marked = true
 			break
 		}
@@ -74,10 +107,10 @@ func (ps *UI) installSelectedPackages(pkglist []PkgStatus) {
 	var aur_toinstall []PkgStatus
 
 	for i := range pkglist {
-		if pkglist[i].installed {
+		if pkglist[i].State&PkgInstalled == PkgInstalled {
 			pkgs_touninstall = append(pkgs_touninstall, pkglist[i])
 		} else {
-			if pkglist[i].pkg.Source == "AUR" {
+			if pkglist[i].Pkg.Source == "AUR" {
 				aur_toinstall = append(aur_toinstall, pkglist[i])
 			} else {
 				pkgs_toinstall = append(pkgs_toinstall, pkglist[i])
@@ -86,15 +119,19 @@ func (ps *UI) installSelectedPackages(pkglist []PkgStatus) {
 	}
 
 	var command string
+	// clear pkglist since we splitted it to multiple sources
+	pkglist = nil
 
 	if pkgs_touninstall != nil {
 		command = ps.conf.UninstallCommand
-		ps.runShellInstall(command, pkgs_touninstall)
+		pkgs_touninstall = ps.runShellInstall(command, pkgs_touninstall)
+		pkglist = append(pkglist, pkgs_touninstall...)
 	}
 
 	if aur_toinstall != nil && ps.conf.AurUseDifferentCommands && ps.conf.AurInstallCommand != "" {
 		command = ps.conf.AurInstallCommand
-		ps.runShellInstall(command, aur_toinstall)
+		aur_toinstall = ps.runShellInstall(command, aur_toinstall)
+		pkglist = append(pkglist, aur_toinstall...)
 	} else {
 		// this will drop down to pkgs_toinstall
 		pkgs_toinstall = append(pkgs_toinstall, aur_toinstall...)
@@ -102,11 +139,13 @@ func (ps *UI) installSelectedPackages(pkglist []PkgStatus) {
 
 	if pkgs_toinstall != nil {
 		command = ps.conf.InstallCommand
-		ps.runShellInstall(command, pkgs_toinstall)
+		pkgs_toinstall = ps.runShellInstall(command, pkgs_toinstall)
+		pkglist = append(pkglist, pkgs_toinstall...)
 	}
 
 	// update package install status
-	ps.updateInstalledState()
+	ps.updateInstalledState(pkglist)
+	return pkglist
 }
 
 // selects a package, returns list(slice) of packages
@@ -115,13 +154,13 @@ func (ps *UI) selectPackage(pkglist []PkgStatus) []PkgStatus {
 		return pkglist
 	}
 	row, _ := ps.tablePackages.GetSelection()
-	installed := ps.tablePackages.GetCell(row, 2).Reference.(int8)&0x1 == 1
+	installed := ps.tablePackages.GetCell(row, 2).Reference.(PkgState) & PkgInstalled
 
 	marked := false
 	index := 0
 
 	for i := range pkglist {
-		if pkglist[i].pkg.ID == ps.selectedPackage.ID {
+		if pkglist[i].Pkg.ID == ps.selectedPackage.ID {
 			marked = true
 			index = i
 			break
@@ -129,16 +168,15 @@ func (ps *UI) selectPackage(pkglist []PkgStatus) []PkgStatus {
 	}
 
 	if marked {
+		// removes marked item from pkglist thus when getPkgState it returns PkgNone
 		var tmp []PkgStatus
 		tmp = append(tmp, pkglist[:index]...)
 		tmp = append(tmp, pkglist[index+1:]...)
 		pkglist = tmp
-		ps.setPkgMarked(ps.selectedPackage.Name, 0x0)
 	} else {
-		pkglist = append(pkglist, PkgStatus{*ps.selectedPackage, installed})
-		ps.setPkgMarked(ps.selectedPackage.Name, 0x2)
+		pkglist = append(pkglist, PkgStatus{*ps.selectedPackage, installed | PkgMarked})
 	}
-	ps.updateInstalledState()
+	ps.updateInstalledState(pkglist)
 
 	return pkglist
 }
