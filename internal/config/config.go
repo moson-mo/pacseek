@@ -33,6 +33,7 @@ type Settings struct {
 	GlyphStyle              string
 	DisableNewsFeed         bool
 	FeedURLs                string
+	URLOpen                 string
 	FeedMaxItems            int
 	SaveWindowLayout        bool
 	LeftProportion          int
@@ -72,6 +73,7 @@ func Defaults() *Settings {
 		DisableNewsFeed:        false,
 		FeedURLs:               "https://archlinux.org/feeds/news/",
 		FeedMaxItems:           5,
+		URLOpen:                "home",
 		SaveWindowLayout:       false,
 		LeftProportion:         4,
 		Transparent:            false,
@@ -197,6 +199,12 @@ func (s *Settings) applyUpgradeFixes() {
 	// URL change added with 1.7.8
 	if s.AurRpcUrl == "https://server.moson.rocks/rpc" {
 		s.AurRpcUrl = "https://aurapi.moson.org/rpc"
+		fixApplied = true
+	}
+
+	// <C-o> bind URLOpen change added with 1.*.*
+	if s.URLOpen == "" {
+		s.URLOpen = "home"
 		fixApplied = true
 	}
 

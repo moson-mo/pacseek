@@ -312,7 +312,31 @@ func (ps *UI) setupKeyBindings() {
 
 		// CTRL+O - Open URL for selected package
 		if event.Key() == tcell.KeyCtrlO && ps.selectedPackage != nil {
-			exec.Command("xdg-open", ps.selectedPackage.URL).Start()
+			var url string
+			sp := ps.selectedPackage
+			switch ps.conf.URLOpen {
+			case "build":
+				if sp.Source == "AUR" {
+					url = fmt.Sprintf(UrlAurPkgbuild, sp.PackageBase)
+				} else {
+					url = fmt.Sprintf(UrlRepoPkgbuild, encodePackageGitlabUrl(sp.PackageBase))
+				}
+			case "home":
+				url = sp.URL
+			case "maintainer":
+				url = fmt.Sprintf(UrlAurMaintainer, sp.Maintainer)
+			case "source":
+				if sp.Source == "AUR" {
+					url = fmt.Sprintf(UrlAurPackage, sp.Name)
+				} else if ps.isArm {
+					url = fmt.Sprintf(UrlArmPackage, sp.Architecture, sp.Name)
+				} else {
+					url = fmt.Sprintf(UrlPackage, sp.Source, sp.Architecture, sp.Name)
+				}
+			default:
+				ps.displayMessage("Unknown config option for URLOpen", true)
+			}
+			exec.Command("xdg-open", url).Start()
 			return nil
 		}
 
