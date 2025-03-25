@@ -134,7 +134,7 @@ func New(conf *config.Settings, flags args.Flags) (*UI, error) {
 func (ps *UI) Start() error {
 	if ps.flags.SearchTerm != "" {
 		ps.inputSearch.SetText(ps.flags.SearchTerm)
-		ps.displayPackages(ps.flags.SearchTerm)
+		ps.displayPackages(ps.flags.SearchTerm, false)
 	} else {
 		if ps.flags.ShowInstalled {
 			ps.displayInstalled(ps.flags.ShowUpdates)
