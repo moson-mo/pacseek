@@ -62,3 +62,17 @@ func UniqueStrings(strSlices ...[]string) []string {
 
 	return result
 }
+
+// blatant copy of slices.Delete go 1.22 stdlib
+func Delete[S ~[]E, E any](s S, i, j int) S {
+	_ = s[i:j:len(s)] // bounds check
+
+	if i == j {
+		return s
+	}
+
+	oldlen := len(s)
+	s = append(s[:i], s[j:]...)
+	clear(s[len(s):oldlen]) // zero/nil out the obsolete elements, for GC
+	return s
+}

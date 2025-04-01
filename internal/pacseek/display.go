@@ -13,19 +13,114 @@ import (
 	"github.com/rivo/tview"
 )
 
+// we don't need whole InfoRecord struct just .Name and .OptDepends
+// if there isn't .Name in optsList that mean toggle state is false
+// var optsList []InfoRecord
+type PkgOpts struct {
+	Name           string
+	OptDependsName []string
+	OptDepends     []Package
+	Row            int
+}
+
+// if optsList is emtpy simply means no package has toggled dep state true
+var optsList []PkgOpts
+
+func (ps *UI) searchForOptDeps(pkg PkgOpts) PkgOpts {
+	for _, opt := range pkg.OptDependsName {
+		// search repositories
+		pkgOpts, _, err := searchRepos(ps.alpmHandle, opt, "StartsWith", "Name", 1)
+		if err != nil {
+			ps.app.QueueUpdateDraw(func() {
+				ps.displayMessage(err.Error(), true)
+			})
+		}
+
+		if len(pkgOpts) != 0 {
+			pkg.OptDepends = append(pkg.OptDepends, pkgOpts...)
+		} else if !ps.conf.DisableAur {
+			// if pkgname wasn't found, search in aur
+			aurOpts, err := searchAur(ps.conf.AurRpcUrl, opt, ps.conf.AurTimeout, "StartsWith", "Name", 1)
+			if err != nil {
+				ps.app.QueueUpdateDraw(func() {
+					ps.displayMessage(err.Error(), true)
+				})
+			}
+
+			// probably for aur installed mark
+			for i := 0; i < len(aurOpts); i++ {
+				aurOpts[i].IsInstalled = isPackageInstalled(ps.alpmHandle, aurOpts[i].Name)
+			}
+
+			pkg.OptDepends = append(pkg.OptDepends, aurOpts...)
+		}
+
+		// sort OptDepends by name
+		//sort.Slice(pkg.OptDepends, func(i, j int) bool {
+		//	return pkg.OptDepends[i].Name < opts[j].Name
+		//})
+		if len(pkg.OptDepends) == 0 {
+			ps.displayMessage("Couldn't find any opt package for search-term: "+opt, false)
+			// should always find optional dependency,
+			// if not then have no idea what else should we do
+		}
+	}
+	return pkg
+}
+
+func (ps *UI) toggleOptDeps() {
+	if ps.selectedPackage != nil {
+		index := -1
+		for i := range optsList {
+			if optsList[i].Name == ps.selectedPackage.Name {
+				index = i
+				optsList = util.Delete(optsList, index, index+1)
+				break
+			}
+		}
+		if index == -1 {
+			row, _ := ps.tablePackages.GetSelection()
+			pkg := PkgOpts{
+				Name:           ps.selectedPackage.Name,
+				OptDependsName: ps.selectedPackage.OptDepends,
+				OptDepends:     nil,
+				Row:            row,
+			}
+
+			pkg = ps.searchForOptDeps(pkg)
+
+			// show message if we couldn't find anything
+			if pkg.OptDepends == nil {
+				ps.displayMessage("No OptDepends found for package: "+pkg.Name, false)
+			} else {
+				optsList = append(optsList, pkg)
+			}
+
+			// it's better for them to be sorted by row since we draw by row
+			sort.Slice(optsList, func(i, j int) bool {
+				return optsList[i].Row < optsList[j].Row
+			})
+		}
+	}
+	ps.displayPackages(ps.lastSearchTerm, true)
+}
+
 // gets packages from repos/AUR and displays them
-func (ps *UI) displayPackages(text string) {
+func (ps *UI) displayPackages(text string, isToggleDraw bool) {
 	var packages []Package
 
 	showFunc := func() {
 		ps.shownPackages = packages
-		best := bestMatch(text, packages) + 1
-		ps.drawPackageListContent(packages, ps.conf.PackageColumnWidth)
+		ps.drawPackageListContent(packages, optsList, ps.conf.PackageColumnWidth)
 		if ps.flexRight.GetItem(0) == ps.formSettings {
 			ps.flexRight.Clear()
 			ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
 		}
-		ps.tablePackages.Select(best, 0) // select the best match
+
+		if !isToggleDraw {
+			best := bestMatch(text, packages) + 1
+			ps.tablePackages.Select(best, 0) // select the best match
+		}
 	}
 
 	// check cache first
@@ -424,7 +519,7 @@ func (ps *UI) displayInstalled(displayUpdatesAfter bool) {
 	if installedCached, found := ps.cacheSearch.Get("#installed#"); found {
 		packages := installedCached.([]Package)
 		ps.shownPackages = packages
-		ps.drawPackageListContent(packages, ps.conf.PackageColumnWidth)
+		ps.drawPackageListContent(packages, nil, ps.conf.PackageColumnWidth)
 		ps.tablePackages.Select(1, 0)
 		return
 	}
@@ -470,7 +565,7 @@ func (ps *UI) displayInstalled(displayUpdatesAfter bool) {
 		}
 		ps.shownPackages = packages
 		ps.app.QueueUpdateDraw(func() {
-			ps.drawPackageListContent(packages, ps.conf.PackageColumnWidth)
+			ps.drawPackageListContent(packages, nil, ps.conf.PackageColumnWidth)
 			if displayUpdatesAfter {
 				ps.displayUpgradable()
 			} else {
