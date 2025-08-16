@@ -521,10 +521,9 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 		}
 
 		// necessary conversion for boolcast workaround
-		var isInstalled PkgState = PkgNone
-		var isMarked PkgState = ps.getPkgState(pkglist, pkg.Name)
+		var pkgstate PkgState = getPkgState(pkglist, pkg.Name)
 		if pkg.IsInstalled {
-			isInstalled = PkgInstalled
+			pkgstate |= PkgInstalled
 		}
 
 		ps.tablePackages.SetCell(i+1, 0, &tview.TableCell{
@@ -540,9 +539,9 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 			}).
 			SetCell(i+1, 2, &tview.TableCell{
 				Color:       ps.conf.Colors().DefaultBackground,
-				Text:        ps.getInstalledStateText(isInstalled | isMarked),
+				Text:        ps.getInstalledStateText(pkgstate),
 				Expansion:   1000,
-				Reference:   isInstalled | isMarked,
+				Reference:   pkgstate,
 				Transparent: true,
 			})
 	}
@@ -747,7 +746,7 @@ func getDependenciesJoined(i InfoRecord, installedIcon, notInstalledicon string,
 	return strings.Join(deps, separator)
 }
 
-func (ps *UI) getPkgState(pkglist []PkgStatus, pkgname string) PkgState {
+func getPkgState(pkglist []PkgStatus, pkgname string) PkgState {
 	for i := range pkglist {
 		if pkglist[i].Pkg.Name == pkgname {
 			return pkglist[i].State
@@ -772,19 +771,23 @@ func (ps *UI) updateInstalledState(pkglist []PkgStatus) {
 
 	// update currently shown packages
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
-		var isInstalled PkgState
+		var pkgstate PkgState
+		// NOTE: maybe rework isPackageInstalled to return Pkgstate instead of bool
+		// we will need to rework data Package struct
+		//
+		// There no need to have 2 functions getPkgState and isPackageInstalled
 		if isPackageInstalled(ps.alpmHandle, ps.tablePackages.GetCell(i, 0).Text) {
-			isInstalled = PkgInstalled
+			pkgstate = PkgInstalled
 		} else {
-			isInstalled = PkgNone
+			pkgstate = PkgNone
 		}
 
-		isMarked := ps.getPkgState(pkglist, ps.tablePackages.GetCell(i, 0).Text)
+		pkgstate |= getPkgState(pkglist, ps.tablePackages.GetCell(i, 0).Text)
 
 		newCell := &tview.TableCell{
-			Text:        ps.getInstalledStateText(isInstalled | isMarked),
+			Text:        ps.getInstalledStateText(pkgstate),
 			Expansion:   1000,
-			Reference:   isInstalled | isMarked,
+			Reference:   pkgstate,
 			Transparent: true,
 		}
 		ps.tablePackages.SetCell(i, 2, newCell)

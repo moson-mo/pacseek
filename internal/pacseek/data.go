@@ -52,7 +52,10 @@ const (
 )
 
 type PkgStatus struct {
-	Pkg   InfoRecord
+	Pkg InfoRecord
+	//Name string
+	//ID int
+	//Source string
 	State PkgState
 }
 

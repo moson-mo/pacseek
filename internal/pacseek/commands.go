@@ -91,14 +91,9 @@ func (ps *UI) installSelectedPackages(pkglist []PkgStatus) []PkgStatus {
 	}
 
 	// this is for case when user selects package (SPACE) and also presses Enter
-	marked := false
-	for i := range pkglist {
-		if pkglist[i].Pkg.ID == ps.selectedPackage.ID {
-			marked = true
-			break
-		}
-	}
-	if !marked {
+	row, _ := ps.tablePackages.GetSelection()
+	marked := ps.tablePackages.GetCell(row, 2).Reference.(PkgState) & PkgMarked
+	if marked != PkgMarked {
 		pkglist = ps.selectPackage(pkglist)
 	}
 
@@ -119,7 +114,7 @@ func (ps *UI) installSelectedPackages(pkglist []PkgStatus) []PkgStatus {
 	}
 
 	var command string
-	// clear pkglist since we splitted it to multiple sources
+	// clear pkglist since we split it to multiple sources
 	pkglist = nil
 
 	if pkgs_touninstall != nil {
@@ -149,33 +144,28 @@ func (ps *UI) installSelectedPackages(pkglist []PkgStatus) []PkgStatus {
 }
 
 // selects a package, returns list(slice) of packages
+// eg. toggle mark function
 func (ps *UI) selectPackage(pkglist []PkgStatus) []PkgStatus {
 	if ps.selectedPackage == nil {
 		return pkglist
 	}
 	row, _ := ps.tablePackages.GetSelection()
-	installed := ps.tablePackages.GetCell(row, 2).Reference.(PkgState) & PkgInstalled
+	pkgstate := ps.tablePackages.GetCell(row, 2).Reference.(PkgState)
 
-	marked := false
-	index := 0
+	// removes marked item from pkglist thus when getPkgState it returns PkgNone
+	if pkgstate&PkgMarked != PkgMarked {
+		pkglist = append(pkglist, PkgStatus{*ps.selectedPackage, pkgstate | PkgMarked})
+		goto SkipDupCheck
+	}
 
-	for i := range pkglist {
-		if pkglist[i].Pkg.ID == ps.selectedPackage.ID {
-			marked = true
-			index = i
+	for i, _ := range pkglist {
+		if pkglist[i].Pkg.Name == ps.selectedPackage.Name {
+			pkglist = append(pkglist[:i], pkglist[i+1:]...)
 			break
 		}
 	}
 
-	if marked {
-		// removes marked item from pkglist thus when getPkgState it returns PkgNone
-		var tmp []PkgStatus
-		tmp = append(tmp, pkglist[:index]...)
-		tmp = append(tmp, pkglist[index+1:]...)
-		pkglist = tmp
-	} else {
-		pkglist = append(pkglist, PkgStatus{*ps.selectedPackage, installed | PkgMarked})
-	}
+SkipDupCheck:
 	ps.updateInstalledState(pkglist)
 
 	return pkglist
