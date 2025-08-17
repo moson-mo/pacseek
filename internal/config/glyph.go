@@ -14,6 +14,7 @@ type Glyphs struct {
 	Installed    string
 	NotInstalled string
 	Marked       string
+	Reinstall    string
 	PrefixState  string
 	SuffixState  string
 	Settings     string
@@ -34,6 +35,7 @@ var (
 			Installed:    "✔",
 			NotInstalled: "✗",
 			Marked:       "•",
+			Reinstall:    "",
 			Settings:     "🖉  ",
 			Pkgbuild:     "🗒  ",
 			Help:         "🕮  ",
@@ -44,6 +46,7 @@ var (
 			Installed:    "✔",
 			NotInstalled: "✗",
 			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "[",
 			SuffixState:  "]",
 			Settings:     "🖉  ",
@@ -56,6 +59,7 @@ var (
 			Installed:    "✔",
 			NotInstalled: "✗",
 			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "(",
 			SuffixState:  ")",
 			Settings:     "🖉  ",
@@ -68,6 +72,7 @@ var (
 			Installed:    "✔",
 			NotInstalled: "✗",
 			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "{",
 			SuffixState:  "}",
 			Settings:     "🖉  ",
@@ -80,6 +85,7 @@ var (
 			Installed:    "✔",
 			NotInstalled: "✗",
 			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "|",
 			SuffixState:  "|",
 			Settings:     "🖉  ",
@@ -92,12 +98,14 @@ var (
 			Installed:    "Y",
 			NotInstalled: "-",
 			Marked:       "*",
+			Reinstall:    "R",
 		},
 		"Plain-No-X": {
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: " ",
 			Marked:       "•",
+			Reinstall:    "",
 			Settings:     "🖉  ",
 			Pkgbuild:     "🗒  ",
 			Help:         "🕮  ",
@@ -108,6 +116,7 @@ var (
 			Installed:    "✔",
 			NotInstalled: " ",
 			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "[",
 			SuffixState:  "]",
 			Settings:     "🖉  ",
@@ -120,6 +129,7 @@ var (
 			Installed:    "✔",
 			NotInstalled: " ",
 			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "(",
 			SuffixState:  ")",
 			Settings:     "🖉  ",
@@ -132,6 +142,7 @@ var (
 			Installed:    "✔",
 			NotInstalled: " ",
 			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "{",
 			SuffixState:  "}",
 			Settings:     "🖉  ",
@@ -144,6 +155,7 @@ var (
 			Installed:    "✔",
 			NotInstalled: " ",
 			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "|",
 			SuffixState:  "|",
 			Settings:     "🖉  ",
@@ -156,6 +168,7 @@ var (
 			Installed:    "Y",
 			NotInstalled: " ",
 			Marked:       "*",
+			Reinstall:    "R",
 		},
 	}
 )

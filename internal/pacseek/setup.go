@@ -441,9 +441,14 @@ func (ps *UI) setupKeyBindings() {
 			pkglist = ps.installSelectedPackages(pkglist)
 			return nil
 		}
-		// SPACE
-		if event.Rune() == ' ' {
-			pkglist = ps.selectPackage(pkglist)
+		// SPACE or 's'
+		if event.Rune() == ' ' || event.Rune() == 's' {
+			pkglist = ps.selectPackage(pkglist, PkgMarked)
+			return nil
+		}
+		// r
+		if event.Rune() == 'r' {
+			pkglist = ps.selectPackage(pkglist, PkgReinstall)
 			return nil
 		}
 		// Down / j / k -> noop: WTF? Prevent lock-up with empty list ;) :(

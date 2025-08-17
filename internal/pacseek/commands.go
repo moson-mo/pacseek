@@ -62,7 +62,9 @@ func (ps *UI) runShellInstall(command string, pkglist []PkgStatus) []PkgStatus {
 			}
 
 			// states not equal: means installed has changed thus remove from list
-			if (pkglist[i].State | PkgMarked) != (state | PkgMarked) {
+			// 2nd clause is weak against interrupts
+			if pkglist[i].State&PkgInstalled != state ||
+				pkglist[i].State&PkgReinstall == PkgReinstall {
 				pkglistSize := len(pkglist)
 				if i+1 == pkglistSize {
 					// everything successful return empty array
@@ -90,11 +92,11 @@ func (ps *UI) installSelectedPackages(pkglist []PkgStatus) []PkgStatus {
 		return nil
 	}
 
-	// this is for case when user selects package (SPACE) and also presses Enter
+	// this is for case when user presses Enter on package that wasn't explicitly selected
+	// (default actions install when uninstalled and uninstalls when installed)
 	row, _ := ps.tablePackages.GetSelection()
-	marked := ps.tablePackages.GetCell(row, 2).Reference.(PkgState) & PkgMarked
-	if marked != PkgMarked {
-		pkglist = ps.selectPackage(pkglist)
+	if ps.tablePackages.GetCell(row, 2).Reference.(PkgState) <= PkgInstalled {
+		pkglist = ps.selectPackage(pkglist, PkgMarked)
 	}
 
 	var pkgs_toinstall []PkgStatus
@@ -102,7 +104,7 @@ func (ps *UI) installSelectedPackages(pkglist []PkgStatus) []PkgStatus {
 	var aur_toinstall []PkgStatus
 
 	for i := range pkglist {
-		if pkglist[i].State&PkgInstalled == PkgInstalled {
+		if pkglist[i].State == PkgInstalled|PkgMarked {
 			pkgs_touninstall = append(pkgs_touninstall, pkglist[i])
 		} else {
 			if pkglist[i].Pkg.Source == "AUR" {
@@ -143,29 +145,41 @@ func (ps *UI) installSelectedPackages(pkglist []PkgStatus) []PkgStatus {
 	return pkglist
 }
 
-// selects a package, returns list(slice) of packages
-// eg. toggle mark function
-func (ps *UI) selectPackage(pkglist []PkgStatus) []PkgStatus {
+func (ps *UI) removeDuplicate(pkglist []PkgStatus) []PkgStatus {
+	for i := range pkglist {
+		if pkglist[i].Pkg.Name == ps.selectedPackage.Name {
+			pkglist = append(pkglist[:i], pkglist[i+1:]...)
+			break
+		}
+	}
+	return pkglist
+}
+
+func (ps *UI) selectPackage(pkglist []PkgStatus, state PkgState) []PkgStatus {
 	if ps.selectedPackage == nil {
 		return pkglist
 	}
 	row, _ := ps.tablePackages.GetSelection()
 	pkgstate := ps.tablePackages.GetCell(row, 2).Reference.(PkgState)
 
-	// removes marked item from pkglist thus when getPkgState it returns PkgNone
-	if pkgstate&PkgMarked != PkgMarked {
-		pkglist = append(pkglist, PkgStatus{*ps.selectedPackage, pkgstate | PkgMarked})
-		goto SkipDupCheck
+	if state == PkgReinstall && pkgstate&PkgInstalled != PkgInstalled {
+		ps.displayMessage("Cannot mark package for reinstallation, not installed", true)
+		goto SkipChecks
 	}
 
-	for i, _ := range pkglist {
-		if pkglist[i].Pkg.Name == ps.selectedPackage.Name {
-			pkglist = append(pkglist[:i], pkglist[i+1:]...)
-			break
-		}
+	// NOTE: in future if we'll be adding more flags this might need some simplifying
+	// performance wise removing element and appending element with new value might not be feasible
+	pkglist = ps.removeDuplicate(pkglist)
+	if (state == PkgMarked && pkgstate&PkgMarked != PkgMarked) ||
+		(state == PkgReinstall && pkgstate&PkgReinstall != PkgReinstall) {
+		// mutually exclusive flags
+		pkglist = append(
+			pkglist,
+			PkgStatus{*ps.selectedPackage, pkgstate&PkgInstalled | state},
+		)
 	}
 
-SkipDupCheck:
+SkipChecks:
 	ps.updateInstalledState(pkglist)
 
 	return pkglist

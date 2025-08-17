@@ -520,7 +520,6 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 			color = ps.conf.Colors().PackagelistSourceAUR
 		}
 
-		// necessary conversion for boolcast workaround
 		var pkgstate PkgState = getPkgState(pkglist, pkg.Name)
 		if pkg.IsInstalled {
 			pkgstate |= PkgInstalled
@@ -807,11 +806,17 @@ func (ps *UI) getInstalledStateText(state PkgState) string {
 
 	if state&PkgMarked == PkgMarked {
 		installed = glyphs.Marked
+		// TODO: maybe add different glyphs when in ASCII mode
 		if state&PkgInstalled == PkgInstalled {
 			colStrInstalled = "[#ff0000::b]"
 		} else {
 			colStrInstalled = "[#00ff00::b]"
 		}
+	}
+
+	if state&PkgReinstall == PkgReinstall {
+		installed = glyphs.Reinstall
+		colStrInstalled = "[#00ff00::b]"
 	}
 
 	if ps.conf.ColorScheme == "Monochrome" || ps.flags.MonochromeMode {
