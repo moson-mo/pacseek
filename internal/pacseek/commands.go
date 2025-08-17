@@ -13,39 +13,40 @@ func (ps *UI) runShellInstall(command string, pkglist []PkgStatus) []PkgStatus {
 		return nil
 	}
 
-	var pkgs_names string
-	//var pkgs_opts string
-	//var pkgs_repos string
+	// Needs one by one logic
+	// NOTE: will need rework if we want to have everything in one batch
+	if strings.Contains(command, "{pkg}") ||
+		strings.Contains(command, "{optdepends}") ||
+		strings.Contains(command, "{repo}") ||
+		strings.Contains(command, "{giturl}") {
 
-	for i := range pkglist {
-		pkgs_names += " " + pkglist[i].Pkg.Name
-		//pkgs_opts += " " + pkglist[i].pkg.OptDepends
-	}
+		for i := range pkglist {
+			pkg := pkglist[i].Pkg
+			command = strings.Replace(command, "{pkg}", pkg.Name, -1)
+			command = strings.Replace(command, "{optdepends}", strings.Join(pkg.OptDepends, " "), -1)
+			command = strings.Replace(command, "{repo}", strings.ToLower(pkg.Source), -1)
 
-	// if our command contains {pkg}, replace it with the package name, otherwise concat it
-	if strings.Contains(command, "{pkg}") {
-		command = strings.Replace(command, "{pkg}", pkgs_names, -1)
+			if pkg.Source == "AUR" {
+				command = strings.Replace(command, "{giturl}", "https://aur.archlinux.org/"+pkg.PackageBase+".git", -1)
+				command = strings.Replace(command, "{pkgbase}", pkg.PackageBase, -1)
+			}
+			// Here I'm assuming -c is the argument for passing a command to the shell
+			// This might not be valid for all of em though.
+			args := []string{"-c", command}
+
+			ps.runCommand(ps.shell, args...)
+		}
 	} else {
-		command += " " + pkgs_names
+		for i := range pkglist {
+			command += " " + pkglist[i].Pkg.Name
+		}
+		// Here I'm assuming -c is the argument for passing a command to the shell
+		// This might not be valid for all of em though.
+		args := []string{"-c", command}
+
+		ps.runCommand(ps.shell, args...)
 	}
 
-	// TODO:replace optdepends
-	//command = strings.Replace(command, "{optdepends}", strings.Join(pkg.OptDepends, " "), -1)
-
-	// TODO:replace repo
-	//command = strings.Replace(command, "{repo}", strings.ToLower(pkg.Source), -1)
-
-	// TODO:replace {giturl} with AUR url if defined
-	//if pkg.Source == "AUR" {
-	//	command = strings.Replace(command, "{giturl}", "https://aur.archlinux.org/"+pkg.PackageBase+".git", -1)
-	//	command = strings.Replace(command, "{pkgbase}", pkg.PackageBase, -1)
-	//}
-
-	// Here I'm assuming -c is the argument for passing a command to the shell
-	// This might not be valid for all of em though.
-	args := []string{"-c", command}
-
-	ps.runCommand(ps.shell, args...)
 	ps.cacheSearch.Flush()
 	// there is no way of checking if ps.runCommand wasn't aborted
 	// it's better to check whether package was installed after aborted
