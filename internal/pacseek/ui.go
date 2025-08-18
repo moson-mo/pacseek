@@ -66,6 +66,7 @@ type UI struct {
 	lastSearchTerm  string
 	shownPackages   []Package
 	sortAscending   bool
+	collapsed       bool
 	isArm           bool
 	flags           args.Flags
 
@@ -89,6 +90,7 @@ func New(conf *config.Settings, flags args.Flags) (*UI, error) {
 
 		flags:         flags,
 		sortAscending: true,
+		collapsed:     false,
 		isArm:         runtime.GOARCH != "amd64",
 	}
 

@@ -2,6 +2,7 @@ package util
 
 import (
 	"os"
+	"strings"
 )
 
 // SliceContains checks if a slice contains a certain element
@@ -61,4 +62,11 @@ func UniqueStrings(strSlices ...[]string) []string {
 	}
 
 	return result
+}
+
+func RemoveStrings(s string, strs []string) string {
+	for _, str := range strs {
+		s = strings.ReplaceAll(s, str, "")
+	}
+	return s
 }

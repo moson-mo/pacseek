@@ -518,7 +518,7 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 		}
 
 		ps.tablePackages.SetCell(i+1, 0, &tview.TableCell{
-			Text:            pkg.Name,
+			Text:            pkg.DisplayName,
 			Color:           tcell.ColorWhite,
 			BackgroundColor: ps.conf.Colors().DefaultBackground,
 			MaxWidth:        pkgwidth,
@@ -659,6 +659,44 @@ func (ps *UI) sortAndRedrawPackageList(runeKey rune) {
 	ps.tablePackages.Select(1, 0)
 }
 
+func (ps *UI) toggleCollapse() bool {
+	if ps.collapsed {
+		for i := range ps.shownPackages {
+			ps.shownPackages[i].DisplayName = ps.shownPackages[i].Name
+		}
+		ps.drawPackageListContent(ps.shownPackages, ps.conf.PackageColumnWidth)
+		return false
+	}
+
+	for i, pkg := range ps.shownPackages {
+		if i+1 == len(ps.shownPackages) {
+			break
+		}
+		depth := strings.Count(pkg.DisplayName, "│")
+		depth += strings.Count(pkg.DisplayName, "├")
+		depth += strings.Count(pkg.DisplayName, "─┼")
+		depth += strings.Count(pkg.DisplayName, "─┤")
+		stringDepth := " │" + strings.Repeat("─┤", depth)
+		if depth > 0 {
+			stringDepth = strings.Replace(stringDepth, "│", "├", 1)
+			stringDepth = strings.Replace(stringDepth, "─┤", "─┼", depth-1)
+		}
+
+		for ii, pkgnext := range ps.shownPackages[i+1:] {
+			// NOTE: 1 letter names mangle with unrelated packages
+			// can be understood as feature, remove last check in if statement
+			appendix := strings.Split(pkgnext.DisplayName, pkg.DisplayName)
+			if len(appendix) < 2 || len(ps.shownPackages) <= i+1+ii || appendix[1][0] != '-' {
+				break
+			}
+			ps.shownPackages[i+1+ii].DisplayName = stringDepth + strings.Join(appendix, "")
+		}
+	}
+
+	ps.drawPackageListContent(ps.shownPackages, ps.conf.PackageColumnWidth)
+	return true
+}
+
 // composes a map with fields and values (package information) for our details box
 func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 	order := []string{
@@ -752,7 +790,8 @@ func (ps *UI) updateInstalledState() {
 
 	// update currently shown packages
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
-		isInstalled := isPackageInstalled(ps.alpmHandle, ps.tablePackages.GetCell(i, 0).Text)
+		pkgname := ps.getRootName(i) + util.RemoveStrings(ps.tablePackages.GetCell(i, 0).Text, []string{" ", "│", "├", "┼", "┤", "─"})
+		isInstalled := isPackageInstalled(ps.alpmHandle, pkgname)
 		newCell := &tview.TableCell{
 			Text:        ps.getInstalledStateText(isInstalled),
 			Expansion:   1000,
