@@ -536,7 +536,6 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 				Transparent: true,
 			})
 	}
-	ps.tablePackages.ScrollToBeginning()
 }
 
 // draw pkgbuild on screen
