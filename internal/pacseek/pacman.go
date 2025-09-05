@@ -42,7 +42,7 @@ func initPacmanDbs(dbPath, confPath string, repos []string) (*alpm.Handle, error
 }
 
 // searches the pacman databases and returns packages that could be found (starting with "term")
-func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults int) ([]Package, []Package, error) {
+func searchRepos(h *alpm.Handle, term string, by string, maxResults int) ([]Package, []Package, error) {
 	packages := []Package{}
 	installed := []Package{}
 
@@ -66,13 +66,9 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 			if counter >= maxResults {
 				break
 			}
-			compFunc := strings.HasPrefix
-			if mode == "Contains" {
-				compFunc = strings.Contains
-			}
 
-			if compFunc(pkg.Name(), term) ||
-				(by == "Name & Description" && compFunc(strings.ToLower(pkg.Description()), term)) {
+			if util.IsMatch(pkg.Name(), term) ||
+				(by == "Name & Description" && util.IsMatch(strings.ToLower(pkg.Description()), term)) {
 				pkg := Package{
 					Name:         pkg.Name(),
 					Source:       db.Name(),
@@ -94,7 +90,7 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 }
 
 func suggestRepos(h *alpm.Handle, term string) []string {
-	pkgs, _, _ := searchRepos(h, term, "", "", 20)
+	pkgs, _, _ := searchRepos(h, term, "", 20)
 
 	names := []string{}
 	for _, pkg := range pkgs {
@@ -330,7 +326,7 @@ func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) SearchRe
 	return r
 }
 
-// add locally installed satisfiers to pacakge info records
+// add locally installed satisfiers to package info records
 func addLocalSatisfiers(h *alpm.Handle, pkgs ...InfoRecord) {
 	local, err := h.LocalDB()
 

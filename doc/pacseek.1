@@ -226,13 +226,6 @@ The default is
 .TP
 .BI "\(dqMaxResults\(dq\fR: " number
 The maximum number of results that are displayed in the result list.
-Note that when
-.B SearchMode
-is set to
-.IR StartsWith ,
-it is limited to 100 results from the AUR.
-This is a limitation of an API call that is being used
-(using the official endpoint has an even lower maximum of 20 results).
 
 The default is
 .IR 500 .
@@ -277,18 +270,6 @@ The command that is being run when upgrading packages with
 
 The default is
 .IR yay .
-
-.TP
-.BI "\(dqSearchMode\(dq\fR: " \(dqstring\(dq
-There are two search modes available.
-With the
-.IR Contains
-(default) option, it will show results where the name/description contains the
-search\-term at any position.
-When using the
-.I StartsWith
-option, only those packages are shown where the very beginning of a package
-name/description matched the search\-term.
 
 .TP
 .BI "\(dqSearchBy\(dq\fR: " \(dqstring\(dq

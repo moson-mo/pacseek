@@ -21,7 +21,6 @@ type Settings struct {
 	InstallCommand          string
 	UninstallCommand        string
 	SysUpgradeCommand       string
-	SearchMode              string
 	SearchBy                string
 	CacheExpiry             int
 	DisableCache            bool
@@ -56,7 +55,6 @@ func Defaults() *Settings {
 		PacmanConfigPath:       "/etc/pacman.conf",
 		InstallCommand:         "yay -S",
 		UninstallCommand:       "yay -Rs",
-		SearchMode:             "Contains",
 		SysUpgradeCommand:      "yay",
 		SearchBy:               "Name",
 		CacheExpiry:            10,
@@ -135,12 +133,6 @@ func Load() (*Settings, error) {
 func (s *Settings) applyUpgradeFixes() {
 	fixApplied := false
 	def := Defaults()
-
-	// search mode: added with 0.1.2
-	if s.SearchMode == "" {
-		s.SearchMode = def.SearchMode
-		fixApplied = true
-	}
 
 	// sysupgrade command: added with 0.2.4
 	if s.SysUpgradeCommand == "" {

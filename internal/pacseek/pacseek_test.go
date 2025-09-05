@@ -45,19 +45,17 @@ func (suite *pacseekTestSuite) TestSearchPacmanDbs() {
 	suite.Nil(err, err)
 
 	// ok
-	p, _, err := searchRepos(h, "glibc", "StartsWith", "Name", 1)
+	p, _, err := searchRepos(h, "glibc", "Name", 1)
 	suite.Nil(err, err)
 	suite.Len(p, 1, "Number of packages != 1")
-	p, _, err = searchRepos(h, "glibc", "StartsWith", "Name & Description", 1)
-	suite.Nil(err, err)
 	suite.Len(p, 1, "Number of packages != 1")
 
 	// nok
-	p, _, err = searchRepos(h, "nonsense_nonsense", "StartsWith", "Name", 1)
+	p, _, err = searchRepos(h, "nonsense_nonsense",  "Name", 1)
 	suite.Nil(err, err)
 	suite.Equal([]Package{}, p, "[]Packages not empty")
 
-	p, _, err = searchRepos(nil, "nonsense_nonsense", "StartsWith", "Name", 1)
+	p, _, err = searchRepos(nil, "nonsense_nonsense", "Name", 1)
 	suite.NotNil(err, err)
 	suite.Equal([]Package{}, p, "[]Packages not empty")
 }
@@ -95,25 +93,7 @@ func (suite *pacseekTestSuite) TestIsInstalled() {
 
 func (suite *pacseekTestSuite) TestSearchAur() {
 	// ok
-	p, err := searchAur("http://server.moson.rocks:10666/rpc", "yay", 5000, "StartsWith", "Name", 20)
-	suite.Nil(err, err)
-	suite.Greater(len(p), 0, "no results for yay")
-	p, err = searchAur("http://server.moson.rocks:10666/rpc", "yay", 5000, "Contains", "Name", 20)
-	suite.Nil(err, err)
-	suite.Greater(len(p), 0, "no results for yay")
-	p, err = searchAur("http://server.moson.rocks:10666/rpc", "yay", 5000, "Contains", "Name & Description", 20)
-	suite.Nil(err, err)
-	suite.Greater(len(p), 0, "no results for yay")
-	p, err = searchAur("http://server.moson.rocks:10666/rpc", "yay", 5000, "StartsWith", "Name & Description", 20)
-	suite.Nil(err, err)
-	suite.Greater(len(p), 0, "no results for yay")
-
-	// nok
-	p, err = searchAur("http://server.moson.rocks:10666/rpcbla", "yay", 5000, "StartsWith", "Name", 20)
-	suite.NotNil(err, err)
-	suite.Equal([]Package{}, p, "[]Packages not empty")
-
-	p, err = searchAur("nonsense", "yay", 5000, "StartsWith", "Name", 20)
+	p, err :=  "Name", 20)
 	suite.NotNil(err, err)
 	suite.Equal([]Package{}, p, "[]Packages not empty")
 }
