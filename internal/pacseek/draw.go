@@ -18,10 +18,6 @@ import (
 // draws input fields on settings form
 func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, pkgbuildInternal, disableFeed bool) {
 	ps.formSettings.Clear(false)
-	mode := 0
-	if ps.conf.SearchMode != "StartsWith" {
-		mode = 1
-	}
 	by := 0
 	if ps.conf.SearchBy != "Name" {
 		by = 1
@@ -97,11 +93,6 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 		ps.formSettings.AddInputField("Cache expiry (m): ", strconv.Itoa(ps.conf.CacheExpiry), 6, nil, sc)
 	}
 	ps.formSettings.AddInputField("Max search results: ", strconv.Itoa(ps.conf.MaxResults), 6, nil, sc).
-		AddDropDown("Search mode: ", []string{"StartsWith", "Contains"}, mode, func(text string, index int) {
-			if text != ps.conf.SearchMode {
-				ps.settingsChanged = true
-			}
-		}).
 		AddDropDown("Search by: ", []string{"Name", "Name & Description"}, by, func(text string, index int) {
 			if text != ps.conf.SearchBy {
 				ps.settingsChanged = true

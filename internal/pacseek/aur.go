@@ -8,10 +8,12 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/moson-mo/pacseek/internal/util"
 )
 
 // calls the AUR rpc API (suggest type) and returns found packages (beginning with "term")
-func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResults int) ([]Package, error) {
+func searchAur(aurUrl, term string, timeout int, by string, maxResults int) ([]Package, error) {
 	packages := []Package{}
 	client := http.Client{
 		Timeout: time.Millisecond * time.Duration(timeout),
@@ -22,7 +24,24 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 		t = "search&by=name"
 	}
 
-	req, err := http.NewRequest("GET", aurUrl+"?v=5&type="+t+"&arg="+url.QueryEscape(term), nil)
+	// TODO: find a way to search using regex
+	// or download all results from aur and then search using regex
+	stripped := func(s string) string {
+		special := make(map[rune]bool)
+		for _, ch := range "!@#$%^&*()[]{}<>,|+?/\\'\"~`" {
+			// '.-' are allowed
+			special[ch] = true
+		}
+
+		var result []rune
+		for _, ch := range s {
+			if !special[ch] {
+				result = append(result, ch)
+			}
+		}
+		return string(result)
+	}(term)
+	req, err := http.NewRequest("GET", aurUrl+"?v=5&type="+t+"&arg="+url.QueryEscape(stripped), nil)
 	if err != nil {
 		return packages, err
 	}
@@ -54,9 +73,8 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 	i := 0
 	for _, pkg := range s.Results {
 		// filter records
-		if (mode == "StartsWith" && by == "Name" && strings.HasPrefix(pkg.Name, term)) ||
-			(mode == "StartsWith" && by != "Name" && (strings.HasPrefix(pkg.Name, term) || strings.HasPrefix(strings.ToLower(pkg.Description), term))) ||
-			mode == "Contains" {
+		if util.IsMatch(pkg.Name, term) ||
+			(by == "Name & Description" && util.IsMatch(strings.ToLower(pkg.Description), term)) {
 			packages = append(packages, Package{
 				Name:         pkg.Name,
 				Source:       "AUR",

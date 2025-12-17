@@ -374,9 +374,6 @@ func (ps *UI) setupKeyBindings() {
 			if len(ps.lastSearchTerm) == 0 {
 				ps.displayInstalled(false)
 				return
-			} else if len(ps.lastSearchTerm) < 2 {
-				ps.displayMessage("Minimum number of characters is 2", true)
-				return
 			}
 			ps.displayPackages(ps.lastSearchTerm)
 		} else if key == tcell.KeyTAB {
@@ -585,8 +582,6 @@ func (ps *UI) saveSettings(defaults bool) {
 		} else if dd, ok := item.(*tview.DropDown); ok {
 			_, opt := dd.GetCurrentOption()
 			switch dd.GetLabel() {
-			case "Search mode: ":
-				ps.conf.SearchMode = opt
 			case "Search by: ":
 				ps.conf.SearchBy = opt
 			case "Color scheme: ":

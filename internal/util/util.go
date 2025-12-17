@@ -2,6 +2,7 @@ package util
 
 import (
 	"os"
+	"regexp"
 )
 
 // SliceContains checks if a slice contains a certain element
@@ -61,4 +62,13 @@ func UniqueStrings(strSlices ...[]string) []string {
 	}
 
 	return result
+}
+
+// Check if string matches regex
+func IsMatch(str string, expr string) bool {
+	re, err := regexp.Compile(expr)
+	if err != nil || !re.Match([]byte(str)) {
+		return false
+	}
+	return true
 }

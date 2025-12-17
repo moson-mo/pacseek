@@ -2,13 +2,13 @@ package pacseek
 
 import (
 	"os/exec"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/Jguer/go-alpm/v2"
 	"github.com/gdamore/tcell/v2"
-	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/moson-mo/pacseek/internal/util"
 	"github.com/rivo/tview"
 )
@@ -29,6 +29,9 @@ func (ps *UI) displayPackages(text string) {
 	}
 
 	// check cache first
+	// FIX: We'll have to wait until cache.go will implement regex
+	// string matching or create own function.
+	// Until then this works only for plain strings.
 	if packagesCache, found := ps.cacheSearch.Get(text); found {
 		packages = packagesCache.([]Package)
 		showFunc()
@@ -47,7 +50,7 @@ func (ps *UI) displayPackages(text string) {
 		var localPackages []Package
 
 		// search repositories
-		packages, localPackages, err = searchRepos(ps.alpmHandle, text, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
+		packages, localPackages, err = searchRepos(ps.alpmHandle, text, ps.conf.SearchBy, ps.conf.MaxResults)
 		if err != nil {
 			ps.app.QueueUpdateDraw(func() {
 				ps.displayMessage(err.Error(), true)
@@ -55,7 +58,7 @@ func (ps *UI) displayPackages(text string) {
 		}
 		// search AUR
 		if !ps.conf.DisableAur {
-			aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchMode, ps.conf.SearchBy, ps.conf.MaxResults)
+			aurPackages, err := searchAur(ps.conf.AurRpcUrl, text, ps.conf.AurTimeout, ps.conf.SearchBy, ps.conf.MaxResults)
 			if err != nil {
 				ps.app.QueueUpdateDraw(func() {
 					ps.displayMessage(err.Error(), true)
@@ -511,13 +514,26 @@ func (ps *UI) autoComplete(text string) []string {
 }
 
 // returns index of best matching package name
-func bestMatch(text string, packages []Package) int {
+func bestMatch(expr string, packages []Package) int {
 	// rank packages and save index of closest one to search term
 	bestMatch := 0
 	prevRank := 9999
+	re, err := regexp.Compile(expr)
+	if err != nil {
+		return 0
+	}
+	// TODO: comeup with better solution if needed
 	for i := 0; i < len(packages); i++ {
-		rank := fuzzy.RankMatch(text, packages[i].Name)
-		if rank < prevRank && rank != -1 {
+		matches := re.FindAllString(packages[i].Name, -1)
+		rank := len(matches)
+		if rank == 1 && matches[0] == packages[i].Name {
+			// prefer shortest exact 1 match
+			rank = len(matches[0])
+		} else {
+			// string with most matches
+			rank = 9999 - rank
+		}
+		if rank < prevRank {
 			bestMatch = i
 			prevRank = rank
 		}
