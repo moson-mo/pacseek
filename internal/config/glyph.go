@@ -13,6 +13,8 @@ type Glyphs struct {
 	Package      string
 	Installed    string
 	NotInstalled string
+	Marked       string
+	Reinstall    string
 	PrefixState  string
 	SuffixState  string
 	Settings     string
@@ -32,6 +34,8 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: "✗",
+			Marked:       "•",
+			Reinstall:    "",
 			Settings:     "🖉  ",
 			Pkgbuild:     "🗒  ",
 			Help:         "🕮  ",
@@ -41,6 +45,8 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: "✗",
+			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "[",
 			SuffixState:  "]",
 			Settings:     "🖉  ",
@@ -52,6 +58,8 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: "✗",
+			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "(",
 			SuffixState:  ")",
 			Settings:     "🖉  ",
@@ -63,6 +71,8 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: "✗",
+			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "{",
 			SuffixState:  "}",
 			Settings:     "🖉  ",
@@ -74,6 +84,8 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: "✗",
+			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "|",
 			SuffixState:  "|",
 			Settings:     "🖉  ",
@@ -85,11 +97,15 @@ var (
 			Package:      "",
 			Installed:    "Y",
 			NotInstalled: "-",
+			Marked:       "*",
+			Reinstall:    "R",
 		},
 		"Plain-No-X": {
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: " ",
+			Marked:       "•",
+			Reinstall:    "",
 			Settings:     "🖉  ",
 			Pkgbuild:     "🗒  ",
 			Help:         "🕮  ",
@@ -99,6 +115,8 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: " ",
+			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "[",
 			SuffixState:  "]",
 			Settings:     "🖉  ",
@@ -110,6 +128,8 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: " ",
+			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "(",
 			SuffixState:  ")",
 			Settings:     "🖉  ",
@@ -121,6 +141,8 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: " ",
+			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "{",
 			SuffixState:  "}",
 			Settings:     "🖉  ",
@@ -132,6 +154,8 @@ var (
 			Package:      "📦 ",
 			Installed:    "✔",
 			NotInstalled: " ",
+			Marked:       "•",
+			Reinstall:    "",
 			PrefixState:  "|",
 			SuffixState:  "|",
 			Settings:     "🖉  ",
@@ -143,6 +167,8 @@ var (
 			Package:      "",
 			Installed:    "Y",
 			NotInstalled: " ",
+			Marked:       "*",
+			Reinstall:    "R",
 		},
 	}
 )

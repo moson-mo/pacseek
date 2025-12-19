@@ -145,7 +145,7 @@ func (ps *UI) applyColors() {
 		// Installed
 		c = ps.tablePackages.GetCell(i, 2)
 		c.SetTextColor(ps.conf.Colors().DefaultBackground)
-		c.SetText(ps.getInstalledStateText(c.Reference.(bool)))
+		c.SetText(ps.getInstalledStateText(c.Reference.(PkgState)))
 	}
 
 	// details
@@ -198,7 +198,7 @@ func (ps *UI) applyGlyphStyle() {
 	// package list
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
 		c := ps.tablePackages.GetCell(i, 2)
-		if ref, ok := c.Reference.(bool); ok {
+		if ref, ok := c.Reference.(PkgState); ok {
 			c.SetText(ps.getInstalledStateText(ref))
 		}
 	}
@@ -438,7 +438,17 @@ func (ps *UI) setupKeyBindings() {
 		}
 		// ENTER
 		if event.Key() == tcell.KeyEnter {
-			ps.installSelectedPackage()
+			pkglist = ps.installSelectedPackages(pkglist)
+			return nil
+		}
+		// SPACE or 's'
+		if event.Rune() == ' ' || event.Rune() == 's' {
+			pkglist = ps.selectPackage(pkglist, PkgMarked)
+			return nil
+		}
+		// r
+		if event.Rune() == 'r' {
+			pkglist = ps.selectPackage(pkglist, PkgReinstall)
 			return nil
 		}
 		// Down / j / k -> noop: WTF? Prevent lock-up with empty list ;) :(

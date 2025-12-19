@@ -43,6 +43,27 @@ type InfoRecord struct {
 	DepsAndSatisfiers []DependencySatisfier
 }
 
+type PkgState int8
+
+const (
+	PkgNone      PkgState = 0x0
+	PkgInstalled          = 0x1
+	PkgMarked             = 0x2
+	PkgReinstall          = 0x4
+)
+
+// might need better name like PkgListStatus
+// or PkgStateList or smth
+type PkgStatus struct {
+	Pkg InfoRecord
+	//Name string
+	//ID int
+	//Source string
+	State PkgState
+}
+
+var pkglist []PkgStatus
+
 type DependencySatisfier struct {
 	DepType   string
 	DepName   string

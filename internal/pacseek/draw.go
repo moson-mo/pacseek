@@ -481,7 +481,10 @@ func (ps *UI) drawUpgradeableLine(up InfoRecord, lNum int, ignored bool) {
 			Color:           ps.conf.Colors().SettingsFieldText,
 			BackgroundColor: ps.conf.Colors().SearchBar,
 			Clicked: func() bool {
-				ps.installPackage(up, false)
+				// sorry not very optimal
+				var pkglist []PkgStatus = nil
+				pkglist = append(pkglist, PkgStatus{up, PkgNone})
+				pkglist = ps.installSelectedPackages(pkglist)
 				ps.cacheInfo.Delete("#upgrades#")
 				ps.displayUpgradable()
 				return true
@@ -517,6 +520,11 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 			color = ps.conf.Colors().PackagelistSourceAUR
 		}
 
+		var pkgstate PkgState = getPkgState(pkglist, pkg.Name)
+		if pkg.IsInstalled {
+			pkgstate |= PkgInstalled
+		}
+
 		ps.tablePackages.SetCell(i+1, 0, &tview.TableCell{
 			Text:            pkg.Name,
 			Color:           tcell.ColorWhite,
@@ -530,9 +538,9 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 			}).
 			SetCell(i+1, 2, &tview.TableCell{
 				Color:       ps.conf.Colors().DefaultBackground,
-				Text:        ps.getInstalledStateText(pkg.IsInstalled),
+				Text:        ps.getInstalledStateText(pkgstate),
 				Expansion:   1000,
-				Reference:   pkg.IsInstalled,
+				Reference:   pkgstate,
 				Transparent: true,
 			})
 	}
@@ -686,7 +694,7 @@ func (ps *UI) getDetailFields(i InfoRecord) (map[string]string, []string) {
 	fields["Conflicts"] = strings.Join(i.Conflicts, ", ")
 	fields["Licenses"] = strings.Join(i.License, ", ")
 	fields["Maintainer"] = i.Maintainer
-	fields["Dependencies"] = getDependenciesJoined(i, ps.getInstalledStateText(true), ps.getInstalledStateText(false), ps.conf.SepDepsWithNewLine)
+	fields["Dependencies"] = getDependenciesJoined(i, ps.getInstalledStateText(PkgInstalled), ps.getInstalledStateText(PkgNone), ps.conf.SepDepsWithNewLine)
 	fields["Required by"] = strings.Join(i.RequiredBy, ", ")
 	fields["URL"] = i.URL
 	if i.Source == "AUR" {
@@ -737,8 +745,18 @@ func getDependenciesJoined(i InfoRecord, installedIcon, notInstalledicon string,
 	return strings.Join(deps, separator)
 }
 
+func getPkgState(pkglist []PkgStatus, pkgname string) PkgState {
+	for i := range pkglist {
+		if pkglist[i].Pkg.Name == pkgname {
+			return pkglist[i].State
+		}
+	}
+
+	return PkgNone
+}
+
 // updates the "install state" of all packages in cache and package list
-func (ps *UI) updateInstalledState() {
+func (ps *UI) updateInstalledState(pkglist []PkgStatus) {
 	// update cached packages
 	sterm := strings.ToLower(ps.inputSearch.GetText())
 	cpkg, exp, found := ps.cacheSearch.GetWithExpiration(sterm)
@@ -752,11 +770,23 @@ func (ps *UI) updateInstalledState() {
 
 	// update currently shown packages
 	for i := 1; i < ps.tablePackages.GetRowCount(); i++ {
-		isInstalled := isPackageInstalled(ps.alpmHandle, ps.tablePackages.GetCell(i, 0).Text)
+		var pkgstate PkgState
+		// NOTE: maybe rework isPackageInstalled to return Pkgstate instead of bool
+		// we will need to rework data Package struct
+		//
+		// There no need to have 2 functions getPkgState and isPackageInstalled
+		if isPackageInstalled(ps.alpmHandle, ps.tablePackages.GetCell(i, 0).Text) {
+			pkgstate = PkgInstalled
+		} else {
+			pkgstate = PkgNone
+		}
+
+		pkgstate |= getPkgState(pkglist, ps.tablePackages.GetCell(i, 0).Text)
+
 		newCell := &tview.TableCell{
-			Text:        ps.getInstalledStateText(isInstalled),
+			Text:        ps.getInstalledStateText(pkgstate),
 			Expansion:   1000,
-			Reference:   isInstalled,
+			Reference:   pkgstate,
 			Transparent: true,
 		}
 		ps.tablePackages.SetCell(i, 2, newCell)
@@ -764,13 +794,28 @@ func (ps *UI) updateInstalledState() {
 }
 
 // compose text for "Installed" column in package list
-func (ps *UI) getInstalledStateText(isInstalled bool) string {
+func (ps *UI) getInstalledStateText(state PkgState) string {
 	glyphs := ps.conf.Glyphs()
 	colStrInstalled := "[#ff0000::b]"
 	installed := glyphs.NotInstalled
 
-	if isInstalled {
+	if state&PkgInstalled == PkgInstalled {
 		installed = glyphs.Installed
+		colStrInstalled = "[#00ff00::b]"
+	}
+
+	if state&PkgMarked == PkgMarked {
+		installed = glyphs.Marked
+		// TODO: maybe add different glyphs when in ASCII mode
+		if state&PkgInstalled == PkgInstalled {
+			colStrInstalled = "[#ff0000::b]"
+		} else {
+			colStrInstalled = "[#00ff00::b]"
+		}
+	}
+
+	if state&PkgReinstall == PkgReinstall {
+		installed = glyphs.Reinstall
 		colStrInstalled = "[#00ff00::b]"
 	}
 
