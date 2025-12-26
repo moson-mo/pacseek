@@ -145,7 +145,7 @@ func (ps *UI) displayPackageInfo(row, column int) {
 	}
 	ps.tableDetails.Clear().
 		SetTitle("")
-	pkg := ps.tablePackages.GetCell(row, 0).Text
+	pkg := ps.getRootName(row) + util.RemoveStrings(ps.tablePackages.GetCell(row, 0).Text, []string{" ", "│", "├", "┼", "┤", "─"})
 	source := ps.tablePackages.GetCell(row, 1).Text
 
 	info := SearchResults{}
@@ -339,7 +339,7 @@ func (ps *UI) isPackageSelected(pkg string, queue bool) bool {
 	var sel string
 	f := func() {
 		crow, _ := ps.tablePackages.GetSelection()
-		sel = ps.tablePackages.GetCell(crow, 0).Text
+		sel = ps.getRootName(crow) + util.RemoveStrings(ps.tablePackages.GetCell(crow, 0).Text, []string{" ", "│", "├", "┼", "┤", "─"})
 	}
 
 	if queue {

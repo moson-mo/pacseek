@@ -75,6 +75,7 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 				(by == "Name & Description" && compFunc(strings.ToLower(pkg.Description()), term)) {
 				pkg := Package{
 					Name:         pkg.Name(),
+					DisplayName:  pkg.Name(),
 					Source:       db.Name(),
 					IsInstalled:  local.Pkg(pkg.Name()) != nil,
 					LastModified: int(pkg.BuildDate().Unix()),
@@ -330,7 +331,7 @@ func infoPacman(h *alpm.Handle, computeRequiredBy bool, pkgs ...string) SearchRe
 	return r
 }
 
-// add locally installed satisfiers to pacakge info records
+// add locally installed satisfiers to package info records
 func addLocalSatisfiers(h *alpm.Handle, pkgs ...InfoRecord) {
 	local, err := h.LocalDB()
 

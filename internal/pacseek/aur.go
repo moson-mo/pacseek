@@ -59,6 +59,7 @@ func searchAur(aurUrl, term string, timeout int, mode string, by string, maxResu
 			mode == "Contains" {
 			packages = append(packages, Package{
 				Name:         pkg.Name,
+				DisplayName:  pkg.Name,
 				Source:       "AUR",
 				LastModified: pkg.LastModified,
 				Popularity:   pkg.Popularity,

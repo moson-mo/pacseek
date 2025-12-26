@@ -53,6 +53,7 @@ type DependencySatisfier struct {
 // Package is a data structure for the package tview table
 type Package struct {
 	Name         string
+	DisplayName  string
 	Source       string
 	IsInstalled  bool
 	LastModified int

@@ -269,6 +269,11 @@ func (ps *UI) setupKeyBindings() {
 			}
 			return nil
 		}
+		// CTRL+R - Show/collapse repetitive
+		if event.Key() == tcell.KeyCtrlR {
+			ps.collapsed = ps.toggleCollapse()
+			return nil
+		}
 		// CTRL+U - Upgrade
 		if event.Key() == tcell.KeyCtrlU {
 			ps.performUpgrade(false)
@@ -462,7 +467,12 @@ func (ps *UI) setupKeyBindings() {
 			ps.flexRight.AddItem(ps.tableDetails, 0, 1, false)
 		}
 		ps.displayPackageInfo(row, column)
-		ps.tablePackages.SetTitle(fmt.Sprintf(" (%d/%d) ", row, ps.tablePackages.GetRowCount()-1))
+		if ps.collapsed {
+			rootname := ps.getRootName(row)
+			ps.tablePackages.SetTitle(fmt.Sprintf(" ://%.18s... | (%d/%d) ", rootname, row, ps.tablePackages.GetRowCount()-1))
+		} else {
+			ps.tablePackages.SetTitle(fmt.Sprintf(" (%d/%d) ", row, ps.tablePackages.GetRowCount()-1))
+		}
 	})
 
 	// PKGBUILD
@@ -496,6 +506,40 @@ func (ps *UI) setupKeyBindings() {
 
 		return event
 	})
+}
+
+func (ps *UI) getRootName(row int) string {
+	//selected_row, _ := ps.tablePackages.GetSelection()
+	pkgname := ps.tablePackages.GetCell(row, 0).Text
+	rootname := ""
+	selected_depth := strings.Count(pkgname, "│")
+	selected_depth += strings.Count(pkgname, "├")
+	selected_depth += strings.Count(pkgname, "─┼")
+	selected_depth += strings.Count(pkgname, "─┤")
+	if selected_depth == 0 {
+		// WARNING: If uncomment this line,
+		// needs change in logic of displaying pkg info.
+		// Can be used as feature.
+		//
+		//rootname = ps.tablePackages.GetCell(row, 0).Text
+		return rootname
+	}
+	ii := 0
+	for depths := selected_depth; depths > 0; depths-- {
+		for i := range ps.shownPackages[:row-ii] {
+			up_pkgname := ps.shownPackages[row-1-i-ii].DisplayName
+			up_depth := strings.Count(up_pkgname, "│")
+			up_depth += strings.Count(up_pkgname, "├")
+			up_depth += strings.Count(up_pkgname, "─┼")
+			up_depth += strings.Count(up_pkgname, "─┤")
+			if up_depth < depths {
+				rootname = util.RemoveStrings(ps.shownPackages[row-1-i-ii].DisplayName, []string{" ", "│", "├", "┼", "┤", "─"}) + rootname
+				ii += i
+				break
+			}
+		}
+	}
+	return rootname
 }
 
 // sets up settings form
