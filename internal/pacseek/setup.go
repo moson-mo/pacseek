@@ -378,7 +378,7 @@ func (ps *UI) setupKeyBindings() {
 				ps.displayMessage("Minimum number of characters is 2", true)
 				return
 			}
-			ps.displayPackages(ps.lastSearchTerm)
+			ps.displayPackages(ps.lastSearchTerm, false)
 		} else if key == tcell.KeyTAB {
 			ps.app.SetFocus(ps.tablePackages)
 		}
@@ -439,6 +439,11 @@ func (ps *UI) setupKeyBindings() {
 		// ENTER
 		if event.Key() == tcell.KeyEnter {
 			ps.installSelectedPackage()
+			return nil
+		}
+		// show optional dependencies
+		if event.Rune() == 'd' {
+			ps.toggleOptDeps()
 			return nil
 		}
 		// Down / j / k -> noop: WTF? Prevent lock-up with empty list ;) :(

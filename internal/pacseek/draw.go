@@ -163,7 +163,7 @@ func (ps *UI) drawSettingsFields(disableAur, disableCache, separateAurCommands, 
 	ps.formSettings.AddInputField("Package column width: ", strconv.Itoa(ps.conf.PackageColumnWidth), 6, nil, func(text string) {
 		ps.settingsChanged = true
 		width, _ := strconv.Atoi(text)
-		ps.drawPackageListContent(ps.shownPackages, width)
+		ps.drawPackageListContent(ps.shownPackages, nil, width)
 	})
 	ps.formSettings.AddCheckbox("Separate Deps with Newline: ", ps.conf.SepDepsWithNewLine, func(checked bool) {
 		ps.settingsChanged = true
@@ -502,33 +502,28 @@ func (ps *UI) drawUpgradeableLine(up InfoRecord, lNum int, ignored bool) {
 	}
 }
 
-// draw packages on screen
-func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
-	ps.tablePackages.Clear()
-
-	// header
-	ps.drawPackageListHeader(pkgwidth)
-
+// draw optional dependencies on screen
+func (ps *UI) drawOptsListContent(opts []Package, pkgwidth int, row int) {
 	// rows
-	for i, pkg := range packages {
+	for i, pkg := range opts {
 		color := ps.conf.Colors().PackagelistSourceRepository
 
 		if pkg.Source == "AUR" {
 			color = ps.conf.Colors().PackagelistSourceAUR
 		}
 
-		ps.tablePackages.SetCell(i+1, 0, &tview.TableCell{
+		ps.tablePackages.SetCell(i+row+1, 0, &tview.TableCell{
 			Text:            pkg.Name,
-			Color:           tcell.ColorWhite,
+			Color:           tcell.ColorGray,
 			BackgroundColor: ps.conf.Colors().DefaultBackground,
 			MaxWidth:        pkgwidth,
 		}).
-			SetCell(i+1, 1, &tview.TableCell{
+			SetCell(i+row+1, 1, &tview.TableCell{
 				Text:            pkg.Source,
 				Color:           color,
 				BackgroundColor: ps.conf.Colors().DefaultBackground,
 			}).
-			SetCell(i+1, 2, &tview.TableCell{
+			SetCell(i+row+1, 2, &tview.TableCell{
 				Color:       ps.conf.Colors().DefaultBackground,
 				Text:        ps.getInstalledStateText(pkg.IsInstalled),
 				Expansion:   1000,
@@ -536,7 +531,59 @@ func (ps *UI) drawPackageListContent(packages []Package, pkgwidth int) {
 				Transparent: true,
 			})
 	}
-	ps.tablePackages.ScrollToBeginning()
+}
+
+// draw packages on screen
+func (ps *UI) drawPackageListContent(packages []Package, optsList []PkgOpts, pkgwidth int) {
+	ps.tablePackages.Clear()
+
+	// header
+	ps.drawPackageListHeader(pkgwidth)
+
+	var rowShift int
+	var optsIndex = -1
+	// rows
+	for i, pkg := range packages {
+		optsIndex = -1
+		// for this purpose is required that list is sorted
+		for i, pkgOpt := range optsList {
+			if pkgOpt.Name == pkg.Name {
+				optsIndex = i
+			}
+		}
+
+		color := ps.conf.Colors().PackagelistSourceRepository
+
+		if pkg.Source == "AUR" {
+			color = ps.conf.Colors().PackagelistSourceAUR
+		}
+
+		ps.tablePackages.SetCell(i+rowShift+1, 0, &tview.TableCell{
+			Text:            pkg.Name,
+			Color:           tcell.ColorWhite,
+			BackgroundColor: ps.conf.Colors().DefaultBackground,
+			MaxWidth:        pkgwidth,
+		}).
+			SetCell(i+rowShift+1, 1, &tview.TableCell{
+				Text:            pkg.Source,
+				Color:           color,
+				BackgroundColor: ps.conf.Colors().DefaultBackground,
+			}).
+			SetCell(i+rowShift+1, 2, &tview.TableCell{
+				Color:       ps.conf.Colors().DefaultBackground,
+				Text:        ps.getInstalledStateText(pkg.IsInstalled),
+				Expansion:   1000,
+				Reference:   pkg.IsInstalled,
+				Transparent: true,
+			})
+		if optsIndex != -1 {
+			ps.drawOptsListContent(optsList[optsIndex].OptDepends, pkgwidth, optsList[optsIndex].Row)
+			rowShift += len(optsList[optsIndex].OptDepends)
+		}
+	}
+
+	// not good since we can toggle 'd' and everytime it would reset cursor
+	//ps.tablePackages.ScrollToBeginning()
 }
 
 // draw pkgbuild on screen
@@ -655,7 +702,7 @@ func (ps *UI) sortAndRedrawPackageList(runeKey rune) {
 		}
 	}
 	ps.sortAscending = !ps.sortAscending
-	ps.drawPackageListContent(ps.shownPackages, ps.conf.PackageColumnWidth)
+	ps.drawPackageListContent(ps.shownPackages, nil, ps.conf.PackageColumnWidth)
 	ps.tablePackages.Select(1, 0)
 }
 
