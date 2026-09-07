@@ -653,6 +653,22 @@ func (ps *UI) sortAndRedrawPackageList(runeKey rune) {
 				return ps.shownPackages[j].Popularity > ps.shownPackages[i].Popularity
 			})
 		}
+	case 'V': // sort by votes
+		if ps.sortAscending {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].Votes == ps.shownPackages[j].Votes {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[i].Votes > ps.shownPackages[j].Votes
+			})
+		} else {
+			sort.Slice(ps.shownPackages, func(i, j int) bool {
+				if ps.shownPackages[i].Votes == ps.shownPackages[j].Votes {
+					return ps.shownPackages[j].Name > ps.shownPackages[i].Name
+				}
+				return ps.shownPackages[j].Votes > ps.shownPackages[i].Votes
+			})
+		}
 	}
 	ps.sortAscending = !ps.sortAscending
 	ps.drawPackageListContent(ps.shownPackages, ps.conf.PackageColumnWidth)

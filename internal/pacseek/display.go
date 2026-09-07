@@ -460,6 +460,7 @@ func (ps *UI) displayInstalled(displayUpdatesAfter bool) {
 				IsInstalled:  true,
 				LastModified: pkg.LastModified,
 				Popularity:   pkg.Popularity,
+				Votes:        pkg.NumVotes,
 			})
 			if !ps.conf.DisableCache {
 				ps.cacheInfo.Set(pkg.Name+"-"+pkg.Source, pkg, time.Duration(ps.conf.CacheExpiry)*time.Minute)

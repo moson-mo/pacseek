@@ -79,6 +79,7 @@ func searchRepos(h *alpm.Handle, term string, mode string, by string, maxResults
 					IsInstalled:  local.Pkg(pkg.Name()) != nil,
 					LastModified: int(pkg.BuildDate().Unix()),
 					Popularity:   math.MaxFloat64,
+					Votes:        math.MaxInt,
 				}
 				if db != local {
 					packages = append(packages, pkg)
